@@ -1,0 +1,99 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-receive',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["message"],
+        inputs:0,
+        outputs:1,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: {"value": null},
+            ignoreText: {"value": false},
+            ignoreReactions: {"value": false},
+            ignoreFiles: {"value": false},
+            ignoreImages: {"value": false},
+        },
+        label: function() {
+            return this.name || "Matrix Receive";
+        },
+        paletteLabel: 'Receive'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-receive">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+ 	 <div class="form-row">
+     	<label for="node-input-server"><i class="fa fa-server"></i> Matrix Server</label>
+     	<input type="text" id="node-input-server">
+ 	</div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <input type="text" id="node-input-roomId">
+    </div>
+    <div class="form-tips">Enter a single room, comma separated list of rooms, or leave blank to get from all</div>
+    <div class="form-row" style="margin-left: 100px;margin-top:10px;font-weight:bold;">
+        Timeline event filters
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-config-input-ignoreText"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-config-input-ignoreText" style="width: auto">
+            Ignore text
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-config-input-ignoreReactions"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-config-input-ignoreReactions" style="width: auto">
+            Ignore reactions
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-config-input-ignoreFiles"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-config-input-ignoreFiles" style="width: auto">
+            Ignore files
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-config-input-ignoreImages"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-config-input-ignoreImages" style="width: auto">
+            Ignore images
+        </label>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-receive">
+    <p>Receive messages from a matrix server on all rooms or a specified room.</p>
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Message
+            <dl class="message-properties">
+                <dt>topic <span class="property-type">string</span></dt>
+                <dd>the room the message originated from.</dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>payload <span class="property-type">string</span></dt>
+                <dd>the message from the server.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

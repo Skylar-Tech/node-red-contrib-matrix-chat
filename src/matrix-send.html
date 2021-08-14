@@ -1,0 +1,78 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-send',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            matrixServer: { value: "", type: "matrix-server-config" },
+            room: { value: null }
+        },
+        label: function() {
+            return this.name || "matrix-send";
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-send">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+ 	 <div class="form-row">
+     	<label for="node-input-matrixServer"><i class="fa fa-user"></i> Matrix Server Config</label>
+     	<input type="text" id="node-input-matrixServer">
+ 	</div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <input type="text" id="node-input-roomId">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-send">
+    <p>Send a message to a matrix room.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">string</span>
+        </dt>
+        <dd> the payload of the message to publish. </dd>
+        <dt class="optional">topic <span class="property-type">string</span></dt>
+        <dd> the Matrix room ID to send the message to. Setting it will override the room ID configured on the node.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Standard output
+            <dl class="message-properties">
+                <dt>payload <span class="property-type">string</span></dt>
+                <dd>the standard output of the command.</dd>
+            </dl>
+        </li>
+        <li>Standard error
+            <dl class="message-properties">
+                <dt>payload <span class="property-type">string</span></dt>
+                <dd>the standard error of the command.</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>Details</h3>
+    <p><code>msg.payload</code> is used as the payload of the published message.
+        If it contains an Object it will be converted to a JSON string before being sent.
+        If it contains a binary Buffer the message will be published as-is.</p>
+    <p>The topic used can be configured in the node or, if left blank, can be set
+        by <code>msg.topic</code>.</p>
+    <p>Likewise the QoS and retain values can be configured in the node or, if left
+        blank, set by <code>msg.qos</code> and <code>msg.retain</code> respectively.</p>
+
+    <h3>References</h3>
+    <ul>
+        <li><a>Twitter API docs</a> - full description of <code>msg.tweet</code> property</li>
+        <li><a>GitHub</a> - the nodes github repository</li>
+    </ul>
+</script>
