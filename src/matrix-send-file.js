@@ -41,6 +41,21 @@ module.exports = function(RED) {
                 return;
             }
 
+            if(msg.content) {
+                node.server.matrixClient.sendMessage(msg.roomId, msg.content)
+                    .then(function(e) {
+                        node.log("File message sent: " + e);
+                        msg.eventId = e.event_id;
+                        node.send([msg, null]);
+                    })
+                    .catch(function(e){
+                        node.warn("Error sending file message " + e);
+                        msg.error = e;
+                        node.send([null, msg]);
+                    });
+                return;
+            }
+
             if(!msg.payload) {
                 node.error('msg.payload is required');
                 return;

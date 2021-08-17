@@ -42,7 +42,8 @@
 </script>
 
 <script type="text/html" data-help-name="matrix-send-image">
-    <p>Send an image to a matrix room.</p>
+    <h3>Details</h3>
+    <p>This node will send an image to a Matrix chat room. You can link this directly to a File In node.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
@@ -70,6 +71,11 @@
             <span class="property-type">String | Null</span>
         </dt>
         <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty the it uses <code>msg.filename</code>. If <code>msg.filename</code> is also undefined it sets it to empty string</dd>
+
+        <dt class="optional">msg.content
+            <span class="property-type">Object | Null</span>
+        </dt>
+        <dd> craft your own msg.content to send to the server. If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -77,6 +83,9 @@
         <li>Success
             <dl class="message-properties">
                 <dd>original msg object preserved.</dd>
+
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the posted message.</dd>
             </dl>
         </li>
         <li>Error
@@ -86,12 +95,4 @@
             </dl>
         </li>
     </ol>
-
-    <h3>Details</h3>
-    <p>This node will send an image to a Matrix chat room. You can link this directly to a File In node.</p>
-
-    <h3>References</h3>
-    <ul>
-        <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MIME Types</a> - description of <code>msg.contentType</code> format</li>
-    </ul>
 </script>

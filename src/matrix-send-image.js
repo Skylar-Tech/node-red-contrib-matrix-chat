@@ -41,6 +41,21 @@ module.exports = function(RED) {
                 return;
             }
 
+            if(msg.content) {
+                node.server.matrixClient.sendMessage(msg.roomId, msg.content)
+                    .then(function(e) {
+                        node.log("Image message sent: " + e);
+                        msg.eventId = e.event_id;
+                        node.send([msg, null]);
+                    })
+                    .catch(function(e){
+                        node.warn("Error sending image message " + e);
+                        msg.error = e;
+                        node.send([null, msg]);
+                    });
+                return;
+            }
+
             if(!msg.payload) {
                 node.error('msg.payload is required');
                 return;
@@ -59,20 +74,22 @@ module.exports = function(RED) {
                     rawResponse: (msg.rawResponse || false), // Return the raw body, rather than parsing the JSON.
                     type: msg.contentType, // Content-type for the upload. Defaults to file.type, or applicaton/octet-stream.
                     onlyContentUri: false // Just return the content URI, rather than the whole body. Defaults to false. Ignored if opts.rawResponse is true.
-                }).then(function(file){
+                })
+                .then(function(file){
                     node.server.matrixClient
                         .sendImageMessage(msg.roomId, file.content_uri, {}, (msg.body || msg.filename) || "")
-                            .then(function(imgResp) {
-                                node.log("Image message sent: " + imgResp);
-                                msg.eventId = e.eventId;
-                                node.send([msg, null]);
-                            })
-                            .catch(function(e){
-                                node.warn("Error sending image message " + e);
-                                msg.matrixError = e;
-                                node.send([null, msg]);
-                            });
-                }).catch(function(e){
+                        .then(function(e) {
+                            node.log("Image message sent: " + e);
+                            msg.eventId = e.event_id;
+                            node.send([msg, null]);
+                        })
+                        .catch(function(e){
+                            node.warn("Error sending image message " + e);
+                            msg.error = e;
+                            node.send([null, msg]);
+                        });
+                })
+                .catch(function(e){
                     node.warn("Error uploading image message " + e);
                     msg.matrixError = e;
                     node.send([null, msg]);

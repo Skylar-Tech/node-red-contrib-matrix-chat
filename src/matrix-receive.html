@@ -41,58 +41,134 @@
     </div>
     <div class="form-row">
         <input
-                type="checkbox"
-                id="node-config-input-ignoreText"
-                style="width: auto; margin-left: 125px; vertical-align: top"
+            type="checkbox"
+            id="node-input-ignoreText"
+            style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-config-input-ignoreText" style="width: auto">
+        <label for="node-input-ignoreText" style="width: auto">
             Ignore text
         </label>
     </div>
     <div class="form-row">
         <input
-                type="checkbox"
-                id="node-config-input-ignoreReactions"
-                style="width: auto; margin-left: 125px; vertical-align: top"
+            type="checkbox"
+            id="node-input-ignoreReactions"
+            style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-config-input-ignoreReactions" style="width: auto">
+        <label for="node-input-ignoreReactions" style="width: auto">
             Ignore reactions
         </label>
     </div>
     <div class="form-row">
         <input
-                type="checkbox"
-                id="node-config-input-ignoreFiles"
-                style="width: auto; margin-left: 125px; vertical-align: top"
+            type="checkbox"
+            id="node-input-ignoreFiles"
+            style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-config-input-ignoreFiles" style="width: auto">
+        <label for="node-input-ignoreFiles" style="width: auto">
             Ignore files
         </label>
     </div>
     <div class="form-row">
         <input
-                type="checkbox"
-                id="node-config-input-ignoreImages"
-                style="width: auto; margin-left: 125px; vertical-align: top"
+            type="checkbox"
+            id="node-input-ignoreImages"
+            style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-config-input-ignoreImages" style="width: auto">
+        <label for="node-input-ignoreImages" style="width: auto">
             Ignore images
         </label>
     </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-receive">
-    <p>Receive messages from a matrix server on all rooms or a specified room.</p>
+    <p>Receive events from matrix.</p>
+
     <h3>Outputs</h3>
     <ol class="node-ports">
-        <li>Message
+        <li>Always Returned
             <dl class="message-properties">
-                <dt>topic <span class="property-type">string</span></dt>
-                <dd>the room the message originated from.</dd>
+                <dt>msg.type <span class="property-type">string</span></dt>
+                <dd>
+                    the message type. This is one of m.text, m.reaction, m.file, or m.image
+                </dd>
             </dl>
+
             <dl class="message-properties">
-                <dt>payload <span class="property-type">string</span></dt>
-                <dd>the message from the server.</dd>
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>the body from the message's content.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.sender <span class="property-type">string</span></dt>
+                <dd>the sender of the message. Example: @john:matrix.org</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.roomId <span class="property-type">string</span></dt>
+                <dd>the ID of the room. Example: !OGEhHVWSdvArJzumhm:matrix.org</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.event <span class="property-type">object</span></dt>
+                <dd>the event object returned by the Matrix server</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.content <span class="property-type">object</span></dt>
+                <dd>the message's content object</dd>
+            </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.text</strong>'
+            <div class="form-tips" style="margin-bottom: 12px;">
+                Doesn't return anything extra
+            </div>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.reaction</strong>'
+            <dl class="message-properties">
+                <dt>msg.info <span class="property-type">object</span></dt>
+                <dd>the content's info.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.referenceEventId <span class="property-type">string</span></dt>
+                <dd>the message that the reaction relates to</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>the key of the reaction's content</dd>
+            </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.file</strong>'
+            <dl class="message-properties">
+                <dt>msg.file.info <span class="property-type">string</span></dt>
+                <dd>the content's info.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.file.url <span class="property-type">string</span></dt>
+                <dd>the file's URL</dd>
+            </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.image</strong>'
+            <dl class="message-properties">
+                <dt>msg.image.info <span class="property-type">string</span></dt>
+                <dd>the image info.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.file.url <span class="property-type">string</span></dt>
+                <dd>the image's URL</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.file.thumbnail_url <span class="property-type">string</span></dt>
+                <dd>the image's thumbnail URL</dd>
             </dl>
         </li>
     </ol>

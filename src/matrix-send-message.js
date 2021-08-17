@@ -7,7 +7,44 @@ module.exports = function(RED) {
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
         this.roomId = n.roomId;
-        this.htmlMessage = n.htmlMessage;
+        this.messageType = n.messageType;
+        this.messageFormat = n.messageFormat;
+
+        // taken from https://github.com/matrix-org/synapse/blob/master/synapse/push/mailer.py
+        this.allowedTags = [
+            "font", // custom to matrix for IRC-style font coloring
+            "del",  // for markdown
+            // deliberately no h1/h2 to stop people shouting.
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "p",
+            "a",
+            "ul",
+            "ol",
+            "nl",
+            "li",
+            "b",
+            "i",
+            "u",
+            "strong",
+            "em",
+            "strike",
+            "code",
+            "hr",
+            "br",
+            "div",
+            "table",
+            "thead",
+            "caption",
+            "tbody",
+            "tr",
+            "th",
+            "td",
+            "pre",
+        ];
 
         if (!node.server) {
             node.warn("No configuration node");
@@ -25,7 +62,26 @@ module.exports = function(RED) {
         });
 
         node.on("input", function (msg) {
-            if (! node.server || ! node.server.matrixClient) {
+            let msgType = node.messageType,
+                msgFormat = node.messageFormat;
+
+            if(msgType === 'msg.type') {
+                if(!msg.type) {
+                    node.error("Message type is set to be passed in via msg.type but was not defined");
+                    return;
+                }
+                msgType = msg.type;
+            }
+
+            if(msgFormat === 'msg.format') {
+                if(!msg.format) {
+                    node.error("Message format is set to be passed in via msg.format but was not defined");
+                    return;
+                }
+                msgFormat = msg.format;
+            }
+
+            if (!node.server || !node.server.matrixClient) {
                 node.warn("No matrix server selected");
                 return;
             }
@@ -46,31 +102,27 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(this.htmlMessage) {
-                node.server.matrixClient.sendHtmlMessage(msg.roomId, msg.payload.toString(), msg.payload.toString())
-                    .then(function(e) {
-                        node.log("Message sent: " + msg.payload);
-                        msg.eventId = e.eventId;
-                        node.send([msg, null]);
-                    })
-                    .catch(function(e){
-                        node.warn("Error sending message " + e);
-                        msg.matrixError = e;
-                        node.send([null, msg]);
-                    });
-            } else {
-                node.server.matrixClient.sendTextMessage(msg.roomId, msg.payload.toString())
-                    .then(function(e) {
-                        node.log("Message sent: " + msg.payload);
-                        msg.eventId = e.eventId;
-                        node.send([msg, null]);
-                    })
-                    .catch(function(e){
-                        node.warn("Error sending message " + e);
-                        msg.matrixError = e;
-                        node.send([null, msg]);
-                    });
+            let content = {
+                msgtype: msgType,
+                body: msg.payload.toString()
+            };
+
+            if(msgFormat === 'html') {
+                content.format = "org.matrix.custom.html";
+                content.formatted_body = msg.formatted_payload || msg.payload;
             }
+
+            node.server.matrixClient.sendMessage(msg.roomId, content)
+                .then(function(e) {
+                    node.log("Message sent: " + msg.payload);
+                    msg.eventId = e.eventId;
+                    node.send([msg, null]);
+                })
+                .catch(function(e){
+                    node.warn("Error sending message " + e);
+                    msg.error = e;
+                    node.send([null, msg]);
+                });
         });
     }
     RED.nodes.registerType("matrix-send-message", MatrixSendImage);

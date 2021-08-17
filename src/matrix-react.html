@@ -1,5 +1,5 @@
 <script type="text/javascript">
-    RED.nodes.registerType('matrix-send-message',{
+    RED.nodes.registerType('matrix-react',{
         category: 'matrix',
         color: '#00b7ca',
         icon: "matrix.png",
@@ -9,18 +9,16 @@
         defaults: {
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
-            roomId: { value: null },
-            messageType: { value: 'm.text' },
-            messageFormat: { value: '' },
+            roomId: { value: null }
         },
         label: function() {
-            return this.name || "Send Message";
+            return this.name || "React";
         },
-        paletteLabel: 'Send Message'
+        paletteLabel: 'React'
     });
 </script>
 
-<script type="text/html" data-template-name="matrix-send-message">
+<script type="text/html" data-template-name="matrix-react">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -61,36 +59,27 @@
     </div>
 </script>
 
-<script type="text/html" data-help-name="matrix-send-message">
+<script type="text/html" data-help-name="matrix-react">
     <h3>Details</h3>
-    <p>Sends a message to a Matrix room.</p>
+    <p>React to a message in a Matrix room.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.payload
             <span class="property-type">String</span>
         </dt>
-        <dd> the message text. </dd>
-
-        <dt class="optional">msg.formatted_payload
-            <span class="property-type">String</span>
-        </dt>
-        <dd> the formatted HTML message (uses msg.payload if not defined). This only affects HTML messages.</dd>
+        <dd> Usually an emoji but can also be text. </dd>
 
         <dt>msg.roomId
             <span class="property-type">String | Null</span>
         </dt>
-        <dd> Room ID to send image to. Optional if configured on the node. Overrides node configuration if set.</dd>
+        <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this will be ignored.</dd>
 
-        <dt class="optional">msg.type
-            <span class="property-type">String | Null</span>
+        <dt class="optional">msg.referenceEventId<br />
+            msg.eventId
+            <span class="property-type">String</span>
         </dt>
-        <dd> This is only used and required when configured so on the node. Must be set to either 'm.text' or 'm.notice'</dd>
-
-        <dt class="optional">msg.format
-            <span class="property-type">String | Null</span>
-        </dt>
-        <dd> This is only used and required when configured so on the node. Set to null for plain text and 'html' for HTML.</dd>
+        <dd> The eventId of the message to react to. Uses <code>msg.referenceEventId</code> first and falls back to <code>msg.eventId</code>. One of these MUST be defined.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -100,7 +89,7 @@
                 <dd>original msg object preserved.</dd>
 
                 <dt>msg.eventId <span class="property-type">string</span></dt>
-                <dd>the eventId from the posted message.</dd>
+                <dd>the eventId from the posted reaction.</dd>
             </dl>
         </li>
         <li>Error

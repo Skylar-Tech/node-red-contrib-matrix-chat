@@ -79,7 +79,6 @@ module.exports = function(RED) {
                 switch (state) {
                     case "ERROR":
                         node.error("Connection to Matrix server lost");
-                        console.log(state, prevState, data);
                         node.setConnected(false);
                         break;
 
