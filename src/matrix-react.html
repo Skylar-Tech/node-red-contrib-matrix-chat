@@ -75,11 +75,11 @@
         </dt>
         <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this will be ignored.</dd>
 
-        <dt class="optional">msg.referenceEventId<br />
+        <dt>msg.referenceEventId<br />
             msg.eventId
             <span class="property-type">String</span>
         </dt>
-        <dd> The eventId of the message to react to. Uses <code>msg.referenceEventId</code> first and falls back to <code>msg.eventId</code>. One of these MUST be defined.</dd>
+        <dd> One of these is required. This is the eventId of the message to react to. Uses <code>msg.referenceEventId</code> first and falls back to <code>msg.eventId</code>.</dd>
     </dl>
 
     <h3>Outputs</h3>
