@@ -1,5 +1,5 @@
 module.exports = function(RED) {
-    function MatrixReact(n) {
+    function MatrixKick(n) {
         RED.nodes.createNode(this, n);
 
         var node = this;
@@ -24,7 +24,7 @@ module.exports = function(RED) {
         });
 
         node.on("input", function (msg) {
-            if (!node.server || !node.server.matrixClient) {
+            if (! node.server || ! node.server.matrixClient) {
                 node.error("No matrix server selected");
                 return;
             }
@@ -40,39 +40,23 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(!msg.payload) {
-                node.error('msg.payload is required');
+            if(!msg.userId) {
+                node.error("msg.userId was not set.");
                 return;
             }
 
-            let eventId = msg.referenceEventId || msg.eventId;
-            if(!eventId) {
-                node.error('Either msg.referenceEventId or msg.eventId must be defined to react to a message.');
-                return;
-            }
-
-            node.server.matrixClient.sendCompleteEvent(
-                msg.topic,
-                {
-                    type: 'm.reaction',
-                    content: {
-                        "m.relates_to": {
-                            event_id: eventId,
-                            key: msg.payload,
-                            rel_type: "m.annotation"
-                        }
-                    }
-                }
-            )
+            node.server.matrixClient.kick(msg.topic, msg.userId, msg.reason || undefined)
                 .then(function(e) {
+                    node.log("Successfully kicked " + msg.userId + " from " + msg.topic);
                     msg.eventId = e.event_id;
                     node.send([msg, null]);
                 })
                 .catch(function(e){
+                    node.error("Error trying to kick " + msg.userId + " from " + msg.topic);
                     msg.error = e;
                     node.send([null, msg]);
                 });
         });
     }
-    RED.nodes.registerType("matrix-react", MatrixReact);
+    RED.nodes.registerType("matrix-room-kick", MatrixKick);
 }

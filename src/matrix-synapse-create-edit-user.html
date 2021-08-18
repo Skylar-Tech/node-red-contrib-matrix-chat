@@ -1,0 +1,70 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-synapse-create-edit-user', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+        },
+        label: function() {
+            return this.name || "Synapse Add/Edit User";
+        },
+        paletteLabel: 'Synapse Add/Edit User'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-synapse-create-edit-user">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-tips" style="margin-bottom: 12px;">
+        User must be an admin to use this endpoint. Only works with Synapse servers. It is recommended to check if the user exists before creating otherwise it will edit an existing user.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-synapse-create-edit-user">
+    <h3>Details</h3>
+    <p>Add a new user to a Synapse Matrix server. This is only supported on Synapse servers and the API client must be an admin.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.userId
+            <span class="property-type">string</span>
+        </dt>
+        <dd> ID of user to create/edit (ex: @bob:example.com)</dd>
+
+        <dt>msg.payload
+            <span class="property-type">Object</span>
+        </dt>
+        <dd> Details of the new user to create. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#create-or-modify-account" target="_blank">Click here</a> to see what valid data you can pass via this input.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dd>original msg object preserved.</dd>
+
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the posted message.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

@@ -1,0 +1,88 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-synapse-deactivate-user', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+        },
+        label: function() {
+            return this.name || "Synapse Deactivate User";
+        },
+        paletteLabel: 'Synapse Deactivate User'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-synapse-deactivate-user">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-tips" style="margin-bottom: 12px;">
+        User must be an admin to use this endpoint. Only works with Synapse servers. This is permanent so make sure you actually want to do it.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-synapse-deactivate-user">
+    <h3>Details</h3>
+    <p>
+        Permanently deactivate a Synapse Matrix user. It removes active access tokens, resets the password, and deletes third-party IDs (to prevent the user requesting a password reset). If you don't want this to be permanent edit the user instead. User IDs are not recycled so think this through carefully.
+        <br>The following actions are performed when deactivating an user (click <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#deactivate-account" target="_blank">here</a> for more information as this may change):
+        <ul>
+            <li>Try to unpind 3PIDs from the identity server</li>
+            <li>Remove all 3PIDs from the homeserver</li>
+            <li>Delete all devices and E2EE keys</li>
+            <li>Delete all access tokens</li>
+            <li>Delete the password hash</li>
+            <li>Removal from all rooms the user is a member of</li>
+            <li>Remove the user from the user directory</li>
+            <li>Reject all pending invites</li>
+            <li>Remove all account validity information related to the user</li>
+        </ul>
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.userId
+            <span class="property-type">string</span>
+        </dt>
+        <dd> ID of user to create/edit (ex: @bob:example.com)</dd>
+
+        <dt class="optional">msg.erase
+            <span class="property-type">string</span>
+        </dt>
+        <dd>
+            The following additional actions are performed during deactivation if set to true (defaults to false)
+            <ul>
+                <li>Remove the user's display name</li>
+                <li>Remove the user's avatar URL</li>
+                <li>Mark the user as erased</li>
+            </ul>
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dd>original msg object preserved.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

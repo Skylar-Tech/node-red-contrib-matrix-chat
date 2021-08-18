@@ -1,0 +1,80 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-users',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: "" }
+        },
+        label: function() {
+            return this.name || "Room User List";
+        },
+        paletteLabel: 'Room User List'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-users">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+ 	 <div class="form-row">
+     	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+     	<input type="text" id="node-input-server">
+ 	</div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Room Id</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-tips">
+        This only works on Synapse servers. The user also must be an administrator.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-users">
+    <h3>Details</h3>
+    <p>List out joined users from a Matrix room.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.topic
+            <span class="property-type">Integer</span>
+        </dt>
+        <dd> Room ID to get member list from. Required if not configured on the node.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>the response object from the server.</dd>
+
+                <dt>msg.payload.users <span class="property-type">array</span></dt>
+                <dd>list of users from the Matrix server. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts" target="_blank">Click here</a> for details on what this contains (or do a test and dump the output). We would put the details here in the doc but Synapse is constantly changing so it's best to reference the official Synapse docs.</dd>
+
+                <dt>msg.next_token <span class="property-type">string</span></dt>
+                <dd>string representing a positive integer - Indication for pagination. See above (input msg.from)</dd>
+
+                <dt>msg.total <span class="property-type">integer</span></dt>
+                <dd>Total number of media.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts">Matrix Docs</a> - List Accounts API method information</li>
+    </ul>
+</script>

@@ -1,0 +1,71 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-whois-user', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+        },
+        label: function() {
+            return this.name || "WhoIs User";
+        },
+        paletteLabel: 'WhoIs User'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-whois-user">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-tips" style="margin-bottom: 12px;">
+        User must be an admin to use this endpoint.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-whois-user">
+    <h3>Details</h3>
+    <p>This node returns information about the active sessions for a specific user.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.userId
+            <span class="property-type">string</span>
+        </dt>
+        <dd> ID of user to do whois request for (ex: @bob:example.com)</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>This returns data directly from the API endpoint. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user" target="_blank">Click here</a> to see what this returns.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>Details</h3>
+    <p>
+        <ul>
+            <li><a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user">Matrix Doc</a> - Doc reference for User Whois API</li>
+        </ul>
+    </p>
+
+</script>

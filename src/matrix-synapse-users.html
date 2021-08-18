@@ -1,0 +1,109 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-synapse-users',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" }
+        },
+        label: function() {
+            return this.name || "Synapse User List";
+        },
+        paletteLabel: 'Synapse User List'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-synapse-users">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+ 	 <div class="form-row">
+     	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+     	<input type="text" id="node-input-server">
+ 	</div>
+    <div class="form-tips">
+        This only works on Synapse servers. The user also must be an administrator.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-synapse-users">
+    <h3>Details</h3>
+    <p>This node lists out users from a Synapse server. Only works on Synapse Matrix servers. User must be an admin to call this API.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.from
+            <span class="property-type">Integer</span>
+        </dt>
+        <dd> Is optional but used for pagination, denoting the offset in the returned results. This should be treated as an opaque value and not explicitly set to anything other than the return value of next_token from a previous call. Defaults to 0.</dd>
+
+        <dt class="optional">msg.limit
+            <span class="property-type">Integer</span>
+        </dt>
+        <dd> limit - representing a positive integer - Is optional but is used for pagination, denoting the maximum number of items to return in this call. Defaults to 100.</dd>
+
+        <dt class="optional">msg.guests
+            <span class="property-type">Bool</span>
+        </dt>
+        <dd> Is optional and if false will exclude guest users. Defaults to true to include guest users.</dd>
+
+        <dt class="optional">msg.order_by
+            <span class="property-type">String</span>
+        </dt>
+        <dd>
+            The method by which to sort the returned list of users.
+            If the ordered field has duplicates, the second order is always by ascending name, which guarantees a stable ordering.
+            Valid values are:
+            <ul>
+                <li><code>name</code> - Users are ordered alphabetically by <code>name</code>. This is the default.</li>
+                <li><code>is_guest</code> - Users are ordered by <code>is_guest</code> status.</li>
+                <li><code>admin</code> - Users are ordered by <code>admin</code> status.</li>
+                <li><code>user_type</code> - Users are ordered alphabetically by <code>user_type</code>.</li>
+                <li><code>deactivated</code> - Users are ordered by <code>deactivated</code> status.</li>
+                <li><code>shadow_banned</code> - Users are ordered by <code>shadow_banned</code> status.</li>
+                <li><code>displayname</code> - Users are ordered alphabetically by <code>displayname</code>.</li>
+                <li><code>avatar_url</code> - Users are ordered alphabetically by avatar URL.</li>
+                <li><code>creation_ts</code> - Users are ordered by when the users was created in ms.</li>
+            </ul>
+            <p>Caution. The database only has indexes on the columns <code>name</code> and <code>creation_ts</code>.
+                This means that if a different sort order is used (<code>is_guest</code>, <code>admin</code>,
+                <code>user_type</code>, <code>deactivated</code>, <code>shadow_banned</code>, <code>avatar_url</code> or <code>displayname</code>),
+                this can cause a large load on the database, especially for large environments.</p>
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>the response object from the server.</dd>
+
+                <dt>msg.payload.users <span class="property-type">array</span></dt>
+                <dd>list of users from the Matrix server. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts" target="_blank">Click here</a> for details on what this contains (or do a test and dump the output). We would put the details here in the doc but Synapse is constantly changing so it's best to reference the official Synapse docs.</dd>
+
+                <dt>msg.next_token <span class="property-type">string</span></dt>
+                <dd>string representing a positive integer - Indication for pagination. See above (input msg.from)</dd>
+
+                <dt>msg.total <span class="property-type">integer</span></dt>
+                <dd>Total number of media.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts">Matrix Docs</a> - List Accounts API method information</li>
+    </ul>
+</script>

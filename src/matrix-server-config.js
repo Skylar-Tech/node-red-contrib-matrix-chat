@@ -14,6 +14,8 @@ module.exports = function(RED) {
             this.credentials = {};
         }
 
+        node.setMaxListeners(1000);
+
         this.connected = false;
         this.name = n.name;
         this.userId = this.credentials.userId;
@@ -27,8 +29,6 @@ module.exports = function(RED) {
         } else if(!this.userId) {
             node.log("Matrix connection failed: missing user ID.");
         } else {
-            node.log("Initializing Matrix Server Config node");
-
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
@@ -49,6 +49,7 @@ module.exports = function(RED) {
                 if (node.connected !== connected) {
                     node.connected = connected;
                     if (connected) {
+                        node.log("Matrix server connection ready.");
                         node.emit("connected");
                     } else {
                         node.emit("disconnected");
@@ -59,6 +60,10 @@ module.exports = function(RED) {
             node.isConnected = function() {
                 return node.connected;
             };
+
+            node.matrixClient.on("Room.timeline", function(event, room, toStartOfTimeline, data) {
+                node.emit("Room.timeline", event, room, toStartOfTimeline, data);
+            });
 
             // handle auto-joining rooms
             node.matrixClient.on("RoomMember.membership", function(event, member) {
@@ -82,6 +87,8 @@ module.exports = function(RED) {
                         node.setConnected(false);
                         break;
 
+                    case "PREPARED":
+                    case "RECONNECTING":
                     case "STOPPED":
                         node.setConnected(false);
                         break;
@@ -90,11 +97,11 @@ module.exports = function(RED) {
                         node.setConnected(true);
                         break;
 
-                    case "PREPARED":
-                        // the client instance is ready to be queried.
-                        node.log("Matrix server connection ready.");
-                        node.setConnected(true);
-                        break;
+                    // case "PREPARED":
+                    //     // the client instance is ready to be queried.
+                    //     node.log("Matrix server connection ready.");
+                    //     node.setConnected(true);
+                    //     break;
                 }
             });
 

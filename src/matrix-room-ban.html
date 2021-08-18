@@ -1,0 +1,75 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-ban',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: null }
+        },
+        label: function() {
+            return this.name || "Room Ban";
+        },
+        paletteLabel: 'Room Ban'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-ban">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+ 	 <div class="form-row">
+     	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+     	<input type="text" id="node-input-server">
+ 	</div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-tips">
+        Room ID must either be defined here or passed in via <code>msg.topic</code>. The config takes precedence over the input.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-ban">
+    <h3>Details</h3>
+    <p>This node will ban a user from a room as long as the bot has permission to do so.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.userId
+            <span class="property-type">String</span>
+        </dt>
+        <dd> The ID of the user to ban.</dd>
+
+        <dt class="optional">msg.topic
+            <span class="property-type">String | Null</span>
+        </dt>
+        <dd> The room to ban the user from. Required if not defined on the config. Config takes precedence.</dd>
+
+        <dt class="optional">msg.reason
+            <span class="property-type">String</span>
+        </dt>
+        <dd> Reason for banning the user.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dd>original msg object preserved. Node doesn't set anything.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

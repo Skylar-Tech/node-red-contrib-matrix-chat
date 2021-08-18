@@ -1,0 +1,100 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-synapse-register', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        credentials: {
+            server: { type:"text", required: true },
+            sharedSecret: { type:"text", required: true },
+        },
+        defaults: {
+            name: { value: null },
+        },
+        label: function() {
+            return this.name || "Synapse Register v1";
+        },
+        paletteLabel: 'Synapse Register v1'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-synapse-register">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Server URL</label>
+        <input type="text" id="node-input-server" placeholder="https://matrix.example.com">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        This only works for Synapse Matrix Servers. You must be the system admin of this server. Make sure the path <code>/_synapse/admin/v1/register</code> is available on your server.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-sharedSecret"><i class="fa fa-user"></i> Registration Shared Secret</label>
+        <input type="text" id="node-input-sharedSecret">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Public registration does not need to be enabled to register. Using your <code>registration_shared_secret</code> from within your <code>homeserver.yaml</code> server config file will allow Node-RED to register users.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-synapse-register">
+    <h3>Details</h3>
+    <p>Register a client with a Synapse Matrix server using the v1 admin API. This registers users with closed registration by using the <code>registration_shared_secret</code> from Synapse's <code>homeserver.yaml</code> config file. This is mainly used to generate a first time admin user on newly created Matrix servers (as you can use the V2 registration endpoint after you have an admin user).</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.payload
+            <span class="property-type">Object</span>
+        </dt>
+        <dd> Details of the new user to create. </dd>
+
+        <dt class="optional">msg.payload.displayname
+            <span class="property-type">String | null</span>
+        </dt>
+        <dd> Set the displayname for the user (default to username if not set). </dd>
+
+        <dt>msg.payload.username
+            <span class="property-type">Object</span>
+        </dt>
+        <dd> Username for the new user. </dd>
+
+        <dt>msg.payload.password
+            <span class="property-type">String</span>
+        </dt>
+        <dd> Password for the new user. </dd>
+
+        <dt>msg.payload.admin
+            <span class="property-type">Bool</span>
+        </dt>
+        <dd> If true, the new user will be an admin. Default to false. </dd>
+
+        <dt class="optional">msg.payload.user_type
+            <span class="property-type">String | null</span>
+        </dt>
+        <dd> Set the user type. Leave this to null if you don't know what it is for. Check <a href="https://github.com/matrix-org/synapse/blob/master/synapse/api/constants.py">here</a> and look for <code>class UserTypes</code> to figure out what is valid.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dd>original msg object preserved.</dd>
+
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the posted message.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

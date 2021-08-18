@@ -91,9 +91,9 @@ module.exports = function(RED) {
                 node.send([null, msg]);
             }
 
-            msg.roomId = node.roomId || msg.roomId;
-            if(!msg.roomId) {
-                node.warn("Room must be specified in msg.roomId or in configuration");
+            msg.topic = node.roomId || msg.topic;
+            if(!msg.topic) {
+                node.warn("Room must be specified in msg.topic or in configuration");
                 return;
             }
 
@@ -112,7 +112,7 @@ module.exports = function(RED) {
                 content.formatted_body = msg.formatted_payload || msg.payload;
             }
 
-            node.server.matrixClient.sendMessage(msg.roomId, content)
+            node.server.matrixClient.sendMessage(msg.topic, content)
                 .then(function(e) {
                     node.log("Message sent: " + msg.payload);
                     msg.eventId = e.eventId;
