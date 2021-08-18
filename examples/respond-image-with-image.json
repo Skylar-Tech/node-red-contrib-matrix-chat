@@ -1,0 +1,96 @@
+[
+  {
+    "id": "a9b412957063b06c",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "ignoreText": false,
+    "ignoreReactions": false,
+    "ignoreFiles": false,
+    "ignoreImages": false,
+    "x": 460,
+    "y": 120,
+    "wires": [
+      [
+        "4aa45cd8653ba898"
+      ]
+    ]
+  },
+  {
+    "id": "4aa45cd8653ba898",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload == \"image\"",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "image",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 670,
+    "y": 120,
+    "wires": [
+      [
+        "71dc8555d734f985"
+      ]
+    ]
+  },
+  {
+    "id": "195f346def928e16",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"image\" with an uploaded image",
+    "info": "",
+    "x": 550,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "71dc8555d734f985",
+    "type": "file in",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "filename": "example.png",
+    "format": "",
+    "chunk": false,
+    "sendError": false,
+    "encoding": "none",
+    "allProps": false,
+    "x": 870,
+    "y": 120,
+    "wires": [
+      [
+        "2e68b9ef45a84f48"
+      ]
+    ]
+  },
+  {
+    "id": "2e68b9ef45a84f48",
+    "type": "matrix-send-image",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "contentType": "image/png",
+    "x": 1030,
+    "y": 120,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "4de4e868e02a9051",
+    "type": "matrix-server-config",
+    "name": "Your Server",
+    "autoAcceptRoomInvites": true
+  }
+]

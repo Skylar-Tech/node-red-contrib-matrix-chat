@@ -1,0 +1,141 @@
+[
+  {
+    "id": "a9b412957063b06c",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "ignoreText": false,
+    "ignoreReactions": false,
+    "ignoreFiles": false,
+    "ignoreImages": false,
+    "x": 460,
+    "y": 120,
+    "wires": [
+      [
+        "4aa45cd8653ba898"
+      ]
+    ]
+  },
+  {
+    "id": "4aa45cd8653ba898",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload == \"react\"",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "react",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 670,
+    "y": 120,
+    "wires": [
+      [
+        "35e92315a7ff4987"
+      ]
+    ]
+  },
+  {
+    "id": "35e92315a7ff4987",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "👍",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 880,
+    "y": 120,
+    "wires": [
+      [
+        "ab74f9b52a26435c"
+      ]
+    ]
+  },
+  {
+    "id": "d5f35b3b5f64f413",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1150,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "07b598284bcadc58",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1150,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "46a9a333fe2c20f5",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"react\" with a reaction (thumbs up)",
+    "info": "",
+    "x": 550,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "ab74f9b52a26435c",
+    "type": "matrix-react",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "x": 1030,
+    "y": 120,
+    "wires": [
+      [
+        "d5f35b3b5f64f413"
+      ],
+      [
+        "07b598284bcadc58"
+      ]
+    ]
+  },
+  {
+    "id": "4de4e868e02a9051",
+    "type": "matrix-server-config",
+    "name": "Your Server",
+    "autoAcceptRoomInvites": true
+  }
+]

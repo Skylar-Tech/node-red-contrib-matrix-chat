@@ -1,0 +1,143 @@
+[
+  {
+    "id": "a9b412957063b06c",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "ignoreText": false,
+    "ignoreReactions": false,
+    "ignoreFiles": false,
+    "ignoreImages": false,
+    "x": 460,
+    "y": 120,
+    "wires": [
+      [
+        "4aa45cd8653ba898"
+      ]
+    ]
+  },
+  {
+    "id": "4aa45cd8653ba898",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload == \"ping\"",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "ping",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 660,
+    "y": 120,
+    "wires": [
+      [
+        "240492a035448ca6"
+      ]
+    ]
+  },
+  {
+    "id": "240492a035448ca6",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "set msg.payload = \"pong\"",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "pong",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 890,
+    "y": 120,
+    "wires": [
+      [
+        "02973db9f86807b6"
+      ]
+    ]
+  },
+  {
+    "id": "bbed21ccdb0cc394",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"ping\" with \"pong\"",
+    "info": "",
+    "x": 500,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "02973db9f86807b6",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "messageType": "m.text",
+    "messageFormat": "",
+    "x": 1100,
+    "y": 120,
+    "wires": [
+      [
+        "2b07fce769aacb0c"
+      ],
+      [
+        "a3101646528cdea2"
+      ]
+    ]
+  },
+  {
+    "id": "2b07fce769aacb0c",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1250,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "a3101646528cdea2",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1250,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "4de4e868e02a9051",
+    "type": "matrix-server-config",
+    "name": "Your Server",
+    "autoAcceptRoomInvites": true
+  }
+]

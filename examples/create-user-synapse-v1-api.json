@@ -1,0 +1,49 @@
+[
+  {
+    "id": "dc757ef02529f228",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"username\":\"example\",\"password\":\"replaceme\"}",
+    "payloadType": "json",
+    "x": 130,
+    "y": 600,
+    "wires": [
+      [
+        "62f9049cf48342da"
+      ]
+    ]
+  },
+  {
+    "id": "62f9049cf48342da",
+    "type": "matrix-synapse-register",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "x": 330,
+    "y": 600,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "3f9d486ca3c75bf2",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Register user using API v1",
+    "info": "",
+    "x": 170,
+    "y": 560,
+    "wires": []
+  }
+]

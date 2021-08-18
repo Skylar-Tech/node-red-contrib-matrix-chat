@@ -22,16 +22,15 @@ The following is supported from this package:
 
 Therefore, you can easily build a bot, chat relay, or administrate your Matrix server from within [Node-RED](https://nodered.org/).
 
+### Examples
+We have examples! [Check them out](examples)
+
 ### Installing
 
 You can either install from within Node-RED by searching for `node-red-contrib-matrix-chat` or run this from within your Node-RED directory:
 ```bash
 npm install node-red-contrib-matrix-chat
 ```
-
-### Examples
-We don't have examples just yet but here is a picture of my flow I use for testing this module while creating it (gives you an idea of what is possible and how easy it is to chain things):
-![img.png](example.png)
 
 ### Usage
 

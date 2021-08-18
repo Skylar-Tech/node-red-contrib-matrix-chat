@@ -1,0 +1,143 @@
+[
+  {
+    "id": "a9b412957063b06c",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "ignoreText": false,
+    "ignoreReactions": false,
+    "ignoreFiles": false,
+    "ignoreImages": false,
+    "x": 460,
+    "y": 120,
+    "wires": [
+      [
+        "4aa45cd8653ba898"
+      ]
+    ]
+  },
+  {
+    "id": "4aa45cd8653ba898",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload == \"html\"",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "html",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 660,
+    "y": 120,
+    "wires": [
+      [
+        "494174e295946f41"
+      ]
+    ]
+  },
+  {
+    "id": "788e82fbd80fe4cf",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send HTML Message",
+    "server": "4de4e868e02a9051",
+    "roomId": "",
+    "messageType": "m.text",
+    "messageFormat": "html",
+    "x": 1080,
+    "y": 120,
+    "wires": [
+      [
+        "c8a970ff52092aeb"
+      ],
+      [
+        "7747d0fb81341d04"
+      ]
+    ]
+  },
+  {
+    "id": "494174e295946f41",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "This is an <strong>HTML</strong> test. <div>New line with div element.</div>",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 860,
+    "y": 120,
+    "wires": [
+      [
+        "788e82fbd80fe4cf"
+      ]
+    ]
+  },
+  {
+    "id": "c8a970ff52092aeb",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1270,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "7747d0fb81341d04",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1270,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "c4ab4b6d5386037d",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"html\" with html message",
+    "info": "",
+    "x": 530,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "4de4e868e02a9051",
+    "type": "matrix-server-config",
+    "name": "Your Server",
+    "autoAcceptRoomInvites": true
+  }
+]
