@@ -22,16 +22,6 @@ module.exports = function(RED) {
             return;
         }
 
-        node.status({ fill: "red", shape: "ring", text: "disconnected" });
-
-        node.server.on("disconnected", function(){
-            node.status({ fill: "red", shape: "ring", text: "disconnected" });
-        });
-
-        node.server.on("connected", function() {
-            node.status({ fill: "green", shape: "ring", text: "connected" });
-        });
-
         node.on("input", function (msg) {
 
             if(!msg.payload.username) {

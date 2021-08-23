@@ -10,10 +10,12 @@
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
             roomId: {"value": null},
-            ignoreText: {"value": false},
-            ignoreReactions: {"value": false},
-            ignoreFiles: {"value": false},
-            ignoreImages: {"value": false},
+            acceptText: {"value": true},
+            acceptEmotes: {"value": true},
+            acceptStickers: {"value": true},
+            acceptReactions: {"value": true},
+            acceptFiles: {"value": true},
+            acceptImages: {"value": true},
         },
         label: function() {
             return this.name || "Matrix Receive";
@@ -42,41 +44,61 @@
     <div class="form-row">
         <input
             type="checkbox"
-            id="node-input-ignoreText"
+            id="node-input-acceptText"
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-input-ignoreText" style="width: auto">
-            Ignore text
+        <label for="node-input-acceptText" style="width: auto">
+            Accept text <code>m.text</code>
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-acceptEmotes"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-acceptEmotes" style="width: auto">
+            Accept emotes <code>m.emote</code>
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-acceptStickers"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-acceptStickers" style="width: auto">
+            Accept stickers <code>m.sticker</code>
         </label>
     </div>
     <div class="form-row">
         <input
             type="checkbox"
-            id="node-input-ignoreReactions"
+            id="node-input-acceptReactions"
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-input-ignoreReactions" style="width: auto">
-            Ignore reactions
+        <label for="node-input-acceptReactions" style="width: auto">
+            Accept reactions <code>m.reaction</code>
         </label>
     </div>
     <div class="form-row">
         <input
             type="checkbox"
-            id="node-input-ignoreFiles"
+            id="node-input-acceptFiles"
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-input-ignoreFiles" style="width: auto">
-            Ignore files
+        <label for="node-input-acceptFiles" style="width: auto">
+            Accept files <code>m.file</code>
         </label>
     </div>
     <div class="form-row">
         <input
             type="checkbox"
-            id="node-input-ignoreImages"
+            id="node-input-acceptImages"
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-input-ignoreImages" style="width: auto">
-            Ignore images
+        <label for="node-input-acceptImages" style="width: auto">
+            Accept images <code>m.image</code>
         </label>
     </div>
 </script>
@@ -92,6 +114,16 @@
                 <dd>
                     the message type. For example this will be either m.text, m.reaction, m.file, m.image, etc
                 </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.encrypted <span class="property-type">bool</span></dt>
+                <dd> returns true if message was encrypted (e2ee).</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.redacted <span class="property-type">bool</span></dt>
+                <dd> returns true if the message was redacted (such as deleted by the user).</dd>
             </dl>
 
             <dl class="message-properties">
@@ -140,6 +172,24 @@
             <dl class="message-properties">
                 <dt>msg.payload <span class="property-type">string</span></dt>
                 <dd>the key of the reaction's content</dd>
+            </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.emote</strong>'
+            <div class="form-tips" style="margin-bottom: 12px;">
+                Doesn't return anything extra
+            </div>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.sticker</strong>'
+            <dl class="message-properties">
+                <dt>msg.url <span class="property-type">string</span></dt>
+                <dd>URL to the sticker image</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
+                <dd>URL to the thumbnail of the sticker</dd>
             </dl>
         </li>
 

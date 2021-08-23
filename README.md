@@ -7,17 +7,24 @@ Matrix chat server client for [Node-RED](https://nodered.org/)
 
 The following is supported from this package:
 
-- Receive events from a room (messages, reactions, images, and files)
-- Send Images/Files
+- End-to-end encryption supported
+- Receive events from a room (messages, reactions, images, and files) whether encrypted or not
+- Send Images/Files (sending files to e2ee room doesn't currently encrypt them yet)
+- Decrypt files in e2ee rooms
 - Send HTML/Plain Text Message/Notice
 - React to messages
 - Register user's on closed registration Synapse servers using `registration_shared_secret` (Admin Only)
 - List out users on a Synapse server (Admin Only)
 - Get WhoIs info for a Synapse user (Admin Only)
 - Add/Edit Synapse users using the v2 API (requires a pre-existing admin account)
+- Deactivate users on Synapse servers (Admin Only)
 - Get a user list from a room
 - Kick user from room
 - Ban user from room
+- Join a room
+- Create a room
+- Invite to a room
+- Synapse admin API to force add user to room (requires bot to be in same room already)
 
 
 Therefore, you can easily build a bot, chat relay, or administrate your Matrix server from within [Node-RED](https://nodered.org/).

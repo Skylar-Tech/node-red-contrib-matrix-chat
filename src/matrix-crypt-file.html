@@ -1,0 +1,74 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-decrypt-file',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null }
+        },
+        label: function() {
+            return this.name || "Decrypt File";
+        },
+        paletteLabel: 'Decrypt File'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-decrypt-file">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-decrypt-file">
+    <h3>Details</h3>
+    <p>Files sent in an encrypted room are themselves encrypted. Use this node to encrypt/decrypt files. Note: This node will download the encryted file (required to decrypt)</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.content
+            <span class="property-type">Object</span>
+        </dt>
+        <dd> content of the decrypted message</dd>
+
+        <dt>msg.content.file
+            <span class="property-type">Object</span>
+        </dt>
+        <dd> the information needed to decode the file</dd>
+
+        <dt>msg.url
+            <span class="property-type">String | Null</span>
+        </dt>
+        <dd> the decoded mxc url.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.type <span class="property-type">string</span></dt>
+                <dd>The message type (ex: <code>m.file</code>, <code>m.image</code>, <code>m.video</code>, etc)</dd>
+
+                <dt>msg.payload <span class="property-type">buffer</span></dt>
+                <dd>decoded file contents.</dd>
+
+                <dt>msg.filename <span class="property-type">string</span></dt>
+                <dd>filename of the decoded file (if content.filename isn't defined on the message we fallback to content.body).</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MIME Types</a> - description of <code>msg.contentType</code> format</li>
+    </ul>
+</script>

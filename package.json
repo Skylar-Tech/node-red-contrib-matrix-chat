@@ -1,10 +1,12 @@
 {
   "name": "node-red-contrib-matrix-chat",
-  "version": "0.0.5",
+  "version": "0.1.5",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "got": "^11.8.2",
+    "isomorphic-webcrypto": "^2.3.8",
     "matrix-js-sdk": "^12.2.0",
+    "olm": "https://packages.matrix.org/npm/olm/olm-3.1.4.tgz",
     "utf8": "^3.0.0"
   },
   "node-red": {
@@ -15,12 +17,17 @@
       "matrix-send-file": "src/matrix-send-file.js",
       "matrix-send-image": "src/matrix-send-image.js",
       "matrix-react": "src/matrix-react.js",
+      "matrix-create-room": "src/matrix-create-room.js",
+      "matrix-invite-room": "src/matrix-invite-room.js",
+      "matrix-join-room": "src/matrix-join-room.js",
+      "matrix-crypt-file": "src/matrix-crypt-file.js",
       "matrix-room-kick": "src/matrix-room-kick.js",
       "matrix-room-ban": "src/matrix-room-ban.js",
       "matrix-synapse-users": "src/matrix-synapse-users.js",
       "matrix-synapse-register": "src/matrix-synapse-register.js",
       "matrix-synapse-create-edit-user": "src/matrix-synapse-create-edit-user.js",
       "matrix-synapse-deactivate-user": "src/matrix-synapse-deactivate-user.js",
+      "matrix-synapse-join-room": "src/matrix-synapse-join-room.js",
       "matrix-whois-user": "src/matrix-whois-user.js",
       "matrix-room-users": "src/matrix-room-users.js"
     }
@@ -40,5 +47,8 @@
     "name": "Skylar Sadlier",
     "url": "https://skylar.tech"
   },
-  "license": "SEE LICENSE FILE"
+  "license": "SEE LICENSE FILE",
+  "devDependencies": {
+    "node-localstorage": "^2.2.1"
+  }
 }

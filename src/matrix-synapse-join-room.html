@@ -1,0 +1,77 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-synapse-join-room', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs: 1,
+        outputs: 2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: null },
+        },
+        label: function() {
+            return this.name || "Add Room Membership";
+        },
+        paletteLabel: 'Add Room Membership'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-synapse-join-room">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+
+    <div class="form-tips" style="margin-bottom: 12px;">
+        User must be an admin to use this endpoint.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-synapse-join-room">
+    <h3>Details</h3>
+    <p>
+        This API allows an administrator to join an user account with a given user_id to a room with a given room_id_or_alias. You can only modify the membership of local users. The server administrator must be in the room and have permission to invite users. This only works on Synapse servers.
+    </p>
+    <a href="https://matrix-org.github.io/synapse/develop/admin_api/room_membership.html#edit-room-membership-api" target="_blank">Synapse API Endpoint Information</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic
+            <span class="property-type">string</span>
+        </dt>
+        <dd> The room identifier or alias to join: for example, <code>!h8zld9j31:example.com.</code>. Not required if set in the config and will be ignored even if set.</dd>
+
+        <dt>msg.userId
+            <span class="property-type">string</span>
+        </dt>
+        <dd> User's ID that will be set into the room.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>This returns data directly from the API endpoint. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user" target="_blank">Click here</a> to see what this returns.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

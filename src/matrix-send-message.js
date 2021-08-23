@@ -67,7 +67,7 @@ module.exports = function(RED) {
 
             if(msgType === 'msg.type') {
                 if(!msg.type) {
-                    node.error("Message type is set to be passed in via msg.type but was not defined");
+                    node.error("msg.type type is set to be passed in via msg.type but was not defined");
                     return;
                 }
                 msgType = msg.type;

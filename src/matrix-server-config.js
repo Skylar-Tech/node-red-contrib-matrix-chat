@@ -1,5 +1,10 @@
+global.Olm = require('olm');
+
 module.exports = function(RED) {
-    let sdk = require("matrix-js-sdk");
+    const sdk = require("matrix-js-sdk");
+    const { LocalStorage } = require('node-localstorage');
+    const localStorage = new LocalStorage('./matrix-local-storage');
+    const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 
     function MatrixServerNode(n) {
         // we should add support for getting access token automatically from username/password
@@ -19,8 +24,11 @@ module.exports = function(RED) {
         this.connected = false;
         this.name = n.name;
         this.userId = this.credentials.userId;
+        this.deviceId = this.credentials.deviceId || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
+        this.enableE2ee = this.credentials.enableE2ee || false;
+        this.e2ee = this.enableE2ee && this.deviceId;
 
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
@@ -32,7 +40,10 @@ module.exports = function(RED) {
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
-                userId: this.userId
+                sessionStore: new sdk.WebStorageSessionStore(localStorage),
+                cryptoStore: new LocalStorageCryptoStore(localStorage),
+                userId: this.userId,
+                deviceId: this.deviceId || undefined,
             });
 
             node.on('close', function(done) {
@@ -61,12 +72,28 @@ module.exports = function(RED) {
                 return node.connected;
             };
 
-            node.matrixClient.on("Room.timeline", function(event, room, toStartOfTimeline, data) {
+            node.matrixClient.on("Room.timeline", async function(event, room, toStartOfTimeline, data) {
                 node.emit("Room.timeline", event, room, toStartOfTimeline, data);
             });
 
+            // node.matrixClient.on("RoomMember.typing", async function(event, member) {
+            //     let isTyping = member.typing;
+            //     let roomId = member.roomId;
+            // });
+
+            // node.matrixClient.on("RoomMember.powerLevel", async function(event, member) {
+            //     let newPowerLevel = member.powerLevel;
+            //     let newNormPowerLevel = member.powerLevelNorm;
+            //     let roomId = member.roomId;
+            // });
+
+            // node.matrixClient.on("RoomMember.name", async function(event, member) {
+            //     let newName = member.name;
+            //     let roomId = member.roomId;
+            // });
+
             // handle auto-joining rooms
-            node.matrixClient.on("RoomMember.membership", function(event, member) {
+            node.matrixClient.on("RoomMember.membership", async function(event, member) {
                 if (member.membership === "invite" && member.userId === node.userId) {
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
@@ -80,20 +107,22 @@ module.exports = function(RED) {
                 }
             });
 
-            node.matrixClient.on("sync", function(state, prevState, data) {
+            node.matrixClient.on("sync", async function(state, prevState, data) {
                 switch (state) {
                     case "ERROR":
                         node.error("Connection to Matrix server lost");
                         node.setConnected(false);
                         break;
 
-                    case "PREPARED":
                     case "RECONNECTING":
                     case "STOPPED":
                         node.setConnected(false);
                         break;
 
                     case "SYNCING":
+                        break;
+
+                    case "PREPARED":
                         node.setConnected(true);
                         break;
 
@@ -105,8 +134,17 @@ module.exports = function(RED) {
                 }
             });
 
+            async function run() {
+                if(node.e2ee){
+                    await node.matrixClient.initCrypto();
+                    node.matrixClient.setGlobalErrorOnUnknownDevices(false);
+                } else {
+                }
+                await node.matrixClient.startClient({ initialSyncLimit: 8 });
+            }
+
             node.log("Connecting to Matrix server...");
-            node.matrixClient.startClient();
+            run().catch((error) => node.error(error));
         }
     }
 
@@ -114,6 +152,8 @@ module.exports = function(RED) {
         credentials: {
             userId: { type:"text", required: true },
             accessToken: { type:"text", required: true },
+            deviceId: { type: "text", required: true },
+            enableE2ee: { type: "checkbox", value: true },
             url: { type: "text", required: true },
         }
     });

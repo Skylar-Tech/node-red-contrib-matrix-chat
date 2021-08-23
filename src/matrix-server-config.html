@@ -5,7 +5,9 @@
         credentials: {
             userId: { type: "text", required: true },
             accessToken: { type: "password", required: true },
-            url: { type: "text", required: true }
+            deviceId: { type: "text", required: true },
+            url: { type: "text", required: true },
+            enableE2ee: { type: "checkbox", value: true }
         },
         defaults: {
             name: { value: null },
@@ -23,16 +25,20 @@
         <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-config-input-name" placeholder="Name">
     </div>
- 	 <div class="form-row">
-     	<label for="node-config-input-userId"><i class="fa fa-server"></i> User ID</label>
-     	<input type="text" placeholder="@example:matrix.org" id="node-config-input-userId">
- 	</div>
- 	 <div class="form-row">
-     	<label for="node-config-input-accessToken"><i class="fa fa-key"></i> Access Token</label>
-     	<input type="text" id="node-config-input-accessToken">
- 	</div>
+    <div class="form-row">
+        <label for="node-config-input-userId"><i class="fa fa-server"></i> User ID</label>
+        <input type="text" placeholder="@example:matrix.org" id="node-config-input-userId">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-accessToken"><i class="fa fa-key"></i> Access Token</label>
+        <input type="text" id="node-config-input-accessToken">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-deviceId"><i class="fa fa-key"></i> Device ID</label>
+        <input type="text" id="node-config-input-deviceId">
+    </div>
     <div class="form-tips" style="margin-bottom: 12px;">
-        View the <a href="javascript:$('#red-ui-tab-help-link-button').click();">node docs</a> to figure out how to generate an Access Token.
+        View the <a href="javascript:$('#red-ui-tab-help-link-button').click();">node docs</a> to figure out how to generate an Access Token & Device ID. You can also generate them using the Shared Secret Registration node.
     </div>
  	 <div class="form-row">
      	<label for="node-config-input-url"><i class="fa fa-globe"></i> Server URL</label>
@@ -46,6 +52,16 @@
         />
         <label for="node-config-input-autoAcceptRoomInvites" style="width: auto">
             Auto join invited rooms
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-config-input-enableE2ee"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-config-input-enableE2ee" style="width: auto">
+            Enable end-to-end encryption (requires DeviceID)
         </label>
     </div>
 </script>

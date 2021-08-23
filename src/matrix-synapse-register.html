@@ -14,9 +14,9 @@
             name: { value: null },
         },
         label: function() {
-            return this.name || "Synapse Register v1";
+            return this.name || "Shared Secret Registration";
         },
-        paletteLabel: 'Synapse Register v1'
+        paletteLabel: 'Shared Secret Registration'
     });
 </script>
 
@@ -45,7 +45,8 @@
 
 <script type="text/html" data-help-name="matrix-synapse-register">
     <h3>Details</h3>
-    <p>Register a client with a Synapse Matrix server using the v1 admin API. This registers users with closed registration by using the <code>registration_shared_secret</code> from Synapse's <code>homeserver.yaml</code> config file. This is mainly used to generate a first time admin user on newly created Matrix servers (as you can use the V2 registration endpoint after you have an admin user).</p>
+    <p>Register a client with a Synapse Matrix server using the Shared Secret registration Synapse API. This registers users with closed registration by using the <code>registration_shared_secret</code> from Synapse's <code>homeserver.yaml</code> config file. This is mainly used to generate a first time admin user on newly created Matrix servers (as you can use the V2 registration endpoint after you have an admin user).</p>
+    <a href="https://matrix-org.github.io/synapse/develop/admin_api/register_api.html#shared-secret-registration" target="_blank">Synapse API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">

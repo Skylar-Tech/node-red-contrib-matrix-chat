@@ -49,7 +49,11 @@
             <li>Reject all pending invites</li>
             <li>Remove all account validity information related to the user</li>
         </ul>
+        <div class="form-tips" style="margin-bottom: 12px;">
+            If you want to disable a user without doing the above use the "Synapse Add/Edit User" node to edit the user and set <code>deactivated</code> to true. Note that re-enabling the account will require you to set the password again (so the password still gets lost) but you are at least able to recover the account.
+        </div>
     </p>
+    <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#deactivate-account" target="_blank">Synapse API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">

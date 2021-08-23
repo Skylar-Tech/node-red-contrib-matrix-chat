@@ -1,12 +1,11 @@
 module.exports = function(RED) {
-    function MatrixReact(n) {
+    function MatrixJoinRoom(n) {
         RED.nodes.createNode(this, n);
 
         var node = this;
 
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
-        this.roomId = n.roomId;
 
         if (!node.server) {
             node.warn("No configuration node");
@@ -24,7 +23,7 @@ module.exports = function(RED) {
         });
 
         node.on("input", function (msg) {
-            if (!node.server || !node.server.matrixClient) {
+            if (! node.server || ! node.server.matrixClient) {
                 node.error("No matrix server selected");
                 return;
             }
@@ -34,47 +33,29 @@ module.exports = function(RED) {
                 node.send([null, msg]);
             }
 
-            msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("Room must be specified in msg.topic or in configuration");
+                node.error("Room must be specified in msg.topic");
                 return;
             }
 
-            if(!msg.payload) {
-                node.error('msg.payload is required');
+            if(!msg.userId) {
+                node.error("msg.userId was not set.");
                 return;
             }
 
-            let eventId = msg.referenceEventId || msg.eventId;
-            if(!eventId) {
-                node.error('Either msg.referenceEventId or msg.eventId must be defined to react to a message.');
-                return;
-            }
-
-            msg.type = 'm.reaction';
-
-            node.server.matrixClient.sendCompleteEvent(
-                msg.topic,
-                {
-                    type: 'm.reaction',
-                    content: {
-                        "m.relates_to": {
-                            event_id: eventId,
-                            key: msg.payload,
-                            rel_type: "m.annotation"
-                        }
-                    }
-                }
-            )
+            node.server.matrixClient.joinRoom(msg.topic, msg.joinOpts || {})
                 .then(function(e) {
-                    msg.eventId = e.event_id;
+                    msg.payload = e;
+                    msg.topic = e.roomId;
+                    node.log("Successfully joined room " + msg.topic);
                     node.send([msg, null]);
                 })
                 .catch(function(e){
+                    node.error("Error trying to join room " + msg.topic + ":" + e);
                     msg.error = e;
                     node.send([null, msg]);
                 });
         });
     }
-    RED.nodes.registerType("matrix-react", MatrixReact);
+    RED.nodes.registerType("matrix-join-room", MatrixJoinRoom);
 }
