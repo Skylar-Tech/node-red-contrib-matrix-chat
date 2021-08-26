@@ -1,13 +1,14 @@
 {
   "name": "node-red-contrib-matrix-chat",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "got": "^11.8.2",
     "isomorphic-webcrypto": "^2.3.8",
     "matrix-js-sdk": "^12.2.0",
     "olm": "https://packages.matrix.org/npm/olm/olm-3.1.4.tgz",
-    "utf8": "^3.0.0"
+    "utf8": "^3.0.0",
+    "node-localstorage": "^2.2.1"
   },
   "node-red": {
     "nodes": {
@@ -47,8 +48,5 @@
     "name": "Skylar Sadlier",
     "url": "https://skylar.tech"
   },
-  "license": "SEE LICENSE FILE",
-  "devDependencies": {
-    "node-localstorage": "^2.2.1"
-  }
+  "license": "SEE LICENSE FILE"
 }
