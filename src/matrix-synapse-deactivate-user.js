@@ -52,7 +52,7 @@ module.exports = function(RED) {
 
             const path = node.encodeUri(
                 "/_synapse/admin/v1/deactivate/$userId",
-                { $userId: userId },
+                { $userId: msg.userId },
             );
             node.server.matrixClient.http
                 .authedRequest(undefined, 'POST', path, undefined, { "erase": (msg.erase || false) }, { prefix: '' })
@@ -64,9 +64,6 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
-
-            node.server.matrixClient.deactivateSynapseUser(msg.userId)
-                ;
         });
     }
     RED.nodes.registerType("matrix-synapse-deactivate-user", MatrixSynapseDeactivateUser);

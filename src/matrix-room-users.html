@@ -38,7 +38,8 @@
 
 <script type="text/html" data-help-name="matrix-room-users">
     <h3>Details</h3>
-    <p>List out joined users from a Matrix room.</p>
+    <p>A list of members of the room. If you are joined to the room then this will be the current members of the room. If you have left the room then this will be the members of the room when you left.</p>
+    <a href="https://matrix.org/docs/spec/client_server/latest#get-matrix-client-r0-rooms-roomid-joined-members" target="_blank">Matrix API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
@@ -55,14 +56,14 @@
                 <dt>msg.payload <span class="property-type">object</span></dt>
                 <dd>the response object from the server.</dd>
 
-                <dt>msg.payload.users <span class="property-type">array</span></dt>
-                <dd>list of users from the Matrix server. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts" target="_blank">Click here</a> for details on what this contains (or do a test and dump the output). We would put the details here in the doc but Synapse is constantly changing so it's best to reference the official Synapse docs.</dd>
+                <dt>msg.payload.joined <span class="property-type">object</span></dt>
+                <dd>A map from user ID to a RoomMember object. The key of each item is the <code>userId</code>. <a href="https://matrix.org/docs/spec/client_server/latest#get-matrix-client-r0-rooms-roomid-joined-members" target="_blank">Click here</a> for details on what this contains (or do a test and dump the output).</dd>
 
-                <dt>msg.next_token <span class="property-type">string</span></dt>
-                <dd>string representing a positive integer - Indication for pagination. See above (input msg.from)</dd>
+                <dt>msg.payload.joined.[userId].display_name <span class="property-type">string</span></dt>
+                <dd>The display name of the user this object is representing.</dd>
 
-                <dt>msg.total <span class="property-type">integer</span></dt>
-                <dd>Total number of media.</dd>
+                <dt>msg.payload.joined.[userId].avatar_url <span class="property-type">string</span></dt>
+                <dd>The mxc avatar url of the user this object is representing.</dd>
             </dl>
         </li>
         <li>Error

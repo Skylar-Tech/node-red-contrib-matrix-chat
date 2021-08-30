@@ -35,7 +35,7 @@
 
 <script type="text/html" data-help-name="matrix-synapse-create-edit-user">
     <h3>Details</h3>
-    <p>Add a new user to a Synapse Matrix server. This is only supported on Synapse servers and the API client must be an admin.</p>
+    <p>Allows an administrator to create or modify a user account with a specific <code>msg.userId</code>.</p>
     <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#create-or-modify-account" target="_blank">Synapse API Endpoint Information</a>
 
     <h3>Inputs</h3>
@@ -48,7 +48,7 @@
         <dt>msg.payload
             <span class="property-type">Object</span>
         </dt>
-        <dd> Details of the new user to create. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#create-or-modify-account" target="_blank">Click here</a> to see what valid data you can pass via this input.</dd>
+        <dd> Details of the new user to create. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#create-or-modify-account" target="_blank">Click here</a> to see what valid data you can pass via this input. If the user already exists then optional parameters default to the current value.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -57,7 +57,7 @@
             <dl class="message-properties">
                 <dd>original msg object preserved.</dd>
 
-                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dt>msg.payload <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted message.</dd>
             </dl>
         </li>
