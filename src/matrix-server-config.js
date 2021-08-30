@@ -114,6 +114,7 @@ module.exports = function(RED) {
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
                 deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
+                verificationMethods: ["m.sas.v1"]
             });
 
             // set globally if configured to do so
