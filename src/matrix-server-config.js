@@ -136,11 +136,13 @@ module.exports = function(RED) {
 
             async function run() {
                 if(node.e2ee){
-                    await node.matrixClient.initCrypto();
+                    node.matrixClient.initCrypto()
+                        .catch((error) => node.error(error));
                     node.matrixClient.setGlobalErrorOnUnknownDevices(false);
-                } else {
                 }
-                await node.matrixClient.startClient({ initialSyncLimit: 8 });
+
+                node.matrixClient.startClient({ initialSyncLimit: 8 })
+                    .catch((error) => node.error(error));
             }
 
             node.log("Connecting to Matrix server...");
