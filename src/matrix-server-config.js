@@ -27,7 +27,7 @@ module.exports = function(RED) {
         this.deviceId = this.credentials.deviceId || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
-        this.enableE2ee = this.credentials.enableE2ee || false;
+        this.enableE2ee = this.enableE2ee || false;
         this.e2ee = this.enableE2ee && this.deviceId;
 
         if(!this.credentials.accessToken) {
@@ -134,15 +134,38 @@ module.exports = function(RED) {
                 }
             });
 
+            node.matrixClient.on("Session.logged_out", async function(errorObj){
+                // Example if user auth token incorrect:
+                // {
+                //     errcode: 'M_UNKNOWN_TOKEN',
+                //     data: {
+                //         errcode: 'M_UNKNOWN_TOKEN',
+                //         error: 'Invalid macaroon passed.',
+                //         soft_logout: false
+                //     },
+                //     httpStatus: 401
+                // }
+
+                node.error("[Session.logged_out] " + errorObj);
+            });
+
             async function run() {
                 if(node.e2ee){
-                    node.matrixClient.initCrypto()
-                        .catch((error) => node.error(error));
+                    const initCrypto = ms => new Promise(res => node.matrixClient.initCrypto());
+                    try {
+                        await initCrypto();
+                    } catch(error){
+                        node.error(error);
+                    }
                     node.matrixClient.setGlobalErrorOnUnknownDevices(false);
                 }
 
-                node.matrixClient.startClient({ initialSyncLimit: 8 })
-                    .catch((error) => node.error(error));
+                const startClient = ms => new Promise(res => node.matrixClient.startClient({ initialSyncLimit: 8 }));
+                try {
+                    await startClient();
+                } catch(error){
+                    node.error(error);
+                }
             }
 
             node.log("Connecting to Matrix server...");
@@ -155,7 +178,6 @@ module.exports = function(RED) {
             userId: { type:"text", required: true },
             accessToken: { type:"text", required: true },
             deviceId: { type: "text", required: true },
-            enableE2ee: { type: "checkbox", value: true },
             url: { type: "text", required: true },
         }
     });

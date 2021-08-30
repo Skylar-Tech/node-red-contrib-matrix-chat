@@ -6,12 +6,12 @@
             userId: { type: "text", required: true },
             accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: true },
-            url: { type: "text", required: true },
-            enableE2ee: { type: "checkbox", value: true }
+            url: { type: "text", required: true }
         },
         defaults: {
             name: { value: null },
-            autoAcceptRoomInvites: { value: true }
+            autoAcceptRoomInvites: { value: true },
+            enableE2ee: { type: "checkbox", value: true }
         },
         icon: "matrix.png",
         label: function() {
