@@ -1,0 +1,92 @@
+[
+  {
+    "id": "56b6ae18958287f3",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "userId",
+        "v": "@example:matrix.org",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"password\":\"example-password\",\"displayname\":\"Example User\",\"admin\":false,\"deactivated\":false}",
+    "payloadType": "json",
+    "x": 370,
+    "y": 1500,
+    "wires": [
+      [
+        "bc882759b3b11884"
+      ]
+    ]
+  },
+  {
+    "id": "bc882759b3b11884",
+    "type": "matrix-synapse-create-edit-user",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "x": 570,
+    "y": 1500,
+    "wires": [
+      [
+        "624f5aa29b67602f"
+      ],
+      [
+        "9f71a73d53f06853"
+      ]
+    ]
+  },
+  {
+    "id": "7ac657a41b57e680",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Create or edit Synapse User",
+    "info": "",
+    "x": 440,
+    "y": 1460,
+    "wires": []
+  },
+  {
+    "id": "624f5aa29b67602f",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 1480,
+    "wires": []
+  },
+  {
+    "id": "9f71a73d53f06853",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 1520,
+    "wires": []
+  }
+]

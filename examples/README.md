@@ -7,13 +7,37 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 
 ## Index
 
+- [Create User with Shared Secret Registration](#create-user-with-shared-secret-registration)
+- [Create/Edit Synapse User](#createedit-synapse-user)
 - [Respond to "ping" with "pong"](#respond-to-ping-with-pong)
 - [Respond to "html" with an HTML message](#respond-to-html-with-an-html-message)
-- [Create user using Synapse v1 API](#create-user-using-synapse-v1-api)
 - [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
 - [Respond to "file" with an uploaded file](#respond-to-file-with-an-uploaded-file)
 - [Respond to "react" with a reaction](#respond-to-react-with-a-reaction)
 - [Respond to "users" with full list of server users](#respond-to-users-with-full-list-of-server-users)
+
+
+### Create user with Shared Secret Registration
+
+[View JSON](shared-secret-registration.json)
+
+Use this flow to create users on servers with closed registration. You also use this endpoint to create your first admin user as it is the same as running the local python script on the server. This requires your registration secret from your homeserver.yaml Synapse server configuration file.
+
+Edit the object on the inject node to the user/pass combo you want to create and hit the inject button (to the left of the inject node).
+
+**Note:** This only works on Synapse servers.
+
+![img.png](shared-secret-registration.png)
+
+
+### Create/Edit Synapse User
+
+[View JSON](add-user-with-admin-user.json)
+
+Allows an administrator to create or modify a user account with a specified `msg.userId`.
+
+![img.png](add-user-with-admin-user.png)
+
 
 ### Respond to "ping" with "pong"
 
@@ -32,20 +56,6 @@ Use this flow to respond to anyone that says "ping" with "pong" into the same ro
 Use this flow to respond to anyone that says "html" with an example HTML message. This shows how easy it is to send HTML.
 
 ![img.png](respond-to-html-with-html.png)
-
-
-
-### Create user using Synapse v1 API
-
-[View JSON](create-user-synapse-v1-api.json)
-
-Use this flow to create users on servers with closed registration. You also use this endpoint to create your first admin user as it is the same as running the local python script on the server. This requires your registration secret from your homeserver.yaml Synapse server configuration file.
-
-Edit the object on the inject node to the user/pass combo you want to create and hit the inject button (to the left of the inject node).
-
-**Note:** This only works on Synapse servers.
-
-![img.png](create-user-synapse-v1-api.png)
 
 
 

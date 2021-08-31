@@ -4,7 +4,6 @@
     "type": "matrix-receive",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "server": "4de4e868e02a9051",
     "roomId": "",
     "ignoreText": false,
     "ignoreReactions": false,
@@ -77,7 +76,6 @@
     "type": "matrix-send-image",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "server": "4de4e868e02a9051",
     "roomId": "",
     "contentType": "image/png",
     "x": 1030,
@@ -86,11 +84,5 @@
       [],
       []
     ]
-  },
-  {
-    "id": "4de4e868e02a9051",
-    "type": "matrix-server-config",
-    "name": "Your Server",
-    "autoAcceptRoomInvites": true
   }
 ]

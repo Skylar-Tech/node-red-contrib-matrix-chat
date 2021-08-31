@@ -4,7 +4,6 @@
     "type": "matrix-receive",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "server": "4de4e868e02a9051",
     "roomId": "",
     "ignoreText": false,
     "ignoreReactions": false,
@@ -138,7 +137,6 @@
     "type": "matrix-send-file",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "server": "4de4e868e02a9051",
     "roomId": "",
     "contentType": "application/pdf",
     "x": 1160,
@@ -151,11 +149,5 @@
         "f6826747cd96b814"
       ]
     ]
-  },
-  {
-    "id": "4de4e868e02a9051",
-    "type": "matrix-server-config",
-    "name": "Your Server",
-    "autoAcceptRoomInvites": true
   }
 ]

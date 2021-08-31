@@ -4,7 +4,6 @@
     "type": "matrix-receive",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "server": "4de4e868e02a9051",
     "roomId": "",
     "ignoreText": false,
     "ignoreReactions": false,
@@ -48,7 +47,6 @@
     "type": "matrix-synapse-users",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "server": "4de4e868e02a9051",
     "x": 890,
     "y": 120,
     "wires": [
@@ -63,7 +61,6 @@
     "type": "matrix-send-message",
     "z": "f025a8b9fbd1b054",
     "name": "Send HTML Notice",
-    "server": "4de4e868e02a9051",
     "roomId": "",
     "messageType": "m.notice",
     "messageFormat": "html",
@@ -102,11 +99,5 @@
     "x": 550,
     "y": 80,
     "wires": []
-  },
-  {
-    "id": "4de4e868e02a9051",
-    "type": "matrix-server-config",
-    "name": "Your Server",
-    "autoAcceptRoomInvites": true
   }
 ]
