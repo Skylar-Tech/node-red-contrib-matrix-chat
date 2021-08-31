@@ -7,7 +7,8 @@ Matrix chat server client for [Node-RED](https://nodered.org/)
 
 The following is supported from this package:
 
-- End-to-end encryption supported
+- End-to-end encryption
+  - [Currently a WIP](#end-to-end-encryption-notes)
 - Receive events from a room (messages, reactions, images, and files) whether encrypted or not
 - Send Images/Files (sending files to e2ee room doesn't currently encrypt them yet)
 - Decrypt files in e2ee rooms
