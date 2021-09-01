@@ -1,12 +1,15 @@
 global.Olm = require('olm');
+const fs = require("fs");
+const sdk = require("matrix-js-sdk");
+const { LocalStorage } = require('node-localstorage');
+const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 
 module.exports = function(RED) {
-    const sdk = require("matrix-js-sdk");
-    const { LocalStorage } = require('node-localstorage');
-    const localStorage = new LocalStorage('./matrix-local-storage');
-    const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 
     function MatrixServerNode(n) {
+        let oldStorageDir = './matrix-local-storage';
+        let storageDir = './matrix-client-storage';
+
         // we should add support for getting access token automatically from username/password
         // ref: https://matrix.org/docs/guides/usage-of-the-matrix-js-sdk#login-with-an-access-token
 
@@ -30,6 +33,10 @@ module.exports = function(RED) {
         this.enableE2ee = n.enableE2ee || false;
         this.e2ee = (this.enableE2ee && this.deviceId);
 
+        function toFolderName(name) {
+            return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        }
+
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
         } else if(!this.url) {
@@ -37,6 +44,21 @@ module.exports = function(RED) {
         } else if(!this.userId) {
             node.log("Matrix connection failed: missing user ID.");
         } else {
+            let localStorageDir = storageDir + '/' + toFolderName(this.userId);
+
+            // create storage directory if it doesn't exist
+            if(!fs.existsSync(storageDir)) {
+                fs.mkdirSync(storageDir);
+            }
+
+            // if the old storage location exists lets move it to it's new location
+            if(fs.existsSync(oldStorageDir) && !fs.existsSync(localStorageDir)){
+                node.log("found old '" + oldStorageDir + "' path, moving to new location '" + localStorageDir + "' ------------------------------");
+                fs.renameSync(oldStorageDir, localStorageDir);
+            }
+
+            const localStorage = new LocalStorage(localStorageDir);
+
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
