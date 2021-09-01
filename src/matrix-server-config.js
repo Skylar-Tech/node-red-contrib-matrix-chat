@@ -27,8 +27,8 @@ module.exports = function(RED) {
         this.deviceId = this.credentials.deviceId || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
-        this.enableE2ee = this.enableE2ee || false;
-        this.e2ee = this.enableE2ee && this.deviceId;
+        this.enableE2ee = n.enableE2ee || false;
+        this.e2ee = (this.enableE2ee && this.deviceId);
 
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
