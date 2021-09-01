@@ -81,10 +81,12 @@ module.exports = function(RED) {
                     if(msg.content.info) {
                         if(msg.content.info.thumbnail_url) {
                             msg.thumbnail_url = node.server.matrixClient.mxcUrlToHttp(msg.content.info.thumbnail_url);
+                            msg.thumbnail_mxc_url = msg.content.info.thumbnail_url;
                         }
 
                         if(msg.content.url) {
                             msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.url);
+                            msg.mxc_url = msg.content.url;
                         }
                     }
                     break;
