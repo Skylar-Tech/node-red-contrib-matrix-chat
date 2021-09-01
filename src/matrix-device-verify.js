@@ -39,13 +39,14 @@ module.exports = function(RED) {
          *     rejected.
          */
         node.server.matrixClient.on("crypto.verification.request", async function(data){
-            console.log("[######### crypto.verification.request #########]");
+            console.log("[######### crypto.verification.request #########]", data.phase, data.methods);
             if(data.isSelfVerification) {
-                if(data.requested && data.methods) {
+                if(data.requested || true) {
                     let verifyRequestId = data.targetDevice.userId + ':' + data.targetDevice.deviceId;
                     verificationRequests.set(verifyRequestId, data);
                     node.send({
-                        verifyRequestId: verifyRequestId, // internally used to reference between nodes
+                        verifyRequestId: verifyRequestId, // internally used to reference between nodesc
+                        verifyMethods: data.methods,
                         userId: data.targetDevice.userId,
                         deviceId: data.targetDevice.deviceId,
                         type: 'crypto.verification.request',
@@ -139,6 +140,7 @@ module.exports = function(RED) {
                             };
 
                             data._verifier.on('cancel', function(e){
+                                node.warn("Device verificaiton cancelled " + e);
                                 verifierCancel();
                             });
 
@@ -179,6 +181,8 @@ module.exports = function(RED) {
                                 });
                         }
                     });
+
+                    data.emit("change");
 
                     await data.accept();
                 } catch(e) {

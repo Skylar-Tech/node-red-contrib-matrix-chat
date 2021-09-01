@@ -33,7 +33,8 @@
       "matrix-synapse-join-room": "src/matrix-synapse-join-room.js",
       "matrix-whois-user": "src/matrix-whois-user.js",
       "matrix-room-users": "src/matrix-room-users.js",
-      "matrix-device-verify": "src/matrix-device-verify.js"
+      "matrix-device-verify": "src/matrix-device-verify.js",
+      "matrix-secret-storage": "src/matrix-secret-storage.js"
     }
   },
   "engines": {
