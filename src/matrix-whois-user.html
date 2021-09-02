@@ -36,6 +36,7 @@
 <script type="text/html" data-help-name="matrix-whois-user">
     <h3>Details</h3>
     <p>This node returns information about the active sessions for a specific user.</p>
+    <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user" target="_blank">Matrix API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
@@ -49,8 +50,29 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>This returns data directly from the API endpoint. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user" target="_blank">Click here</a> to see what this returns.</dd>
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>This returns data directly from the API endpoint. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user" target="_blank">Click here</a> to see more info.</dd>
+
+                <dt>msg.payload.user_id <span class="property-type">string</span></dt>
+                <dd>The Matrix user ID of the user.</dd>
+
+                <dt>msg.payload.devices <span class="property-type">object</span></dt>
+                <dd>Each key in this object is an identifier for one of the user's devices.</dd>
+
+                <dt>msg.payload.devices.X.sessions <span class="property-type">array</span></dt>
+                <dd>A user's sessions (i.e. what they did with an access token from one login).</dd>
+
+                <dt>msg.payload.devices.X.sessions[].connections <span class="property-type">array</span></dt>
+                <dd>Information about particular connections in the session.</dd>
+
+                <dt>msg.payload.devices.X.sessions[].connections[].ip <span class="property-type">string</span></dt>
+                <dd>Most recently seen IP address of the session.</dd>
+
+                <dt>msg.payload.devices.X.sessions[].connections[].last_seen <span class="property-type">integer</span></dt>
+                <dd>Unix timestamp that the session was last active.</dd>
+
+                <dt>msg.payload.devices.X.sessions[].connections[].user_agent <span class="property-type">string</span></dt>
+                <dd>User agent string last seen in the session.</dd>
             </dl>
         </li>
         <li>Error

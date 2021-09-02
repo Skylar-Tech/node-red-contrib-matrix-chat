@@ -39,22 +39,22 @@
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt class="optional">msg.from
-            <span class="property-type">Integer</span>
+            <span class="property-type">integer</span>
         </dt>
-        <dd> Is optional but used for pagination, denoting the offset in the returned results. This should be treated as an opaque value and not explicitly set to anything other than the return value of next_token from a previous call. Defaults to 0.</dd>
+        <dd> Is optional but used for pagination, denoting the offset in the returned results. This should be treated as an opaque value and not explicitly set to anything other than the return value of <code>msg.next_token</code> from a previous call. Defaults to 0.</dd>
 
         <dt class="optional">msg.limit
-            <span class="property-type">Integer</span>
+            <span class="property-type">integer</span>
         </dt>
         <dd> limit - representing a positive integer - Is optional but is used for pagination, denoting the maximum number of items to return in this call. Defaults to 100.</dd>
 
         <dt class="optional">msg.guests
-            <span class="property-type">Bool</span>
+            <span class="property-type">bool</span>
         </dt>
         <dd> Is optional and if false will exclude guest users. Defaults to true to include guest users.</dd>
 
         <dt class="optional">msg.order_by
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd>
             The method by which to sort the returned list of users.
@@ -85,14 +85,41 @@
                 <dt>msg.payload <span class="property-type">object</span></dt>
                 <dd>the response object from the server.</dd>
 
+                <dt>msg.payload.next_token <span class="property-type">string</span></dt>
+                <dd>string representing a positive integer - Indication for pagination. If this is unset then there are no more users to paginate through.</dd>
+
+                <dt>msg.payload.total <span class="property-type">integer</span></dt>
+                <dd>Total number of users.</dd>
+
                 <dt>msg.payload.users <span class="property-type">array</span></dt>
-                <dd>list of users from the Matrix server. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts" target="_blank">Click here</a> for details on what this contains (or do a test and dump the output). We would put the details here in the doc but Synapse is constantly changing so it's best to reference the official Synapse docs.</dd>
+                <dd>list of users from the Matrix server. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#list-accounts" target="_blank">Click here</a> for details on what this contains (or do a debug on the output).</dd>
 
-                <dt>msg.next_token <span class="property-type">string</span></dt>
-                <dd>string representing a positive integer - Indication for pagination. See above (input msg.from)</dd>
+                <dt>msg.payload.users[].name <span class="property-type">string</span></dt>
+                <dd>Fully-qualified user ID (ex. <code>@user:server.com</code>).</dd>
 
-                <dt>msg.total <span class="property-type">integer</span></dt>
-                <dd>Total number of media.</dd>
+                <dt>msg.payload.users[].is_guest <span class="property-type">bool</span></dt>
+                <dd>Status if that user is a guest account.</dd>
+
+                <dt>msg.payload.users[].admin <span class="property-type">string</span></dt>
+                <dd>Status if that user is a server administrator.</dd>
+
+                <dt>msg.payload.users[].user_type <span class="property-type">string</span></dt>
+                <dd>Type of the user. Normal users are type <code>None</code>. This allows user type specific behaviour. There are also types <code>support</code> and <code>bot</code>.</dd>
+
+                <dt>msg.payload.users[].deactivated <span class="property-type">bool</span></dt>
+                <dd>Status if that user has been marked as deactivated.</dd>
+
+                <dt>msg.payload.users[].shadow_banned <span class="property-type">bool</span></dt>
+                <dd>Status if that user has been marked as shadow banned.</dd>
+
+                <dt>msg.payload.users[].displayname <span class="property-type">string</span></dt>
+                <dd>The user's display name if they have set one.</dd>
+
+                <dt>msg.payload.users[].avatar_url <span class="property-type">string</span></dt>
+                <dd>The user's avatar URL if they have set one.</dd>
+
+                <dt>msg.payload.users[].creation_ts <span class="property-type">integer</span></dt>
+                <dd>The user's creation timestamp in ms.</dd>
             </dl>
         </li>
         <li>Error

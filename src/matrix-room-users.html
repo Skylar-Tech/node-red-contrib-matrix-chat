@@ -38,15 +38,15 @@
 
 <script type="text/html" data-help-name="matrix-room-users">
     <h3>Details</h3>
-    <p>A list of members of the room. If you are joined to the room then this will be the current members of the room. If you have left the room then this will be the members of the room when you left.</p>
+    <p>This node returns a map of MXIDs to member info objects for members of the room. The current user must be in the room for it to work, unless it is an Application Service in which case any of the AS's users must be in the room. This API is primarily for Application Services and should be faster to respond than /members as it can be implemented more efficiently on the server.</p>
     <a href="https://matrix.org/docs/spec/client_server/latest#get-matrix-client-r0-rooms-roomid-joined-members" target="_blank">Matrix API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt class="optional">msg.topic
-            <span class="property-type">Integer</span>
+            <span class="property-type">integer</span>
         </dt>
-        <dd> Room ID to get member list from. Required if not configured on the node.</dd>
+        <dd> Room ID to get member list from. Ignored if configured on the node, otherwise it's required.</dd>
     </dl>
 
     <h3>Outputs</h3>

@@ -46,8 +46,8 @@ module.exports = function(RED) {
                 node.send([null, msg]);
             }
 
-            let roomId = node.roomId || msg.topic;
-            if(!roomId) {
+            msg.topic = node.roomId || msg.topic;
+            if(!msg.topic) {
                 node.error("room must be defined in either msg.topic or in node config");
                 return;
             }
@@ -70,7 +70,7 @@ module.exports = function(RED) {
                     { "user_id": msg.userId },
                     { prefix: '' }
                 ).then(function(e){
-                    msg.payload = e;
+                    msg.topic = e.room_id;
                     node.send([msg, null]);
                 }).catch(function(e){
                     node.warn("Error joining user to room " + e);

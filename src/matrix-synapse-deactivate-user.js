@@ -55,7 +55,13 @@ module.exports = function(RED) {
                 { $userId: msg.userId },
             );
             node.server.matrixClient.http
-                .authedRequest(undefined, 'POST', path, undefined, { "erase": (msg.erase || false) }, { prefix: '' })
+                .authedRequest(
+                    undefined,
+                    'POST',
+                    path,
+                    undefined,
+                    {"erase": (msg.erase || false)},
+                    {"prefix": '' })
                 .then(function(e){
                     msg.payload = e;
                     node.send([msg, null]);

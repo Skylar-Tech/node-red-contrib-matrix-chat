@@ -29,33 +29,7 @@
  	</div>
     <div class="form-row">
         <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
-        <input type="text" id="node-input-roomId">
-    </div>
-    <div class="form-row">
-        <label for="node-input-messageType">
-            Message Type
-        </label>
-        <select id="node-input-messageType">
-            <option value="m.text">m.text</option>
-            <option value="m.notice">m.notice</option>
-            <option value="msg.type">msg.type input</option>
-        </select>
-        <div class="form-tips">
-            It's recommended to use m.notice for bots because the message will render in a lighter text (at least in Element client) for users to distinguish bot and real user messages.
-        </div>
-    </div>
-    <div class="form-row">
-        <label for="node-input-messageFormat">
-            Message Format
-        </label>
-        <select id="node-input-messageFormat">
-            <option value="">Default (plaintext)</option>
-            <option value="html">HTML</option>
-            <option value="msg.format">msg.format input</option>
-        </select>
-    </div>
-    <div class="form-tips">
-        Must be a valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
     </div>
 </script>
 
@@ -66,18 +40,18 @@
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.payload
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> Usually an emoji but can also be text. </dd>
 
         <dt>msg.topic
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
         <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this will be ignored.</dd>
 
         <dt>msg.referenceEventId<br />
             msg.eventId
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> One of these is required. This is the eventId of the message to react to. Uses <code>msg.referenceEventId</code> first and falls back to <code>msg.eventId</code>.</dd>
     </dl>
@@ -86,8 +60,6 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dd>original msg object preserved.</dd>
-
                 <dt>msg.eventId <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted reaction.</dd>
             </dl>

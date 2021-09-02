@@ -107,7 +107,7 @@
     <p>Receive events from Matrix.</p>
 
     <h3>Outputs</h3>
-    <ol class="node-ports">
+    <ul class="node-ports">
         <li>Always Returned
             <dl class="message-properties">
                 <dt>msg.type <span class="property-type">string</span></dt>
@@ -147,6 +147,11 @@
             </dl>
 
             <dl class="message-properties">
+                <dt>msg.eventId <span class="property-type">object</span></dt>
+                <dd>The event ID, e.g. $143350589368169JsLZx:localhost</dd>
+            </dl>
+
+            <dl class="message-properties">
                 <dt>msg.content <span class="property-type">object</span></dt>
                 <dd>the message's content object</dd>
             </dl>
@@ -159,11 +164,6 @@
         </li>
 
         <li><code>msg.type</code> == '<strong>m.reaction</strong>'
-            <dl class="message-properties">
-                <dt>msg.info <span class="property-type">object</span></dt>
-                <dd>the content's info.</dd>
-            </dl>
-
             <dl class="message-properties">
                 <dt>msg.referenceEventId <span class="property-type">string</span></dt>
                 <dd>the message that the reaction relates to</dd>
@@ -188,38 +188,53 @@
             </dl>
 
             <dl class="message-properties">
+                <dt>msg.mxc_url <span class="property-type">string</span></dt>
+                <dd>Matrix URL to the sticker image</dd>
+            </dl>
+
+            <dl class="message-properties">
                 <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
                 <dd>URL to the thumbnail of the sticker</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
+                <dd>Matrix URL to the thumbnail of the sticker</dd>
             </dl>
         </li>
 
         <li><code>msg.type</code> == '<strong>m.file</strong>'
             <dl class="message-properties">
-                <dt>msg.file.info <span class="property-type">string</span></dt>
-                <dd>the content's info.</dd>
+                <dt>msg.url <span class="property-type">string</span></dt>
+                <dd>the file's URL</dd>
             </dl>
 
             <dl class="message-properties">
-                <dt>msg.file.url <span class="property-type">string</span></dt>
-                <dd>the file's URL</dd>
+                <dt>msg.mxc_url <span class="property-type">string</span></dt>
+                <dd>the file's Matrix URL</dd>
             </dl>
         </li>
 
         <li><code>msg.type</code> == '<strong>m.image</strong>'
             <dl class="message-properties">
-                <dt>msg.image.info <span class="property-type">string</span></dt>
-                <dd>the image info.</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.file.url <span class="property-type">string</span></dt>
+                <dt>msg.url <span class="property-type">string</span></dt>
                 <dd>the image's URL</dd>
             </dl>
 
             <dl class="message-properties">
-                <dt>msg.file.thumbnail_url <span class="property-type">string</span></dt>
+                <dt>msg.mxc_url <span class="property-type">string</span></dt>
+                <dd>the image's Matrix URL</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
                 <dd>the image's thumbnail URL</dd>
             </dl>
+
+            <dl class="message-properties">
+                <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
+                <dd>the image's thumbnail Matrix URL</dd>
+            </dl>
         </li>
-    </ol>
+    </ul>
 </script>

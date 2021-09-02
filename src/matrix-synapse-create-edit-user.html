@@ -46,7 +46,7 @@
         <dd> ID of user to create/edit (ex: @bob:example.com)</dd>
 
         <dt>msg.payload
-            <span class="property-type">Object</span>
+            <span class="property-type">object</span>
         </dt>
         <dd> Details of the new user to create. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#create-or-modify-account" target="_blank">Click here</a> to see what valid data you can pass via this input. If the user already exists then optional parameters default to the current value.</dd>
     </dl>
@@ -55,8 +55,6 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dd>original msg object preserved.</dd>
-
                 <dt>msg.payload <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted message.</dd>
             </dl>

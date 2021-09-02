@@ -61,17 +61,12 @@ module.exports = function(RED) {
                 return;
             }
 
-            msg.contentType = msg.contentType || node.contentType;
-            if(!msg.contentType) {
-                node.error('msg.contentType is required');
-                return;
-            }
-
+            msg.contentType = node.contentType || msg.contentType || null;
             node.log("Uploading image " + msg.filename);
             node.server.matrixClient.uploadContent(
                 msg.payload, {
                     name: msg.filename || null, // Name to give the file on the server.
-                    rawResponse: (msg.rawResponse || false), // Return the raw body, rather than parsing the JSON.
+                    rawResponse: false, // Return the raw body, rather than parsing the JSON.
                     type: msg.contentType, // Content-type for the upload. Defaults to file.type, or applicaton/octet-stream.
                     onlyContentUri: false // Just return the content URI, rather than the whole body. Defaults to false. Ignored if opts.rawResponse is true.
                 })
@@ -91,7 +86,7 @@ module.exports = function(RED) {
                 })
                 .catch(function(e){
                     node.warn("Error uploading image message " + e);
-                    msg.matrixError = e;
+                    msg.error = e;
                     node.send([null, msg]);
                 });
         });

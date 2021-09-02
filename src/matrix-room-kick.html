@@ -31,9 +31,6 @@
         <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
     </div>
-    <div class="form-tips">
-        Room ID must either be defined here or passed in via <code>msg.topic</code>. The config takes precedence over the input.
-    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-room-kick">
@@ -43,17 +40,17 @@
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.userId
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> The ID of the user to kick.</dd>
 
         <dt class="optional">msg.topic
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
-        <dd> The room to kick the user from. Required if not defined on the config. Config takes precedence.</dd>
+        <dd> The room to kick the user from. Ignored if configured on the node, otherwise required.</dd>
 
         <dt class="optional">msg.reason
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> Reason for kicking the user.</dd>
     </dl>
@@ -62,7 +59,8 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dd>original msg object preserved. Node doesn't set anything.</dd>
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the kick event.</dd>
             </dl>
         </li>
         <li>Error

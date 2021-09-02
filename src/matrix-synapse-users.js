@@ -58,7 +58,7 @@ module.exports = function(RED) {
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error fetching user list " + e);
+                    node.warn("Error fetching server user list " + e);
                     msg.error = e;
                     node.send([null, msg]);
                 });
