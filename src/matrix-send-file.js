@@ -61,17 +61,12 @@ module.exports = function(RED) {
                 return;
             }
 
-            msg.contentType = msg.contentType || node.contentType;
-            if(!msg.contentType) {
-                node.error('msg.contentType is required');
-                return;
-            }
-
+            msg.contentType = node.contentType || msg.contentType || null;
             node.log("Uploading file " + msg.filename);
             node.server.matrixClient.uploadContent(
                 msg.payload, {
                     name: msg.filename || null, // Name to give the file on the server.
-                    rawResponse: (msg.rawResponse || false), // Return the raw body, rather than parsing the JSON.
+                    rawResponse: false, // Return the raw body, rather than parsing the JSON.
                     type: msg.contentType, // Content-type for the upload. Defaults to file.type, or applicaton/octet-stream.
                     onlyContentUri: false // Just return the content URI, rather than the whole body. Defaults to false. Ignored if opts.rawResponse is true.
                 })
@@ -79,18 +74,18 @@ module.exports = function(RED) {
                     const content = {
                         msgtype: 'm.file',
                         url: file.content_uri,
-                        body: (msg.body || msg.filename) || "",
+                        body: msg.body || "",
                     };
                     node.server.matrixClient
                         .sendMessage(msg.topic, content)
-                            .then(function(imgResp) {
-                                node.log("File message sent: " + imgResp);
+                            .then(function(e) {
+                                node.log("File message sent: " + e);
                                 msg.eventId = e.eventId;
                                 node.send([msg, null]);
                             })
                             .catch(function(e){
                                 node.warn("Error sending file message " + e);
-                                msg.matrixError = e;
+                                msg.error = e;
                                 node.send([null, msg]);
                             });
                 }).catch(function(e){

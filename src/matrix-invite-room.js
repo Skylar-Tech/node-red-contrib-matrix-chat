@@ -58,7 +58,7 @@ module.exports = function(RED) {
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error creating room " + e);
+                    node.warn("Error inviting to room " + e);
                     msg.error = e;
                     node.send([null, msg]);
                 });

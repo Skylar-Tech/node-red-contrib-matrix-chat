@@ -27,25 +27,19 @@
         <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
         <input type="text" id="node-input-server">
     </div>
-
-    <div class="form-tips" style="margin-bottom: 12px;">
-        User must be an admin to use this endpoint.
-    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-create-room">
     <h3>Details</h3>
-    <p>
-        Create a room with the defined options in <code>msg.payload</code>
-    </p>
+    <p>Create a Matrix room</p>
     <a href="https://matrix.org/docs/spec/client_server/r0.4.0#id266" target="_blank">Matrix API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
-        <dt>msg.payload
-            <span class="property-type">object</span>
+        <dt class="optional">msg.payload
+            <span class="property-type">string | object | null</span>
         </dt>
-        <dd> a list of options to pass to the /createRoom API. <a href="https://matrix.org/docs/spec/client_server/r0.4.0#id266">Click here</a> for information about what can be passed.</dd>
+        <dd> a list of options to pass to the /createRoom API. <a href="https://matrix.org/docs/spec/client_server/r0.4.0#id266">Click here</a> for information about what can be passed. If this is a string it just sets the room name and ignores other options.</dd>
     </dl>
 
     <h3>Outputs</h3>

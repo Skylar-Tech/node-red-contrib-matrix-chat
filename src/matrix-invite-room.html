@@ -32,7 +32,7 @@
 <script type="text/html" data-help-name="matrix-invite-room">
     <h3>Details</h3>
     <p>
-        This API invites a user to participate in a particular room. They do not start participating in the room until they actually join the room.
+        This node invites a user to participate in a particular room. They do not start participating in the room until they actually join the room. The client must be in the room and have permissions to invite.
     </p>
     <a href="https://matrix-org.github.io/synapse/develop/admin_api/room_membership.html#edit-room-membership-api" target="_blank">Synapse API Endpoint Information</a>
 
@@ -41,7 +41,7 @@
         <dt>msg.topic
             <span class="property-type">string</span>
         </dt>
-        <dd> The room identifier to invite to: for example, <code>!h8zld9j31:example.com. If configured on the node it overrides this input and is no longer required.</code>.</dd>
+        <dd> The room identifier to invite to: for example, <code>!h8zld9j31:example.com</code>. Ignored if configured on the node, otherwise required.</dd>
 
         <dt>msg.userId
             <span class="property-type">string</span>

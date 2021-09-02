@@ -35,9 +35,6 @@
         <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
     </div>
-    <div class="form-row form-tips">
-        The configuration Room ID will always override <code>msg.topic</code>
-    </div>
 
     <div class="form-row">
         <label for="node-input-messageType">
@@ -67,32 +64,32 @@
 
 <script type="text/html" data-help-name="matrix-send-message">
     <h3>Details</h3>
-    <p>Sends a message to a Matrix room.</p>
+    <p>Sends a message to a Matrix room. Messages are auto encrypted if necessary.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.topic
-            <span class="property-type">String | null</span>
+            <span class="property-type">string</span>
         </dt>
-        <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this will be overridden.</dd>
+        <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this input will be overridden.</dd>
 
         <dt>msg.payload
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> the message text. </dd>
 
         <dt class="optional">msg.formatted_payload
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> the formatted HTML message (uses msg.payload if not defined). This only affects HTML messages.</dd>
 
         <dt class="optional">msg.type
-            <span class="property-type">String | null</span>
+            <span class="property-type">string | null</span>
         </dt>
         <dd> This is only used and required when configured so on the node. Must be set to either <code>'m.text'</code> or <code>'m.notice'</code></dd>
 
         <dt class="optional">msg.format
-            <span class="property-type">String | null</span>
+            <span class="property-type">string | null</span>
         </dt>
         <dd> This is only used and required when configured so on the node. Set to <code>null</code> for plain text and <code>'html'</code> for HTML.</dd>
     </dl>
