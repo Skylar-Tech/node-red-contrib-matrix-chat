@@ -1,13 +1,15 @@
 global.Olm = require('olm');
-const fs = require("fs");
+const fs = require("fs-extra");
 const sdk = require("matrix-js-sdk");
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 
 module.exports = function(RED) {
+    function MatrixFolderNameFromUserId(name) {
+        return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    }
 
     function MatrixServerNode(n) {
-        let oldStorageDir = './matrix-local-storage';
         let storageDir = './matrix-client-storage';
 
         // we should add support for getting access token automatically from username/password
@@ -33,10 +35,6 @@ module.exports = function(RED) {
         this.enableE2ee = n.enableE2ee || false;
         this.e2ee = (this.enableE2ee && this.deviceId);
 
-        function toFolderName(name) {
-            return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        }
-
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
         } else if(!this.url) {
@@ -44,21 +42,11 @@ module.exports = function(RED) {
         } else if(!this.userId) {
             node.log("Matrix connection failed: missing user ID.");
         } else {
-            let localStorageDir = storageDir + '/' + toFolderName(this.userId);
+            let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId);
 
-            // create storage directory if it doesn't exist
-            if(!fs.existsSync(storageDir)) {
-                fs.mkdirSync(storageDir);
-            }
-
-            // if the old storage location exists lets move it to it's new location
-            if(fs.existsSync(oldStorageDir) && !fs.existsSync(localStorageDir)){
-                node.log("found old '" + oldStorageDir + "' path, moving to new location '" + localStorageDir + "' ------------------------------");
-                fs.renameSync(oldStorageDir, localStorageDir);
-            }
-
+            fs.ensureDirSync(storageDir); // create storage directory if it doesn't exist
+            upgradeDirectoryIfNecessary(node, storageDir);
             const localStorage = new LocalStorage(localStorageDir);
-
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
@@ -172,25 +160,19 @@ module.exports = function(RED) {
             });
 
             async function run() {
-                if(node.e2ee){
-                    const initCrypto = ms => new Promise(res => node.matrixClient.initCrypto());
-                    try {
-                        await initCrypto();
-                    } catch(error){
-                        node.error(error);
-                    }
-                    node.matrixClient.setGlobalErrorOnUnknownDevices(false);
-                }
-
-                const startClient = ms => new Promise(res => node.matrixClient.startClient({ initialSyncLimit: 8 }));
                 try {
-                    await startClient();
+                    if(node.e2ee){
+                        node.log("Initializing crypto...");
+                        await node.matrixClient.initCrypto();
+                        node.matrixClient.setGlobalErrorOnUnknownDevices(false);
+                    }
+                    node.log("Connecting to Matrix server...");
+                    await node.matrixClient.startClient({ initialSyncLimit: 8 });
                 } catch(error){
                     node.error(error);
                 }
             }
 
-            node.log("Connecting to Matrix server...");
             run().catch((error) => node.error(error));
         }
     }
@@ -203,4 +185,30 @@ module.exports = function(RED) {
             url: { type: "text", required: true },
         }
     });
+
+    function upgradeDirectoryIfNecessary(node, storageDir) {
+        let oldStorageDir = './matrix-local-storage';
+
+        // if the old storage location exists lets move it to it's new location
+        if(fs.pathExistsSync(oldStorageDir)){
+            RED.nodes.eachNode(function(n){
+                try {
+                    if(n.type !== 'matrix-server-config') return;
+                    let { userId } = RED.nodes.getCredentials(n.id);
+                    let dir = storageDir + '/' + MatrixFolderNameFromUserId(userId);
+                    if(!fs.pathExistsSync(dir)) {
+                        fs.ensureDirSync(dir);
+                        node.log("found old '" + oldStorageDir + "' path, copying to new location '" + dir);
+                        fs.copySync(oldStorageDir, dir);
+                    }
+                } catch (err) {
+                    console.error(err)
+                }
+            });
+
+            // rename folder to keep as a backup (and so we don't run again)
+            node.log("archiving old config folder '" + oldStorageDir + "' to '" + oldStorageDir + "-backup");
+            fs.renameSync(oldStorageDir, oldStorageDir + "-backup");
+        }
+    }
 }
