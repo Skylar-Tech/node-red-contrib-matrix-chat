@@ -42,7 +42,7 @@ Allows an administrator to create or modify a user account with a specified `msg
 
 ### Use function node to run any command
 
-[View JSON](acustom-redact-function-node.json)
+[View JSON](custom-redact-function-node.json)
 
 If we do not have a node for something you want to do (such as redacting events/messages) you can do this manually with a function node.
 
