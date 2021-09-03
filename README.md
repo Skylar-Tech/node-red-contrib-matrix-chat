@@ -30,9 +30,6 @@ The following is supported from this package:
 
 Therefore, you can easily build a bot, chat relay, or administrate your Matrix server from within [Node-RED](https://nodered.org/).
 
-### Usage
-We have examples! [Check them out](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme)
-
 ### Installing
 
 You can either install from within Node-RED by searching for `node-red-contrib-matrix-chat` or run this from within your Node-RED directory:
@@ -40,8 +37,16 @@ You can either install from within Node-RED by searching for `node-red-contrib-m
 npm install node-red-contrib-matrix-chat
 ```
 
+### Usage
+We have examples! [Check them out](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme)
+
+#### Extra functionality
+You are not limited by just the nodes we have created. If you turn on global access when setting up your Matrix Client you can access the client directly from any function node to write your own logic.
+
+View an example [here](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command)
+
 ### End-to-End Encryption Notes
-Currently this module has no way of getting encryption keys from other devices on the same account. Therefore it is recommended you use the bot exclusively with Node-RED after it's creation. Failure to do so will lead to your bot being unable to receive messages from e2ee rooms it joined from another client. Shared secret registration makes this super easy since it returns a token and device ID.
+Currently, this module has no way of getting encryption keys from other devices on the same account. Therefore it is recommended you use the bot exclusively with Node-RED after it's creation. Failure to do so will lead to your bot being unable to receive messages from e2ee rooms it joined from another client. Shared secret registration makes this super easy since it returns a token and device ID.
 
 This module stores a folder in your Node-RED directory called `matrix-client-storage` and is it vital that you periodically back this up if you are using e2ee. This is where the client stores all the keys necessary to decrypt messages and if lost you will lose access to e2e rooms. If you move your client to another NR install make sure to migrate this folder as well (and do not let both the old and new client run at same time).
 
