@@ -9,6 +9,7 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 
 - [Create User with Shared Secret Registration](#create-user-with-shared-secret-registration)
 - [Create/Edit Synapse User](#createedit-synapse-user)
+- [Use function node to run any command](#use-function-node-to-run-any-command)
 - [Respond to "ping" with "pong"](#respond-to-ping-with-pong)
 - [Respond to "html" with an HTML message](#respond-to-html-with-an-html-message)
 - [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
@@ -38,6 +39,18 @@ Allows an administrator to create or modify a user account with a specified `msg
 
 ![img.png](add-user-with-admin-user.png)
 
+
+### Use function node to run any command
+
+[View JSON](custom-redact-function-node.json)
+
+If we do not have a node for something you want to do (such as redacting events/messages) you can do this manually with a function node.
+
+**Note:** You should make sure to catch any errors in your function node otherwise you could cause Node-RED to crash.
+
+To view what sort of functions you have access to check out the `client.ts` file from `matrix-js-sdk` [here](https://github.com/matrix-org/matrix-js-sdk/blob/master/src/client.ts).
+
+![img.png](custom-redact-function-node.png)
 
 ### Respond to "ping" with "pong"
 
