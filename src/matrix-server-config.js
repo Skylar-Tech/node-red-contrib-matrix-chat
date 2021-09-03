@@ -34,6 +34,7 @@ module.exports = function(RED) {
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.enableE2ee = n.enableE2ee || false;
         this.e2ee = (this.enableE2ee && this.deviceId);
+        this.globalAccess = n.global;
 
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
@@ -56,6 +57,11 @@ module.exports = function(RED) {
                 deviceId: this.deviceId || undefined,
             });
 
+            // set globally if configured to do so
+            if(this.globalAccess) {
+                this.context().global.set('matrixClient["'+this.userId+'"]', node.matrixClient);
+            }
+
             node.on('close', function(done) {
                 if(node.matrixClient) {
                     node.matrixClient.close();
@@ -74,6 +80,10 @@ module.exports = function(RED) {
                         node.emit("connected");
                     } else {
                         node.emit("disconnected");
+                    }
+
+                    if(this.globalAccess) {
+                        this.context().global.set('matrixClientOnline["'+this.userId+'"]', connected);
                     }
                 }
             };

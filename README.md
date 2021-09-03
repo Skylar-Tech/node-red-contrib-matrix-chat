@@ -40,6 +40,11 @@ You can either install from within Node-RED by searching for `node-red-contrib-m
 npm install node-red-contrib-matrix-chat
 ```
 
+### Extra functionality
+You are not limited by just the nodes we have created. If you turn on global access when setting up your Matrix Client you can access the client directly from any function node to write your own logic.
+
+View an example [here](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command)
+
 ### End-to-End Encryption Notes
 Currently this module has no way of getting encryption keys from other devices on the same account. Therefore it is recommended you use the bot exclusively with Node-RED after it's creation. Failure to do so will lead to your bot being unable to receive messages from e2ee rooms it joined from another client. Shared secret registration makes this super easy since it returns a token and device ID.
 
