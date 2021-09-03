@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-matrix-chat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "fs-extra": "^9.1.0",
