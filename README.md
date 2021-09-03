@@ -3,6 +3,8 @@ Matrix chat server client for [Node-RED](https://nodered.org/)
 
 ***Currently we are in beta. We ask that you open any issues you have on our repository to help us reach a stable well tested version. Things may change & break before our first release so check changelog before updating.***
 
+If you need help with this feel free to join our public matrix room at [#node-red-contrib-matrix-chat:skylar.tech](https://app.element.io/#/room/#node-red-contrib-matrix-chat:skylar.tech)
+
 ### Features
 
 The following is supported from this package:
