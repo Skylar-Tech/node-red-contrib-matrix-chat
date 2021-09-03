@@ -109,7 +109,10 @@ module.exports = function(RED) {
 
             if(msgFormat === 'html') {
                 content.format = "org.matrix.custom.html";
-                content.formatted_body = msg.formatted_payload || msg.payload;
+                content.formatted_body =
+                    (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
+                        ? msg.formatted_payload.toString()
+                        : msg.payload.toString();
             }
 
             node.server.matrixClient.sendMessage(msg.topic, content)
