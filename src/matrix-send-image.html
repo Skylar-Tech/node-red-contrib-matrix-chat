@@ -30,50 +30,50 @@
  	</div>
     <div class="form-row">
         <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
-        <input type="text" id="node-input-roomId">
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
     </div>
     <div class="form-row">
         <label for="node-input-contentType"><i class="fa fa-user"></i> Content-Type</label>
         <input type="text" id="node-input-contentType" placeholder="application/png">
     </div>
     <div class="form-tips">
-        Must be a valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>
+        Must be a valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a> (ex: image/png) or left empty
     </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-image">
     <h3>Details</h3>
-    <p>This node will send an image to a Matrix chat room. You can link this directly to a File In node.</p>
+    <p>This node will send an image to a Matrix chat room. Supports direct linking to a File In node.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.payload
-            <span class="property-type">File | String | Buffer | ReadStream | Blob</span>
+            <span class="property-type">File | string | Buffer | ReadStream | Blob</span>
         </dt>
         <dd> the contents of the image to upload. </dd>
 
         <dt>msg.topic
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string</span>
         </dt>
-        <dd> Room ID to send image to. Optional if configured on the node. Overrides node configuration if set.</dd>
+        <dd> Room ID to send image to. Ignored if configured on the node, otherwise required.</dd>
 
         <dt class="optional">msg.filename
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
-        <dd> name of the image file to upload (optional). Overrides node configuration.</dd>
-
-        <dt class="optional">msg.contentType
-            <span class="property-type">String | Null</span>
-        </dt>
-        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. Optional if configured on the node. Overrides node configuration if set.</dd>
+        <dd> name of the image to upload (optional). Note: If this is not defined the file will receive a randomly generated name (without an extension).</dd>
 
         <dt class="optional">msg.body
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
-        <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty the it uses <code>msg.filename</code>. If <code>msg.filename</code> is also undefined it sets it to empty string</dd>
+        <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty it will just display as "Attachment".</dd>
+
+        <dt class="optional">msg.contentType
+            <span class="property-type">string | null</span>
+        </dt>
+        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. Overridden if configured on the node. Optional but highly recommended (so the client receiving knows what type of file it is).</dd>
 
         <dt class="optional">msg.content
-            <span class="property-type">Object | Null</span>
+            <span class="property-type">object | null</span>
         </dt>
         <dd> craft your own msg.content to send to the server. If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
     </dl>
@@ -82,8 +82,6 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dd>original msg object preserved.</dd>
-
                 <dt>msg.eventId <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted message.</dd>
             </dl>

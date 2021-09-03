@@ -25,22 +25,22 @@
 
 <script type="text/html" data-help-name="matrix-decrypt-file">
     <h3>Details</h3>
-    <p>Files sent in an encrypted room are themselves encrypted. Use this node to encrypt/decrypt files. Note: This node will download the encryted file (required to decrypt)</p>
+    <p>Files sent in an encrypted room are themselves encrypted. Use this node to encrypt/decrypt files. Note: This node will download the encrypted file so be cautious of large downloads.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.content
-            <span class="property-type">Object</span>
+            <span class="property-type">object</span>
         </dt>
         <dd> content of the decrypted message</dd>
 
         <dt>msg.content.file
-            <span class="property-type">Object</span>
+            <span class="property-type">object</span>
         </dt>
         <dd> the information needed to decode the file</dd>
 
         <dt>msg.url
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
         <dd> the decoded mxc url.</dd>
     </dl>
@@ -57,6 +57,9 @@
 
                 <dt>msg.filename <span class="property-type">string</span></dt>
                 <dd>filename of the decoded file (if content.filename isn't defined on the message we fallback to content.body).</dd>
+
+                <dt>msg.thumbnail_payload <span class="property-type">buffer</span></dt>
+                <dd>If the file is an image then this property is set to the buffer of the thumbnail. If not an image this is left off.</dd>
             </dl>
         </li>
         <li>Error

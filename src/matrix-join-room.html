@@ -26,25 +26,22 @@
      	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
      	<input type="text" id="node-input-server">
  	</div>
-    <div class="form-tips">
-        Room ID must either be defined here or passed in via <code>msg.topic</code>. The config takes precedence over the input.
-    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-join-room">
     <h3>Details</h3>
-    <p>This API starts a user participating in a particular room, if that user is allowed to participate in that room. After this call, the client is allowed to see all current state events in the room, and all subsequent events associated with the room until the user leaves the room.</p>
+    <p>This node starts the client participating in a particular room, if the client is allowed to participate in that room. After this call, the client is allowed to see all current state events in the room, and all subsequent events associated with the room until the user leaves the room.</p>
     <a href="https://matrix.org/docs/spec/client_server/latest#id291" target="_blank">Matrix API Endpoint Information</a>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.topic
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> The room identifier or alias to join.</dd>
 
         <dt class="optional">msg.joinOpts
-            <span class="property-type">Object</span>
+            <span class="property-type">object | null</span>
         </dt>
         <dd> Extra options that can be passed when joining a room.</dd>
 
@@ -62,11 +59,6 @@
             <span class="property-type">[string]</span>
         </dt>
         <dd> The servers to attempt to join the room through. One of the servers must be participating in the room.</dd>
-
-        <dt class="optional">msg.reason
-            <span class="property-type">String</span>
-        </dt>
-        <dd> Reason for kicking the user.</dd>
     </dl>
 
     <h3>Outputs</h3>

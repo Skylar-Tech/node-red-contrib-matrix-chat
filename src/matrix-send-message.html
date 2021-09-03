@@ -25,14 +25,17 @@
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
+
  	 <div class="form-row">
      	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
      	<input type="text" id="node-input-server">
  	</div>
+
     <div class="form-row">
         <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
-        <input type="text" id="node-input-roomId">
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
     </div>
+
     <div class="form-row">
         <label for="node-input-messageType">
             Message Type
@@ -42,10 +45,11 @@
             <option value="m.notice">m.notice</option>
             <option value="msg.type">msg.type input</option>
         </select>
-        <div class="form-tips">
-            It's recommended to use m.notice for bots because the message will render in a lighter text (at least in Element client) for users to distinguish bot and real user messages.
-        </div>
     </div>
+    <div class="form-row form-tips">
+        It's recommended to use m.notice for bots because the message will render in a lighter text (at least in Element client) for users to distinguish bot and real user messages.
+    </div>
+
     <div class="form-row">
         <label for="node-input-messageFormat">
             Message Format
@@ -56,49 +60,44 @@
             <option value="msg.format">msg.format input</option>
         </select>
     </div>
-    <div class="form-tips">
-        Must be a valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>
-    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-message">
     <h3>Details</h3>
-    <p>Sends a message to a Matrix room.</p>
+    <p>Sends a message to a Matrix room. Messages are auto encrypted if necessary.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
+        <dt>msg.topic
+            <span class="property-type">string</span>
+        </dt>
+        <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this input will be overridden.</dd>
+
         <dt>msg.payload
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> the message text. </dd>
 
         <dt class="optional">msg.formatted_payload
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> the formatted HTML message (uses msg.payload if not defined). This only affects HTML messages.</dd>
 
-        <dt>msg.topic
-            <span class="property-type">String | Null</span>
-        </dt>
-        <dd> Room ID to send image to. Optional if configured on the node. Overrides node configuration if set.</dd>
-
         <dt class="optional">msg.type
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
-        <dd> This is only used and required when configured so on the node. Must be set to either 'm.text' or 'm.notice'</dd>
+        <dd> This is only used and required when configured so on the node. Must be set to either <code>'m.text'</code> or <code>'m.notice'</code></dd>
 
         <dt class="optional">msg.format
-            <span class="property-type">String | Null</span>
+            <span class="property-type">string | null</span>
         </dt>
-        <dd> This is only used and required when configured so on the node. Set to null for plain text and 'html' for HTML.</dd>
+        <dd> This is only used and required when configured so on the node. Set to <code>null</code> for plain text and <code>'html'</code> for HTML.</dd>
     </dl>
 
     <h3>Outputs</h3>
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dd>original msg object preserved.</dd>
-
                 <dt>msg.eventId <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted message.</dd>
             </dl>

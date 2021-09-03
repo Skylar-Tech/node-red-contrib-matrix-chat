@@ -51,32 +51,32 @@
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.payload
-            <span class="property-type">Object</span>
+            <span class="property-type">object</span>
         </dt>
         <dd> Details of the new user to create. </dd>
 
         <dt class="optional">msg.payload.displayname
-            <span class="property-type">String | null</span>
+            <span class="property-type">string | null</span>
         </dt>
         <dd> Set the displayname for the user (default to username if not set). </dd>
 
         <dt>msg.payload.username
-            <span class="property-type">Object</span>
+            <span class="property-type">object</span>
         </dt>
         <dd> Username for the new user. </dd>
 
         <dt>msg.payload.password
-            <span class="property-type">String</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> Password for the new user. </dd>
 
         <dt>msg.payload.admin
-            <span class="property-type">Bool</span>
+            <span class="property-type">bool</span>
         </dt>
         <dd> If true, the new user will be an admin. Default to false. </dd>
 
         <dt class="optional">msg.payload.user_type
-            <span class="property-type">String | null</span>
+            <span class="property-type">string | null</span>
         </dt>
         <dd> Set the user type. Leave this to null if you don't know what it is for. Check <a href="https://github.com/matrix-org/synapse/blob/master/synapse/api/constants.py">here</a> and look for <code>class UserTypes</code> to figure out what is valid.</dd>
     </dl>
@@ -84,9 +84,7 @@
     <h3>Outputs</h3>
     <ol class="node-ports">
         <li>Success
-            <dl class="message-properties">
-                <dd>original msg object preserved.</dd>
-
+            <dl class="message-properties">`
                 <dt>msg.eventId <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted message.</dd>
             </dl>

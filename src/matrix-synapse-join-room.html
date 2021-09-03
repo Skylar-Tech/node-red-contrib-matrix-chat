@@ -51,7 +51,7 @@
         <dt>msg.topic
             <span class="property-type">string</span>
         </dt>
-        <dd> The room identifier or alias to join: for example, <code>!h8zld9j31:example.com.</code>. Not required if set in the config and will be ignored even if set.</dd>
+        <dd> The room identifier or alias to join: for example, <code>!h8zld9j31:example.com.</code>. Ignored if configured on the node, otherwise required.</dd>
 
         <dt>msg.userId
             <span class="property-type">string</span>
@@ -63,8 +63,8 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>This returns data directly from the API endpoint. <a href="https://matrix-org.github.io/synapse/develop/admin_api/user_admin_api.html#query-current-sessions-for-a-user" target="_blank">Click here</a> to see what this returns.</dd>
+                <dt>msg.topic <span class="property-type">string</span></dt>
+                <dd> the ID of the room we just added the user to.</dd>
             </dl>
         </li>
         <li>Error
