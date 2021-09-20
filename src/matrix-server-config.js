@@ -43,9 +43,13 @@ module.exports = function(RED) {
         } else if(!this.userId) {
             node.log("Matrix connection failed: missing user ID.");
         } else {
-            node.setConnected = function(connected) {
+            node.setConnected = function(connected, cb) {
                 if (node.connected !== connected) {
                     node.connected = connected;
+                    if(typeof cb === 'function') {
+                        cb(connected);
+                    }
+
                     if (connected) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
@@ -131,20 +135,27 @@ module.exports = function(RED) {
             node.matrixClient.on("sync", async function(state, prevState, data) {
                 switch (state) {
                     case "ERROR":
-                        node.error("Connection to Matrix server lost");
-                        node.setConnected(false);
+                        node.setConnected(false, function(){
+                            node.error("Connection to Matrix server lost");
+                        });
                         break;
 
                     case "RECONNECTING":
+                        node.setConnected(false, function(){
+                            node.log("Trying to reconnect to matrix server");
+                        });
+                        break;
                     case "STOPPED":
-                        node.setConnected(false);
+                        node.setConnected(false, function(){
+                            node.log("Matrix client stopped");
+                        });
                         break;
 
                     case "SYNCING":
-                        break;
-
                     case "PREPARED":
-                        node.setConnected(true);
+                        node.setConnected(true, function(){
+                            node.log("Matrix client connected");
+                        });
                         break;
 
                     // case "PREPARED":

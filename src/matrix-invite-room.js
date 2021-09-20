@@ -6,6 +6,7 @@ module.exports = function(RED) {
 
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
+        this.roomId = n.roomId;
 
         if(!this.server) {
             node.error('Server must be configured on the node.');
@@ -47,7 +48,7 @@ module.exports = function(RED) {
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("msg.topic must be defined or configured on the node.");
+                node.error("room must be defined in either msg.topic or in node config");
                 return;
             }
 
