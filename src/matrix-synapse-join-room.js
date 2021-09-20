@@ -64,7 +64,7 @@ module.exports = function(RED) {
                     'POST',
                     node.encodeUri(
                         "/_synapse/admin/v1/join/$room_id_or_alias",
-                        { $room_id_or_alias: roomId },
+                        { $room_id_or_alias: msg.topic },
                     ),
                     undefined,
                     { "user_id": msg.userId },

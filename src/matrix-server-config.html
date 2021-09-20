@@ -54,7 +54,7 @@
             id="node-config-input-autoAcceptRoomInvites"
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-config-input-autoAcceptRoomInvites" style="width: auto">
+        <label for="node-config-input-autoAcceptRoomInvites" style="width: auto;max-width:50%;">
             Auto join invited rooms
         </label>
     </div>
@@ -64,12 +64,9 @@
                 id="node-config-input-enableE2ee"
                 style="width: auto; margin-left: 125px; vertical-align: top"
         />
-        <label for="node-config-input-enableE2ee" style="width: auto">
-            Enable end-to-end encryption (requires DeviceID)
+        <label for="node-config-input-enableE2ee" style="width: auto;max-width:50%;">
+            Enable end-to-end encryption (requires a Device ID to be set.)
         </label>
-    </div>
-    <div class="form-tips" style="margin-bottom: 12px;">
-        E2ee requires a Device ID to be set.
     </div>
 
     <div class="form-row">
@@ -82,13 +79,23 @@
             Global access to Matrix Client
         </label>
         <div class="form-tips" style="margin-bottom: 12px;">
-            If enabled this allows you to access the matrix client directly with a Function node. This way you can do whatever you want with the client.<br />
-            Example: <code>let client = global.get("matrixClient['@bot:example.com']")</code>
+            If enabled this allows you to access the matrix client directly with a Function node. This way you can do <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command" target="_blank">whatever you want</a> with the client. Example:<br>
+            <code style="white-space: normal;">let client = global.get("matrixClient['@bot:example.com']");</code>
         </div>
     </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-server-config">
     <h3>Details</h3>
-    <p>Matrix client configuration node</p>
+    <p>Matrix client connection configuration</p>
+
+    <h3>Setting up an account</h3>
+    <div>
+        <p>
+            You need an account for your client to use. If you are going to be using End-to-End Encryption you should generate the bot and only use it within Node-RED otherwise if you have other clients connected on the same user it could cause problems with e2ee (key sharing is currently not supported).
+        </p>
+        <p>If you have access to the server directly you can use Shared Secret Registration as described <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#create-user-with-shared-secret-registration" target="_blank" style="text-decoration: underline;">here</a>.</p>
+        <p>If this is a server you do not administrate/have access to follow these instructions:</p>
+        <ol><li>In a private/incognito browser window, open Element.</li><li>Log in to the account you want to get the access token for, such as the bot's account. <strong>Do not setup key storage</strong>.</li><li>Click on the bot's name in the top left corner then "Settings".</li><li>(Optional) Set your bot's display name and avatar.</li><li>Click the "Help &amp; About" tab (left side of the dialog).</li><li>Scroll to the bottom and click the <code>&lt;click to reveal&gt;</code> part of <code>Access Token: &lt;click to reveal&gt;</code>.</li><li>Copy your access token to a safe place, like the bot's configuration file.</li><li><strong>Do not log out.</strong> Instead, just close the window. If you used a private browsing session, you should be able to still use Element for your own account. Logging out deletes the access token from the server, making the bot unable to use it.</li></ol>
+    </div>
 </script>

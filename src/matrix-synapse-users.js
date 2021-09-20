@@ -39,7 +39,7 @@ module.exports = function(RED) {
             };
 
             if(msg.guests) {
-                queryParams['guests'] = msg.guests;
+                queryParams['guests'] = msg.guests ? 'true' : 'false';
             }
 
             if(msg.order_by) {
