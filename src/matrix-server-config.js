@@ -133,36 +133,70 @@ module.exports = function(RED) {
             });
 
             node.matrixClient.on("sync", async function(state, prevState, data) {
-                switch (state) {
-                    case "ERROR":
-                        node.setConnected(false, function(){
-                            node.error("Connection to Matrix server lost");
-                        });
-                        break;
-
-                    case "RECONNECTING":
-                        node.setConnected(false, function(){
-                            node.log("Trying to reconnect to matrix server");
-                        });
-                        break;
-                    case "STOPPED":
-                        node.setConnected(false, function(){
-                            node.log("Matrix client stopped");
-                        });
-                        break;
-
-                    case "SYNCING":
-                    case "PREPARED":
-                        node.setConnected(true, function(){
-                            node.log("Matrix client connected");
-                        });
-                        break;
-
-                    // case "PREPARED":
-                    //     // the client instance is ready to be queried.
-                    //     node.log("Matrix server connection ready.");
-                    //     node.setConnected(true);
-                    //     break;
+                node.debug("SYNC [STATE=" + state + "] [PREVSTATE=" + prevState + "]");
+                if(prevState === null && state === "PREPARED" ) {
+                    // Occurs when the initial sync is completed first time.
+                    // This involves setting up filters and obtaining push rules.
+                    node.setConnected(true, function(){
+                        node.log("Matrix client connected");
+                    });
+                } else if(prevState === null && state === "ERROR") {
+                    // Occurs when the initial sync failed first time.
+                    node.setConnected(false, function(){
+                        node.error("Failed to connect to Matrix server");
+                    });
+                } else if(prevState === "ERROR" && state === "PREPARED") {
+                    // Occurs when the initial sync succeeds
+                    // after previously failing.
+                    node.setConnected(true, function(){
+                        node.log("Matrix client connected");
+                    });
+                } else if(prevState === "PREPARED" && state === "SYNCING") {
+                    // Occurs immediately after transitioning to PREPARED.
+                    // Starts listening for live updates rather than catching up.
+                    node.setConnected(true, function(){
+                        node.log("Matrix client connected");
+                    });
+                } else if(prevState === "SYNCING" && state === "RECONNECTING") {
+                    // Occurs when the live update fails.
+                    node.setConnected(false, function(){
+                        node.error("Connection to Matrix server lost");
+                    });
+                } else if(prevState === "RECONNECTING" && state === "RECONNECTING") {
+                    // Can occur if the update calls continue to fail,
+                    // but the keepalive calls (to /versions) succeed.
+                    node.setConnected(false, function(){
+                        node.error("Connection to Matrix server lost");
+                    });
+                } else if(prevState === "RECONNECTING" && state === "ERROR") {
+                    // Occurs when the keepalive call also fails
+                    node.setConnected(false, function(){
+                        node.error("Connection to Matrix server lost");
+                    });
+                } else if(prevState === "ERROR" && state === "SYNCING") {
+                    // Occurs when the client has performed a
+                    // live update after having previously failed.
+                    node.setConnected(true, function(){
+                        node.log("Matrix client connected");
+                    });
+                } else if(prevState === "ERROR" && state === "ERROR") {
+                    // Occurs when the client has failed to
+                    // keepalive for a second time or more.
+                    node.setConnected(false, function(){
+                        node.error("Connection to Matrix server lost");
+                    });
+                } else if(prevState === "SYNCING" && state === "SYNCING") {
+                    // Occurs when the client has performed a live update.
+                    // This is called <i>after</i> processing.
+                    node.setConnected(true, function(){
+                        node.log("Matrix client connected");
+                    });
+                } else if(state === "STOPPED") {
+                    // Occurs once the client has stopped syncing or
+                    // trying to sync after stopClient has been called.
+                    node.setConnected(false, function(){
+                        node.error("Connection to Matrix server lost");
+                    });
                 }
             });
 
