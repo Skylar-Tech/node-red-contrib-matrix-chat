@@ -119,7 +119,7 @@ module.exports = function(RED) {
             node.server.matrixClient.sendMessage(msg.topic, content)
                 .then(function(e) {
                     node.log("Message sent: " + msg.payload);
-                    msg.eventId = e.eventId;
+                    msg.eventId = e.event_id;
                     node.send([msg, null]);
                 })
                 .catch(function(e){

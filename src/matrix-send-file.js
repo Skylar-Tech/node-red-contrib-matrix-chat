@@ -80,7 +80,7 @@ module.exports = function(RED) {
                         .sendMessage(msg.topic, content)
                             .then(function(e) {
                                 node.log("File message sent: " + e);
-                                msg.eventId = e.eventId;
+                                msg.eventId = e.event_id;
                                 node.send([msg, null]);
                             })
                             .catch(function(e){
