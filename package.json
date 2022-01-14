@@ -1,12 +1,12 @@
 {
   "name": "node-red-contrib-matrix-chat",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "fs-extra": "^9.1.0",
     "got": "^11.8.2",
     "isomorphic-webcrypto": "^2.3.8",
-    "matrix-js-sdk": "^12.2.0",
+    "matrix-js-sdk": "^15.3.0",
     "node-localstorage": "^2.2.1",
     "olm": "https://packages.matrix.org/npm/olm/olm-3.2.1.tgz",
     "process": "^0.11.10",

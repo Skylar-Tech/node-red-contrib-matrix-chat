@@ -35,6 +35,7 @@ module.exports = function(RED) {
         this.enableE2ee = n.enableE2ee || false;
         this.e2ee = (this.enableE2ee && this.deviceId);
         this.globalAccess = n.global;
+        this.initializedAt = new Date();
 
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
@@ -85,7 +86,6 @@ module.exports = function(RED) {
 
             node.on('close', function(done) {
                 if(node.matrixClient) {
-                    node.matrixClient.close();
                     node.matrixClient.stopClient();
                     node.setConnected(false);
                 }
@@ -97,8 +97,41 @@ module.exports = function(RED) {
                 return node.connected;
             };
 
-            node.matrixClient.on("Room.timeline", async function(event, room, toStartOfTimeline, data) {
-                node.emit("Room.timeline", event, room, toStartOfTimeline, data);
+            node.matrixClient.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data) {
+                if (toStartOfTimeline) {
+                    return; // ignore paginated results
+                }
+                if (!event.getSender() || event.getSender() === node.userId) {
+                    return; // ignore our own messages
+                }
+                if (!data || !data.liveEvent) {
+                    return; // ignore old message (we only want live events)
+                }
+                if(node.initializedAt > event.getDate()) {
+                    return; // skip events that occurred before our client initialized
+                }
+
+                try {
+                    await node.matrixClient.decryptEventIfNeeded(event);
+                } catch (error) {
+                    node.error(error);
+                    return;
+                }
+
+                let msg = {
+                    encrypted : event.isEncrypted(),
+                    redacted  : event.isRedacted(),
+                    content   : event.getContent(),
+                    type      : (event.getContent()['msgtype'] || event.getType()) || null,
+                    payload   : (event.getContent()['body'] || event.getContent()) || null,
+                    userId    : event.getSender(),
+                    topic     : event.getRoomId(),
+                    eventId   : event.getId(),
+                    event     : event,
+                };
+
+                node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (data.liveEvent ? ' [LIVE]' : '') + (toStartOfTimeline ? ' [PAGINATED]' : ''));
+                node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
             });
 
             // node.matrixClient.on("RoomMember.typing", async function(event, member) {
@@ -223,7 +256,9 @@ module.exports = function(RED) {
                         node.matrixClient.setGlobalErrorOnUnknownDevices(false);
                     }
                     node.log("Connecting to Matrix server...");
-                    await node.matrixClient.startClient({ initialSyncLimit: 8 });
+                    await node.matrixClient.startClient({
+                        initialSyncLimit: 8
+                    });
                 } catch(error){
                     node.error(error);
                 }

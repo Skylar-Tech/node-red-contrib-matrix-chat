@@ -78,7 +78,10 @@
         <dt class="optional">msg.payload.user_type
             <span class="property-type">string | null</span>
         </dt>
-        <dd> Set the user type. Leave this to null if you don't know what it is for. Check <a href="https://github.com/matrix-org/synapse/blob/master/synapse/api/constants.py">here</a> and look for <code>class UserTypes</code> to figure out what is valid.</dd>
+        <dd>
+            Set the user type. Leave this to null if you don't know what it is for. Check <a href="https://github.com/matrix-org/synapse/blob/master/synapse/api/constants.py">here</a> and look for <code>class UserTypes</code> to figure out what is valid.<br>
+            NOTE: Testing shows that "bot" and "support" do not work for this. Generate a normal user to use as a bot.
+        </dd>
     </dl>
 
     <h3>Outputs</h3>

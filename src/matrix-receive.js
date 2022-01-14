@@ -22,7 +22,7 @@ module.exports = function(RED) {
             return;
         }
 
-        node.server.on("disconnected", function() {
+        node.server.on("disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
@@ -30,42 +30,11 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.server.on("Room.timeline", async function(event, room, toStartOfTimeline, data) {
-            if (toStartOfTimeline) {
-                return; // ignore paginated results
-            }
-            if (!event.getSender() || event.getSender() === node.server.userId) {
-                return; // ignore our own messages
-            }
-            if (!event.getUnsigned() || event.getUnsigned().age > 1000) {
-                return; // ignore old messages
-            }
-
+        node.server.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
             // if node has a room ID set we only listen on that room
             if(node.roomIds.length && node.roomIds.indexOf(room.roomId) === -1) {
                 return;
             }
-
-            try {
-                await node.server.matrixClient.decryptEventIfNeeded(event);
-            } catch (error) {
-                node.error(error);
-                return;
-            }
-
-            let msg = {
-                encrypted : event.isEncrypted(),
-                redacted  : event.isRedacted(),
-                content   : event.getContent(),
-                type      : (event.getContent()['msgtype'] || event.getType()) || null,
-                payload   : (event.getContent()['body'] || event.getContent()) || null,
-                userId    : event.getSender(),
-                topic     : event.getRoomId(),
-                eventId   : event.getId(),
-                event     : event,
-            };
-
-            node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body);
 
             switch(msg.type) {
                 case 'm.emote':

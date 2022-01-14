@@ -62,7 +62,13 @@ module.exports = function(RED) {
                     .update(utf8.encode(msg.payload.password))
                     .update("\x00")
                     .update(msg.payload.admin ? "admin" : "notadmin")
-                    .digest('hex');
+
+                if(msg.payload.user_type || null) {
+                    hmac.update("\x00")
+                        .update(msg.payload.user_type);
+                }
+
+                hmac = hmac.digest('hex');
 
                 try {
                     response = await got.post(this.server + '/_synapse/admin/v1/register', {
