@@ -38,11 +38,6 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(!msg.userId) {
-                node.error("msg.userId was not set.");
-                return;
-            }
-
             node.server.matrixClient.joinRoom(msg.topic, msg.joinOpts || {})
                 .then(function(e) {
                     msg.payload = e;
