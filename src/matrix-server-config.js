@@ -12,9 +12,6 @@ module.exports = function(RED) {
     function MatrixServerNode(n) {
         let storageDir = './matrix-client-storage';
 
-        // we should add support for getting access token automatically from username/password
-        // ref: https://matrix.org/docs/guides/usage-of-the-matrix-js-sdk#login-with-an-access-token
-
         RED.nodes.createNode(this, n);
 
         let node = this;
