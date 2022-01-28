@@ -45,7 +45,7 @@ module.exports = function(RED) {
                     let verifyRequestId = data.targetDevice.userId + ':' + data.targetDevice.deviceId;
                     verificationRequests.set(verifyRequestId, data);
                     node.send({
-                        verifyRequestId: verifyRequestId, // internally used to reference between nodesc
+                        verifyRequestId: verifyRequestId, // internally used to reference between nodes
                         verifyMethods: data.methods,
                         userId: data.targetDevice.userId,
                         deviceId: data.targetDevice.deviceId,
