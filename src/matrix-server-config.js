@@ -1,4 +1,4 @@
-global.Olm = require('olm');
+global.Olm = require('@matrix-org/olm');
 const fs = require("fs-extra");
 const sdk = require("matrix-js-sdk");
 const { LocalStorage } = require('node-localstorage');
@@ -29,6 +29,7 @@ module.exports = function(RED) {
         this.connected = null;
         this.name = n.name;
         this.userId = this.credentials.userId;
+        this.deviceLabel = this.credentials.deviceLabel || null;
         this.deviceId = this.credentials.deviceId || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
@@ -36,6 +37,9 @@ module.exports = function(RED) {
         this.e2ee = (this.enableE2ee && this.deviceId);
         this.globalAccess = n.global;
         this.initializedAt = new Date();
+        let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId),
+            localStorage = new LocalStorage(localStorageDir),
+            initialSetup = false;
 
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
@@ -54,6 +58,40 @@ module.exports = function(RED) {
                     if (connected) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
+                        if(!initialSetup) {
+                            // store Device ID internally
+                            let stored_device_id = getStoredDeviceId(localStorage),
+                                device_id = this.matrixClient.getDeviceId();
+                            if(!stored_device_id || stored_device_id !== device_id) {
+                                node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
+                                storeDeviceId(localStorage, device_id);
+                            }
+
+                            // update device label
+                            if(node.deviceLabel) {
+                                node.matrixClient
+                                    .getDevice(device_id)
+                                    .then(
+                                        function(response) {
+                                            if(response.display_name !== node.deviceLabel) {
+                                                node.matrixClient.setDeviceDetails(device_id, {
+                                                    display_name: node.deviceLabel
+                                                }).then(
+                                                    function(response) {},
+                                                    function(error) {
+                                                        node.error("Failed to set device label: " + error);
+                                                    }
+                                                );
+                                            }
+                                        },
+                                        function(error) {
+                                            node.error("Failed to fetch device: " + error);
+                                        }
+                                    );
+                            }
+
+                            initialSetup = true;
+                        }
                     } else {
                         node.emit("disconnected");
                     }
@@ -65,18 +103,15 @@ module.exports = function(RED) {
             };
             node.setConnected(false);
 
-            let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId);
-
             fs.ensureDirSync(storageDir); // create storage directory if it doesn't exist
             upgradeDirectoryIfNecessary(node, storageDir);
-            const localStorage = new LocalStorage(localStorageDir);
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
                 sessionStore: new sdk.WebStorageSessionStore(localStorage),
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
-                deviceId: this.deviceId || undefined,
+                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
             });
 
             // set globally if configured to do so
@@ -84,12 +119,15 @@ module.exports = function(RED) {
                 this.context().global.set('matrixClient["'+this.userId+'"]', node.matrixClient);
             }
 
-            node.on('close', function(done) {
-                if(node.matrixClient) {
+            function stopClient() {
+                if(node.matrixClient && node.matrixClient.clientRunning) {
                     node.matrixClient.stopClient();
                     node.setConnected(false);
                 }
+            }
 
+            node.on('close', function(done) {
+                stopClient();
                 done();
             });
 
@@ -130,8 +168,18 @@ module.exports = function(RED) {
                     event     : event,
                 };
 
-                node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (data.liveEvent ? ' [LIVE]' : '') + (toStartOfTimeline ? ' [PAGINATED]' : ''));
+                node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
                 node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
+            });
+
+            /**
+             * Fires when we want to suggest to the user that they restore their megolm keys
+             * from backup or by cross-signing the device.
+             *
+             * @event module:client~MatrixClient#"crypto.suggestKeyRestore"
+             */
+            node.matrixClient.on("crypto.suggestKeyRestore", function(){
+
             });
 
             // node.matrixClient.on("RoomMember.typing", async function(event, member) {
@@ -245,7 +293,8 @@ module.exports = function(RED) {
                 //     httpStatus: 401
                 // }
 
-                node.error("[Session.logged_out] " + errorObj);
+                node.error("Authentication failure: " + errorObj);
+                stopClient();
             });
 
             async function run() {
@@ -259,23 +308,71 @@ module.exports = function(RED) {
                     await node.matrixClient.startClient({
                         initialSyncLimit: 8
                     });
-                } catch(error){
+                } catch(error) {
                     node.error(error);
                 }
             }
 
-            run().catch((error) => node.error(error));
+            // do an authed request and only continue if we don't get an error
+            // this prevent the matrix client from crashing Node-RED on invalid auth token
+            node.matrixClient.getAccountDataFromServer()
+                .then(
+                    function() {
+                        run().catch((error) => node.error(error));
+                    },
+                    function(err) {}
+                );
         }
     }
 
     RED.nodes.registerType("matrix-server-config", MatrixServerNode, {
         credentials: {
-            userId: { type:"text", required: true },
-            accessToken: { type:"text", required: true },
+            deviceLabel: { type: "text", required: false },
+            userId: { type: "text", required: true },
+            accessToken: { type: "text", required: true },
             deviceId: { type: "text", required: true },
-            url: { type: "text", required: true },
+            url: { type: "text", required: true }
         }
     });
+
+    RED.httpAdmin.post(
+        "/matrix-chat/login",
+        RED.auth.needsPermission('flows.write'),
+        function(req, res) {
+            let userId = req.body.userId || undefined,
+                password = req.body.password || undefined,
+                baseUrl = req.body.baseUrl || undefined,
+                deviceId = req.body.deviceId || undefined,
+                displayName = req.body.displayName || undefined;
+
+            const matrixClient = sdk.createClient({
+                baseUrl: baseUrl,
+                deviceId: deviceId
+            });
+
+            matrixClient.login(
+                'm.login.password', {
+                    user: userId,
+                    password: password,
+                    initial_device_display_name: displayName
+                })
+                .then(
+                    function(response) {
+                        res.json({
+                            'result': 'ok',
+                            'token': response.access_token,
+                            'device_id': response.device_id,
+                            'user_id': response.user_id,
+                        });
+                    },
+                    function(err) {
+                        res.json({
+                            'result': 'error',
+                            'message': err
+                        });
+                    }
+                );
+        });
 
     function upgradeDirectoryIfNecessary(node, storageDir) {
         let oldStorageDir = './matrix-local-storage';
@@ -301,5 +398,16 @@ module.exports = function(RED) {
             node.log("archiving old config folder '" + oldStorageDir + "' to '" + oldStorageDir + "-backup");
             fs.renameSync(oldStorageDir, oldStorageDir + "-backup");
         }
+    }
+
+    /**
+     * If a device ID is stored we will use that for the client
+     */
+    function getStoredDeviceId(localStorage) {
+        return localStorage.getItem('my_device_id');
+    }
+
+    function storeDeviceId(localStorage, deviceId) {
+        localStorage.setItem('my_device_id', deviceId);
     }
 }

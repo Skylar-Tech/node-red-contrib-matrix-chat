@@ -1,9 +1,33 @@
+<style>
+    .matrix-loader {
+        border: 8px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 8px solid #3498db;
+        border-bottom: 8px solid #3498db;
+        width: 20px;
+        height: 20px;
+        -webkit-animation: matrix-spin 2s linear infinite;
+        animation: matrix-spin 2s linear infinite;
+    }
+
+    @-webkit-keyframes matrix-spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @keyframes matrix-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
 <script type="text/javascript">
     RED.nodes.registerType('matrix-server-config',{
         category: 'config',
         color: '#00b7ca',
         credentials: {
             userId: { type: "text", required: true },
+            deviceLabel: { type: "text", required: false },
             accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: true },
             url: { type: "text", required: true }
@@ -26,28 +50,51 @@
         <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-config-input-name" placeholder="Name">
     </div>
+
     <div class="form-row">
-        <label for="node-config-input-userId"><i class="fa fa-server"></i> User ID</label>
+        <label for="node-config-input-deviceLabel"><i class="fa fa-tag"></i> Device Label</label>
+        <input type="text" placeholder="Node-RED" id="node-config-input-deviceLabel">
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-url"><i class="fa fa-server"></i> Server URL</label>
+        <input type="text" placeholder="https://matrix.org" id="node-config-input-url">
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-userId"><i class="fa fa-user"></i> User ID</label>
         <input type="text" placeholder="@example:matrix.org" id="node-config-input-userId">
     </div>
+
+    <div class="form-row">
+        <label for="node-config-input-password"><i class="fa fa-key"></i> Password</label>
+        <input type="password" placeholder="" id="node-config-input-password">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Password is never saved and is only used to fetch an access token using the button below.
+    </div>
+    <pre class="form-tips" id="matrix-chat-login-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;display:none;"></pre>
+    <pre class="form-tips" id="matrix-chat-login-success" style="color: #155724;background-color: #d4edda;border-color: #c3e6cb;margin-bottom: 12px;display:none;"></pre>
+    <button class="ui-button ui-corner-all ui-widget primary" id="matrix-login-btn">Update Access Token</button>
+    <div class="matrix-loader" id="matrix-access-token-loader" style="display:none;"></div>
+
     <div class="form-row">
         <label for="node-config-input-accessToken"><i class="fa fa-key"></i> Access Token</label>
         <input type="text" id="node-config-input-accessToken">
     </div>
     <div class="form-tips" style="margin-bottom: 12px;">
-        View the <a href="javascript:$('#red-ui-tab-help-link-button').click();">node docs</a> to figure out how to generate an Access Token. You can also generate them using the Shared Secret Registration node.
+        You can either provide/generate an access token yourself or use the login button above to do it automatically. View the <a href="javascript:$('#red-ui-tab-help-link-button').click();">node docs</a> to figure out how to generate an Access Token manually. If you generated a user with shared secret registration you will already have an access token you can place here.
     </div>
+
     <div class="form-row">
-        <label for="node-config-input-deviceId"><i class="fa fa-key"></i> Device ID</label>
+        <label for="node-config-input-deviceId"><i class="fa fa-desktop"></i> Device ID</label>
         <input type="text" id="node-config-input-deviceId">
     </div>
     <div class="form-tips" style="margin-bottom: 12px;">
-        This can either be an existing Device ID attached to the above Access Token or you can enter a unique value to set a new one.
+        If you have a Device ID for this auth token you can place it here, or you can leave it blank to have one automatically generated (this field will always be blank if auto generated as it is saved internally).<br />
+        WARNING: If you change this after the client has already initialized you will break encryption.
     </div>
- 	 <div class="form-row">
-     	<label for="node-config-input-url"><i class="fa fa-globe"></i> Server URL</label>
-     	<input type="text" placeholder="https://matrix.org" id="node-config-input-url">
- 	</div>
+
     <div class="form-row">
         <input
             type="checkbox"
@@ -79,10 +126,79 @@
             Global access to Matrix Client
         </label>
         <div class="form-tips" style="margin-bottom: 12px;">
-            If enabled this allows you to access the matrix client directly with a Function node. This way you can do <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command" target="_blank">whatever you want</a> with the client. Example:<br>
+            If global access is enabled you can access the client directly within a Function node. This way you can do <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command" target="_blank">whatever you want</a> with the client. Example:<br>
             <code style="white-space: normal;">let client = global.get("matrixClient['@bot:example.com']");</code>
         </div>
     </div>
+    <script type="text/javascript">
+        $("#matrix-login-btn").on("click", function() {
+            function prettyPrintJson(json) {
+                try{
+                    return typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
+                }
+                catch (error){
+                    return json;
+                }
+            }
+
+            let userId = $("#node-config-input-userId").val(),
+                userPassword = $("#node-config-input-password").val(),
+                serverUrl = $("#node-config-input-url").val();
+
+            if(!userId) {
+                alert("User ID is required to fetch access token.");
+                return;
+            }
+            if(!userPassword) {
+                alert("Password is required to fetch access token.");
+                return;
+            }
+            if(!serverUrl) {
+                alert("Server URL is required to fetch access token.");
+                return;
+            }
+
+            $("#matrix-login-btn, #matrix-chat-login-error, #matrix-chat-login-success").hide();
+            $("#matrix-access-token-loader").show();
+            $.ajax({
+                type: 'POST',
+                url: '/matrix-chat/login',
+                dataType: 'json',
+                data: {
+                    'userId': userId,
+                    'password': userPassword,
+                    'baseUrl': serverUrl,
+                    'displayName': $("#node-config-input-deviceLabel").val(),
+                }
+            }).then(
+                function(data) {
+                    if(data.result && data.result === 'ok') {
+                        $("#matrix-chat-login-error").hide();
+                        $("#matrix-chat-login-success")
+                            .html("Login Successful! Auth Token and Device ID have been set below.")
+                            .show();
+
+                        $("#node-config-input-accessToken").val(data.token);
+                        $("#node-config-input-deviceId").val(data.device_id);
+                    } else if(data.result && data.result === 'error') {
+                        $("#matrix-chat-login-success").hide();
+                        $("#matrix-chat-login-error")
+                            .html(data.message ? ('Failed to login: <br />' + prettyPrintJson(data.message)) : 'Failed to login')
+                            .show();
+                    }
+                    $("#matrix-login-btn").show();
+                    $("#matrix-access-token-loader").hide();
+                }, function() {
+                    $("#matrix-chat-login-success").hide();
+                    $("#matrix-chat-login-error")
+                        .html("Failed to login due to server error communicating with Node-RED")
+                        .show();
+                    $("#matrix-login-btn").show();
+                    $("#matrix-access-token-loader").hide();
+                }
+            );
+        });
+    </script>
 </script>
 
 <script type="text/html" data-help-name="matrix-server-config">
