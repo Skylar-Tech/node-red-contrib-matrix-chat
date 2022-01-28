@@ -54,7 +54,7 @@ To view what sort of functions you have access to check out the `client.ts` file
 
 ### Respond to "ping" with "pong"
 
-[View JSON](respond-to-html-with-html.json)
+[View JSON](respond-ping-pong.json)
 
 Use this flow to respond to anyone that says "ping" with "pong" into the same room.
 
