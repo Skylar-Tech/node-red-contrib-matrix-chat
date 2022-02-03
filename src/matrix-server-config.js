@@ -1,4 +1,4 @@
-global.Olm = require('@matrix-org/olm');
+global.Olm = require('olm');
 const fs = require("fs-extra");
 const sdk = require("matrix-js-sdk");
 const { LocalStorage } = require('node-localstorage');
