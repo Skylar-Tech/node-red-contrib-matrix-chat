@@ -53,16 +53,14 @@ module.exports = function(RED) {
 
             msg.type = 'm.reaction';
 
-            node.server.matrixClient.sendCompleteEvent(
+            node.server.matrixClient.sendEvent(
                 msg.topic,
+                'm.reaction',
                 {
-                    type: 'm.reaction',
-                    content: {
-                        "m.relates_to": {
-                            event_id: eventId,
-                            key: msg.payload,
-                            rel_type: "m.annotation"
-                        }
+                    "m.relates_to": {
+                        event_id: eventId,
+                        key: msg.payload,
+                        rel_type: "m.annotation"
                     }
                 }
             )
