@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-matrix-chat",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "@matrix-org/olm": "^3.2.8",
