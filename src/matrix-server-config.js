@@ -4,6 +4,7 @@ const sdk = require("matrix-js-sdk");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
+const {deriveKey} = require("matrix-js-sdk/lib/crypto/key_passphrase");
 
 module.exports = function(RED) {
     function MatrixFolderNameFromUserId(name) {
@@ -27,13 +28,14 @@ module.exports = function(RED) {
         this.userId = this.credentials.userId;
         this.deviceLabel = this.credentials.deviceLabel || null;
         this.deviceId = this.credentials.deviceId || null;
+        this.secureStoragePassphrase = this.credentials.secureStoragePassphrase || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.enableE2ee = n.enableE2ee || false;
         this.e2ee = (this.enableE2ee && this.deviceId);
         this.globalAccess = n.global;
         this.initializedAt = new Date();
-        
+
         if(!this.userId) {
             node.log("Matrix connection failed: missing user ID in configuration.");
             return;
@@ -50,7 +52,7 @@ module.exports = function(RED) {
         } else if(!this.url) {
             node.error("Matrix connection failed: missing server URL in configuration.");
         } else {
-            node.setConnected = function(connected, cb) {
+            node.setConnected = async function(connected, cb) {
                 if (node.connected !== connected) {
                     node.connected = connected;
                     if(typeof cb === 'function') {
@@ -92,6 +94,13 @@ module.exports = function(RED) {
                                     );
                             }
 
+                            try {
+                                await accessSecretStorage(function(){});
+                            } catch(e) {
+                                node.error("secret storage bootstrap failure: " + e);
+                                console.log("secret storage bootstrap failure: ", e);
+                            }
+
                             initialSetup = true;
                         }
                     } else {
@@ -107,14 +116,70 @@ module.exports = function(RED) {
 
             fs.ensureDirSync(storageDir); // create storage directory if it doesn't exist
             upgradeDirectoryIfNecessary(node, storageDir);
+
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
                 sessionStore: new sdk.WebStorageSessionStore(localStorage),
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
-                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
-                verificationMethods: ["m.sas.v1"]
+                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
+                verificationMethods: ["m.sas.v1"],
+                // cryptoCallbacks: {
+                //     getSecretStorageKey: async function(
+                //         { keys: keyInfos },
+                //         ssssItemName,
+                //     ){
+                //         const cli = node.matrixClient;
+                //         let keyId = await cli.getDefaultSecretStorageKeyId();
+                //         // console.log("DEFAULT SECRET STORAGE KEY ID: " + keyId, keyInfos);
+                //         //
+                //         // let decodeBase64 = function(base64) {
+                //         //     return Buffer.from(base64, "base64");
+                //         // }
+                //         // return await this.crypto.getSecretStorageKey(keyId);
+                //         let keyInfo;
+                //         if (keyId) {
+                //             // use the default SSSS key if set
+                //             keyInfo = keyInfos[keyId];
+                //             if (!keyInfo) {
+                //                 // if the default key is not available, pretend the default key
+                //                 // isn't set
+                //                 keyId = undefined;
+                //             }
+                //         }
+                //         if (!keyId) {
+                //             // if no default SSSS key is set, fall back to a heuristic of using the
+                //             // only available key, if only one key is set
+                //             const keyInfoEntries = Object.entries(keyInfos);
+                //             if (keyInfoEntries.length > 1) {
+                //                 throw new Error("Multiple storage key requests not implemented");
+                //             }
+                //             [keyId, keyInfo] = keyInfoEntries[0];
+                //         }
+                //
+                //         // Check the in-memory cache
+                //         // if (isCachingAllowed() && secretStorageKeys[keyId]) {
+                //         //     return [keyId, secretStorageKeys[keyId]];
+                //         // }
+                //
+                //         // if (dehydrationCache.key) {
+                //         //     if (await MatrixClientPeg.get().checkSecretStorageKey(dehydrationCache.key, keyInfo)) {
+                //         //         cacheSecretStorageKey(keyId, keyInfo, dehydrationCache.key);
+                //         //         return [keyId, dehydrationCache.key];
+                //         //     }
+                //         // }
+                //
+                //         // const backupInfo = await node.matrixClient.getKeyBackupVersion();
+                //         const backupInfo = await node.matrixClient.getAccountDataFromServer(
+                //             "m.secret_storage.key." + keyId
+                //         );
+                //
+                //         // if(await cli.checkSecretStorageKey(key, keyInfo)) {
+                //         // }
+                //         return [keyId, await node.matrixClient.keyBackupKeyFromPassword(node.secureStoragePassphrase, backupInfo)] ;
+                //     }
+                // }
             });
 
             // set globally if configured to do so
@@ -304,13 +369,88 @@ module.exports = function(RED) {
                 stopClient();
             });
 
+
+            /**
+             * This helper should be used whenever you need to access secret storage. It
+             * ensures that secret storage (and also cross-signing since they each depend on
+             * each other in a cycle of sorts) have been bootstrapped before running the
+             * provided function.
+             *
+             * Bootstrapping secret storage may take one of these paths:
+             * 1. Create secret storage from a passphrase and store cross-signing keys
+             *    in secret storage.
+             * 2. Access existing secret storage by requesting passphrase and accessing
+             *    cross-signing keys as needed.
+             * 3. All keys are loaded and there's nothing to do.
+             *
+             * @param {Function} [func] An operation to perform once secret storage has been
+             * bootstrapped. Optional.
+             * @param {boolean} [forceReset] Reset secret storage even if it's already set up
+             */
+            let accessSecretStorage = async function(func = async () => { }, forceReset = false) {
+                // only do this if we have a secure storage password
+                if(!node.secureStoragePassphrase) {
+                    return;
+                }
+
+                const recoveryKey = await node.matrixClient.createRecoveryKeyFromPassphrase(node.secureStoragePassphrase);
+                const cli = node.matrixClient;
+                try {
+                    if (!(await cli.hasSecretStorageKey()) || forceReset) {
+                        // For password authentication users after 2020-09, this cross-signing
+                        // step will be a no-op since it is now setup during registration or login
+                        // when needed. We should keep this here to cover other cases such as:
+                        //   * Users with existing sessions prior to 2020-09 changes
+                        //   * SSO authentication users which require interactive auth to upload
+                        //     keys (and also happen to skip all post-authentication flows at the
+                        //     moment via token login)
+                        if(!await node.matrixClient.isCrossSigningReady()) {
+                            await node.matrixClient.bootstrapCrossSigning({
+                                // maybe we can skip this?
+                                authUploadDeviceSigningKeys: () => {
+                                    return true;
+                                }
+                            });
+                        }
+
+                        const backupInfo = await node.matrixClient.getKeyBackupVersion();
+                        await node.matrixClient.bootstrapSecretStorage({
+                            createSecretStorageKey: async () => recoveryKey,
+                            keyBackupInfo: backupInfo,
+                            setupNewKeyBackup: !backupInfo,
+                            getKeyBackupPassphrase: () => {
+                                return recoveryKey;
+                            },
+                        });
+                    } else {
+                        await node.matrixClient.bootstrapSecretStorage({
+                            getKeyBackupPassphrase: async () => recoveryKey,
+                        });
+                    }
+
+                    // `return await` needed here to ensure `finally` block runs after the
+                    // inner operation completes.
+                    return await func();
+                } catch (e) {
+                    node.error("Secret storage init failure: " + e);
+                }
+            };
+
             async function run() {
                 try {
-                    if(node.e2ee){
+                    if(node.e2ee && node.matrixClient.initCrypto){
                         node.log("Initializing crypto...");
-                        await node.matrixClient.initCrypto();
-                        node.matrixClient.setGlobalErrorOnUnknownDevices(false);
+                        try {
+                            await node.matrixClient.initCrypto();
+                            node.matrixClient.setGlobalErrorOnUnknownDevices(false);
+                            node.matrixClient.setCryptoTrustCrossSignedDevices(true); // false = manually verify sessions
+                            // await tryToUnlockSecretStorageWithDehydrationKey(this.matrixClient);
+                        } catch (e) {
+                            node.error("Failed to initialize crypto: " + e);
+                            console.log(e);
+                        }
                     }
+
                     node.log("Connecting to Matrix server...");
                     await node.matrixClient.startClient({
                         initialSyncLimit: 8
@@ -350,6 +490,7 @@ module.exports = function(RED) {
             userId: { type: "text", required: true },
             accessToken: { type: "text", required: true },
             deviceId: { type: "text", required: false },
+            secureStoragePassphrase: { type: "text", required: false },
             url: { type: "text", required: true }
         }
     });

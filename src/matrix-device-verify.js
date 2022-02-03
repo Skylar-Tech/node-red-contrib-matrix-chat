@@ -39,45 +39,23 @@ module.exports = function(RED) {
          *     rejected.
          */
         node.server.matrixClient.on("crypto.verification.request", async function(data){
-            console.log("[######### crypto.verification.request #########]", data.phase, data.methods);
-            if(data.isSelfVerification) {
-                if(data.requested || true) {
-                    let verifyRequestId = data.targetDevice.userId + ':' + data.targetDevice.deviceId;
-                    verificationRequests.set(verifyRequestId, data);
-                    node.send({
-                        verifyRequestId: verifyRequestId, // internally used to reference between nodes
-                        verifyMethods: data.methods,
-                        userId: data.targetDevice.userId,
-                        deviceId: data.targetDevice.deviceId,
-                        type: 'crypto.verification.request',
-                    });
-                    // data.on('change', async function() {
-                    //     console.log("VerificationRequest.change", this, this.phase);
-                    //
-                    //     if(this.phase === 4) {
-                    //         data._verifier.on('show_sas', function(e) {
-                    //             // e = {
-                    //             //     sas: {
-                    //             //         decimal: [ 8641, 3153, 2357 ],
-                    //             //         emoji: [
-                    //             //             [Array], [Array],
-                    //             //             [Array], [Array],
-                    //             //             [Array], [Array],
-                    //             //             [Array]
-                    //             //         ]
-                    //             //     },
-                    //             //     confirm: [AsyncFunction: confirm],
-                    //             //     cancel: [Function: cancel],
-                    //             //     mismatch: [Function: mismatch]
-                    //             // }
-                    //             console.log("show_sas event", e);
-                    //         })
-                    //         await data._verifier.verify();
-                    //     }
-                    // });
-                    //
-                    // await data.accept();
-                }
+            console.log("[######### crypto.verification.request #########]", data.phase, data);
+
+            if(data.phase === 5 || data.phase === 6) {
+                return;
+            }
+
+            if(data.requested || true) {
+                let verifyRequestId = data.targetDevice.userId + ':' + data.targetDevice.deviceId;
+                verificationRequests.set(verifyRequestId, data);
+                node.send({
+                    verifyRequestId: verifyRequestId, // internally used to reference between nodes
+                    verifyMethods: data.methods,
+                    userId: data.targetDevice.userId,
+                    deviceId: data.targetDevice.deviceId,
+                    type: 'crypto.verification.request',
+                    selfVerification: data.isSelfVerification
+                });
             }
         });
     }
@@ -132,7 +110,7 @@ module.exports = function(RED) {
                         var that = this;
                         console.log("[##### VERIFICATION PHASE CHANGE #######]", this.phase);
                         if(this.phase === 4) {
-                            var verifierCancel = function(){
+                            let verifierCancel = function(){
                                 let verifyRequestId = that.targetDevice.userId + ':' + that.targetDevice.deviceId;
                                 if(verificationRequests.has(verifyRequestId)) {
                                     verificationRequests.delete(verifyRequestId);
@@ -279,6 +257,9 @@ module.exports = function(RED) {
                 data._verifier.sasEvent.confirm()
                     .then(function(e){
                         console.log("!!!!!!!! CONFIRMED VERIFY", e);
+                    })
+                    .catch(function(e) {
+                        console.log("!!!!!!!! CONFIRMED VERIFY FAILED", e);
                     });
             } else {
                 console.log("Verification must be started", data);

@@ -59,11 +59,11 @@ module.exports = function(RED) {
                             // maybe we can skip this?
                             // authUploadDeviceSigningKeys: this._doBootstrapUIAuth,
                         });
-                        const backupState = await node.server.matrixClient.getKeyBackupVersion();
+                        const backupInfo = await node.server.matrixClient.getKeyBackupVersion();
                         await node.server.matrixClient.bootstrapSecretStorage({
                             createSecretStorageKey: async () => this._recoveryKey,
-                            keyBackupInfo: backupState.backupInfo,
-                            setupNewKeyBackup: !backupState.backupInfo,
+                            keyBackupInfo: backupInfo,
+                            setupNewKeyBackup: !backupInfo,
                             getKeyBackupPassphrase: () => {
                                 // We may already have the backup key if we earlier went
                                 // through the restore backup path, so pass it along
