@@ -38,6 +38,8 @@ module.exports = function(RED) {
             localStorage = new LocalStorage(localStorageDir),
             initialSetup = false;
 
+        let retryStartTimeout = null;
+
         if(!this.credentials.accessToken) {
             node.log("Matrix connection failed: missing access token.");
         } else if(!this.url) {
@@ -120,6 +122,10 @@ module.exports = function(RED) {
                 if(node.matrixClient && node.matrixClient.clientRunning) {
                     node.matrixClient.stopClient();
                     node.setConnected(false);
+                }
+
+                if(retryStartTimeout) {
+                    clearTimeout(retryStartTimeout);
                 }
             }
 
@@ -290,6 +296,7 @@ module.exports = function(RED) {
                 //     httpStatus: 401
                 // }
 
+                console.log("Authentication failure: ", errorObj);
                 node.error("Authentication failure: " + errorObj);
                 stopClient();
             });
@@ -312,13 +319,25 @@ module.exports = function(RED) {
 
             // do an authed request and only continue if we don't get an error
             // this prevent the matrix client from crashing Node-RED on invalid auth token
-            node.matrixClient.getAccountDataFromServer()
-                .then(
-                    function() {
-                        run().catch((error) => node.error(error));
-                    },
-                    function(err) {}
-                );
+            (function checkAuthTokenThenStart() {
+                if(node.matrixClient.clientRunning) {
+                    return;
+                }
+
+                node.matrixClient.getAccountDataFromServer()
+                    .then(
+                        function() {
+                            run().catch((error) => node.error(error));
+                        },
+                        function(err) {
+                            // if the error isn't authentication related retry in a little bit
+                            if(err.code !== "M_UNKNOWN_TOKEN") {
+                                retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
+                                node.error("Auth check failed: " + err);
+                            }
+                        }
+                    )
+            })();
         }
     }
 
@@ -344,7 +363,8 @@ module.exports = function(RED) {
 
             const matrixClient = sdk.createClient({
                 baseUrl: baseUrl,
-                deviceId: deviceId
+                deviceId: deviceId,
+                localTimeoutMs: '30000'
             });
 
             matrixClient.login(
