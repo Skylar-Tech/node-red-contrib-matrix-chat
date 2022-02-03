@@ -346,7 +346,7 @@ module.exports = function(RED) {
             deviceLabel: { type: "text", required: false },
             userId: { type: "text", required: true },
             accessToken: { type: "text", required: true },
-            deviceId: { type: "text", required: true },
+            deviceId: { type: "text", required: false },
             url: { type: "text", required: true }
         }
     });
