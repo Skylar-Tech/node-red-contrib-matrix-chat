@@ -210,3 +210,13 @@ Note: This requires the bot to be a server admin.
 WARNING: Accounts that are deleted cannot be restored. If you want to temp-disable edit the user instead.
 
 ![room-kick-ban.png](deactivate-user.png)
+
+### Force user to join room
+
+[View JSON](deactivate-user.json)
+
+If you say "force_join @test:example.com !320j90mf0394f:example.com" the bot will force the user `@test:example.com` into room `!320j90mf0394f:example.com`
+
+Note: This requires the bot to be a server admin. This also only works for rooms on the same server.
+
+![room-kick-ban.png](deactivate-user.png)

@@ -1,6 +1,6 @@
 [
   {
-    "id": "843c48978ab1b0a0",
+    "id": "897b8de477d7d0df",
     "type": "switch",
     "z": "f025a8b9fbd1b054",
     "name": "is from me",
@@ -16,16 +16,16 @@
     "checkall": "true",
     "repair": false,
     "outputs": 1,
-    "x": 590,
-    "y": 3260,
+    "x": 470,
+    "y": 3460,
     "wires": [
       [
-        "b77d071077487ddc"
+        "1f73f36092a9536b"
       ]
     ]
   },
   {
-    "id": "93ea76ce5e65a250",
+    "id": "973b2caeb68f3a60",
     "type": "matrix-receive",
     "z": "f025a8b9fbd1b054",
     "name": "",
@@ -37,26 +37,26 @@
     "acceptReactions": false,
     "acceptFiles": false,
     "acceptImages": false,
-    "x": 420,
-    "y": 3260,
+    "x": 300,
+    "y": 3460,
     "wires": [
       [
-        "843c48978ab1b0a0"
+        "897b8de477d7d0df"
       ]
     ]
   },
   {
-    "id": "d6795b522954bccd",
+    "id": "be5c7290e6223b7b",
     "type": "comment",
     "z": "f025a8b9fbd1b054",
-    "name": "Respond to \"deactivate_user <user_id>\" by deactivating the user on the server",
+    "name": "Say \"force_join <user_id> <room_id_or_alias>\" to force a user into a room",
     "info": "",
-    "x": 590,
-    "y": 3220,
+    "x": 460,
+    "y": 3420,
     "wires": []
   },
   {
-    "id": "b77d071077487ddc",
+    "id": "1f73f36092a9536b",
     "type": "switch",
     "z": "f025a8b9fbd1b054",
     "name": "msg.payload filter",
@@ -73,41 +73,42 @@
     "checkall": "true",
     "repair": false,
     "outputs": 1,
-    "x": 770,
-    "y": 3260,
+    "x": 650,
+    "y": 3460,
     "wires": [
       [
-        "3c0e1e130e91206e"
+        "6a2a73bc9dfdaece"
       ]
     ]
   },
   {
-    "id": "3c0e1e130e91206e",
+    "id": "6a2a73bc9dfdaece",
     "type": "function",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "func": "let matches = msg.payload.match(/^deactivate_user ?(\\@.*)?/);\nmsg.userId = matches[1].trim() ? matches[1].trim() : null;\nif(!msg.userId) {\n    return null;\n}\nreturn msg;",
+    "func": "let matches = msg.payload.match(/^force_join (\\@.*) (.*)/);\nmsg.userId = matches[1].trim() ? matches[1].trim() : null;\nif(!msg.userId) {\n    return null;\n}\nmsg.topic = matches[2].trim() ? matches[2].trim() : null;\nif(!msg.topic) {\n    return null;\n}\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 420,
-    "y": 3320,
+    "x": 300,
+    "y": 3520,
     "wires": [
       [
-        "1f4870b7171cc70f"
+        "212e060e320918d3"
       ]
     ]
   },
   {
-    "id": "1f4870b7171cc70f",
-    "type": "matrix-synapse-deactivate-user",
+    "id": "212e060e320918d3",
+    "type": "matrix-synapse-join-room",
     "z": "f025a8b9fbd1b054",
     "name": "",
     "server": null,
-    "x": 610,
-    "y": 3320,
+    "roomId": "",
+    "x": 490,
+    "y": 3520,
     "wires": [
       [],
       []
