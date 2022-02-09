@@ -1,6 +1,7 @@
 global.Olm = require('olm');
 const fs = require("fs-extra");
 const sdk = require("matrix-js-sdk");
+const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 
@@ -10,18 +11,16 @@ module.exports = function(RED) {
     }
 
     function MatrixServerNode(n) {
-        let storageDir = './matrix-client-storage';
-
+        let node = this,
+            storageDir = RED.settings.userDir + '/matrix-client-storage';
         RED.nodes.createNode(this, n);
+        node.setMaxListeners(1000);
 
-        let node = this;
         node.log("Initializing Matrix Server Config node");
 
         if(!this.credentials) {
             this.credentials = {};
         }
-
-        node.setMaxListeners(1000);
 
         this.connected = null;
         this.name = n.name;
@@ -34,6 +33,12 @@ module.exports = function(RED) {
         this.e2ee = (this.enableE2ee && this.deviceId);
         this.globalAccess = n.global;
         this.initializedAt = new Date();
+        
+        if(!this.userId) {
+            node.log("Matrix connection failed: missing user ID in configuration.");
+            return;
+        }
+
         let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId),
             localStorage = new LocalStorage(localStorageDir),
             initialSetup = false;
@@ -41,11 +46,9 @@ module.exports = function(RED) {
         let retryStartTimeout = null;
 
         if(!this.credentials.accessToken) {
-            node.log("Matrix connection failed: missing access token.");
+            node.error("Matrix connection failed: missing access token in configuration.");
         } else if(!this.url) {
-            node.log("Matrix connection failed: missing server URL.");
-        } else if(!this.userId) {
-            node.log("Matrix connection failed: missing user ID.");
+            node.error("Matrix connection failed: missing server URL in configuration.");
         } else {
             node.setConnected = function(connected, cb) {
                 if (node.connected !== connected) {
@@ -296,7 +299,6 @@ module.exports = function(RED) {
                 //     httpStatus: 401
                 // }
 
-                console.log("Authentication failure: ", errorObj);
                 node.error("Authentication failure: " + errorObj);
                 stopClient();
             });
@@ -392,7 +394,8 @@ module.exports = function(RED) {
         });
 
     function upgradeDirectoryIfNecessary(node, storageDir) {
-        let oldStorageDir = './matrix-local-storage';
+        let oldStorageDir = './matrix-local-storage',
+            oldStorageDir2 = './matrix-client-storage';
 
         // if the old storage location exists lets move it to it's new location
         if(fs.pathExistsSync(oldStorageDir)){
@@ -414,6 +417,18 @@ module.exports = function(RED) {
             // rename folder to keep as a backup (and so we don't run again)
             node.log("archiving old config folder '" + oldStorageDir + "' to '" + oldStorageDir + "-backup");
             fs.renameSync(oldStorageDir, oldStorageDir + "-backup");
+        }
+
+        if(RED.settings.userDir !== resolve('./')) {
+            // user directory does not match running directory
+            // check if we stored stuff in wrong directory and move it
+            if(fs.pathExistsSync(oldStorageDir2)){
+                fs.ensureDirSync(storageDir);
+                node.log("found old '" + oldStorageDir2 + "' path, copying to new location '" + storageDir);
+                fs.copySync(oldStorageDir2, storageDir);
+                // rename folder to keep as a backup (and so we don't run again)
+                fs.renameSync(oldStorageDir2, oldStorageDir2 + "-backup");
+            }
         }
     }
 

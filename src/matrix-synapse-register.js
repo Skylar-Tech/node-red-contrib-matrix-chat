@@ -1,5 +1,4 @@
 module.exports = function(RED) {
-    const got = require("got");
     const utf8 = require('utf8');
     const crypto = require('crypto');
 
@@ -22,7 +21,8 @@ module.exports = function(RED) {
             return;
         }
 
-        node.on("input", function (msg) {
+        node.on("input", async function (msg) {
+            const { got } = await import('got');
 
             if(!msg.payload.username) {
                 node.error("msg.payload.username is required");
@@ -34,7 +34,7 @@ module.exports = function(RED) {
                 return;
             }
 
-            (async () => {
+            await (async () => {
                 try {
                     var response = await got.get(this.server + '/_synapse/admin/v1/register', {
                         responseType: 'json'

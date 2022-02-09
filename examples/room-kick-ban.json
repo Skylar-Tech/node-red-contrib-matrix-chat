@@ -1,0 +1,211 @@
+[
+  {
+    "id": "d78dd157085ed843",
+    "type": "matrix-room-kick",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "x": 570,
+    "y": 2980,
+    "wires": [
+      [
+        "44d49fcaad67790c"
+      ],
+      [
+        "44d49fcaad67790c"
+      ]
+    ]
+  },
+  {
+    "id": "32a99c44b50fe3f3",
+    "type": "matrix-room-ban",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "x": 570,
+    "y": 3080,
+    "wires": [
+      [
+        "04628a976e7acf1b"
+      ],
+      [
+        "04628a976e7acf1b"
+      ]
+    ]
+  },
+  {
+    "id": "5e786bbae3b1a368",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 230,
+    "y": 3020,
+    "wires": [
+      [
+        "5b3ddae8335383e7"
+      ]
+    ]
+  },
+  {
+    "id": "ca278a6ffc3b9d6b",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": false,
+    "acceptStickers": false,
+    "acceptReactions": false,
+    "acceptFiles": false,
+    "acceptImages": false,
+    "x": 220,
+    "y": 2960,
+    "wires": [
+      [
+        "5e786bbae3b1a368"
+      ]
+    ]
+  },
+  {
+    "id": "b6830f430157be4e",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"room_ban <user_id>\" by banning user from room",
+    "info": "",
+    "x": 580,
+    "y": 3040,
+    "wires": []
+  },
+  {
+    "id": "8bffe425d3c1bf24",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"room_kick <user_id>\" by kicking user from room",
+    "info": "",
+    "x": 580,
+    "y": 2940,
+    "wires": []
+  },
+  {
+    "id": "5b3ddae8335383e7",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "Kick or Ban",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "regex",
+        "v": "^room_kick",
+        "vt": "str",
+        "case": false
+      },
+      {
+        "t": "regex",
+        "v": "^room_ban",
+        "vt": "str",
+        "case": false
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 230,
+    "y": 3060,
+    "wires": [
+      [
+        "a19b38afd7b52834"
+      ],
+      [
+        "925c59f485bf7247"
+      ]
+    ]
+  },
+  {
+    "id": "925c59f485bf7247",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "func": "let matches = msg.payload.match(/^room_ban ?(\\@.*)?/);\nmsg.userId = matches[1].trim() ? matches[1].trim() : null;\nif(!msg.userId) {\n    return null;\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 3080,
+    "wires": [
+      [
+        "32a99c44b50fe3f3"
+      ]
+    ]
+  },
+  {
+    "id": "a19b38afd7b52834",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "func": "let matches = msg.payload.match(/^room_kick ?(\\@.*)?/);\nmsg.userId = matches[1].trim() ? matches[1].trim() : null;\nif(!msg.userId) {\n    return null;\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 2980,
+    "wires": [
+      [
+        "d78dd157085ed843"
+      ]
+    ]
+  },
+  {
+    "id": "04628a976e7acf1b",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 3080,
+    "wires": []
+  },
+  {
+    "id": "44d49fcaad67790c",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 2980,
+    "wires": []
+  }
+]

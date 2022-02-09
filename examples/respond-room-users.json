@@ -1,0 +1,134 @@
+[
+  {
+    "id": "a7581a6224cbd24d",
+    "type": "matrix-room-users",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "x": 440,
+    "y": 2800,
+    "wires": [
+      [
+        "3e37b5fded58782d"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "2764620d2d514996",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 610,
+    "y": 2740,
+    "wires": [
+      [
+        "f487951ea1b22a95"
+      ]
+    ]
+  },
+  {
+    "id": "7ed8fc36ba75298a",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 440,
+    "y": 2740,
+    "wires": [
+      [
+        "2764620d2d514996"
+      ]
+    ]
+  },
+  {
+    "id": "f487951ea1b22a95",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload filter",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "room_users",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 790,
+    "y": 2740,
+    "wires": [
+      [
+        "a7581a6224cbd24d"
+      ]
+    ]
+  },
+  {
+    "id": "3e37b5fded58782d",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "Room List (for user or all)",
+    "func": "let payload = null;\nif(!msg.payload || !msg.payload.joined) {\n    payload = 'No users in room.';\n} else {\n    payload = `Room ${msg.topic} users:`;\n    payload += '<ul>';\n    for(let user_id in msg.payload.joined) {\n        payload += `<li>${msg.payload.joined[user_id].display_name} - ${user_id}</li>`;\n    }\n    payload += '</ul>'\n}\n\nif(payload){\n    msg.payload = payload;\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 2800,
+    "wires": [
+      [
+        "86a4895c4fe46657"
+      ]
+    ]
+  },
+  {
+    "id": "86a4895c4fe46657",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send HTML Message",
+    "server": null,
+    "roomId": "",
+    "messageType": "m.text",
+    "messageFormat": "html",
+    "x": 880,
+    "y": 2800,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "cae1a37fe034b8f8",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"room_users\" with that room's users",
+    "info": "",
+    "x": 600,
+    "y": 2700,
+    "wires": []
+  }
+]

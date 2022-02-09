@@ -1,0 +1,151 @@
+[
+  {
+    "id": "2eb2dd1b5dbdd03b",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Response to \"rooms\" with all rooms",
+    "info": "",
+    "x": 580,
+    "y": 2500,
+    "wires": []
+  },
+  {
+    "id": "f3415a10f124d586",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "func": "let matches = msg.payload.match(/^rooms ?(\\@.*)?/);\nmsg.userId = matches[1] ? matches[1] : null;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 2620,
+    "wires": [
+      [
+        "2cae98732747989d"
+      ]
+    ]
+  },
+  {
+    "id": "2cae98732747989d",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "Room List (for user or all)",
+    "func": "let matrixClient = global.get(\"matrixClient['@bot:example.com']\"),\n    matrixOnline = global.get(\"matrixClientOnline['@bot:example.com']\");\n\nif(!matrixOnline) {\n    msg.payload = 'Matrix client not connected.';\n    return [null, msg];\n}\n\nif(msg.userId) {\n    matrixClient.http\n        .authedRequest(\n            undefined,\n            'GET',\n            `/_synapse/admin/v1/users/${msg.userId}/joined_rooms`,\n            {}, // query params\n            undefined,\n            { prefix: '' }\n        ).then(function(e){\n            msg.payload = e;\n            if(!e.joined_rooms) {\n                msg.payload = 'User is not part of any rooms.';\n            } else {\n                msg.payload = `${msg.userId}'s rooms:`;\n                msg.payload += '<ul>';\n                e.joined_rooms.forEach(function(room_id){\n                    msg.payload += `<li>${room_id}</li>`;\n                });\n                msg.payload += '</ul>'\n            }\n            node.send([msg, null]);\n        }).catch(function(e){\n            node.warn(\"Error fetching server user list \" + e);\n            msg.payload = e;\n            node.send([null, msg]);\n        });\n} else {\n    matrixClient.http\n        .authedRequest(\n            undefined,\n            'GET',\n            `/_synapse/admin/v1/rooms`,\n            {}, // query params\n            undefined,\n            { prefix: '' }\n        ).then(function(e){\n            msg.payload = e;\n            if(!e.rooms) {\n                msg.payload = 'Server has no rooms.';\n            } else {\n                msg.payload = `Server rooms:`;\n                msg.payload += '<ul>';\n                e.rooms.forEach(function(room){\n                    msg.payload += `<li>${room.name} - ${room.room_id} (members: ${room.joined_members} | creator: ${room.creator})</li>`;\n                });\n                msg.payload += '</ul>'\n            }\n            node.send([msg, null]);\n        }).catch(function(e){\n            node.warn(\"Error fetching server user list \" + e);\n            msg.payload = e;\n            node.send([null, msg]);\n        });\n}",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 610,
+    "y": 2620,
+    "wires": [
+      [
+        "d7508993ec1ce895"
+      ],
+      [
+        "d7508993ec1ce895"
+      ]
+    ]
+  },
+  {
+    "id": "2f8c696ec0dc8f6d",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"rooms <user_id>\" with that user's rooms",
+    "info": "",
+    "x": 590,
+    "y": 2540,
+    "wires": []
+  },
+  {
+    "id": "d7508993ec1ce895",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send HTML Message",
+    "server": null,
+    "roomId": "",
+    "messageType": "m.text",
+    "messageFormat": "html",
+    "x": 840,
+    "y": 2620,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "13a9a0331352338a",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 590,
+    "y": 2580,
+    "wires": [
+      [
+        "afe88b8e115f661f"
+      ]
+    ]
+  },
+  {
+    "id": "e261cc12da739901",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 420,
+    "y": 2580,
+    "wires": [
+      [
+        "13a9a0331352338a"
+      ]
+    ]
+  },
+  {
+    "id": "afe88b8e115f661f",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload filter",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "regex",
+        "v": "^rooms",
+        "vt": "str",
+        "case": false
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 770,
+    "y": 2580,
+    "wires": [
+      [
+        "f3415a10f124d586"
+      ]
+    ]
+  }
+]

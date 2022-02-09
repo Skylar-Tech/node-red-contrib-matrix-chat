@@ -1,0 +1,157 @@
+[
+  {
+    "id": "ea0921f33b58e337",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload is \"newroom\"",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "newroom",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 640,
+    "y": 1820,
+    "wires": [
+      [
+        "d7ce5027bc1e2eee"
+      ]
+    ]
+  },
+  {
+    "id": "9f9a24376b94c977",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 430,
+    "y": 1820,
+    "wires": [
+      [
+        "ea0921f33b58e337"
+      ]
+    ]
+  },
+  {
+    "id": "3bce23488138c013",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 260,
+    "y": 1820,
+    "wires": [
+      [
+        "9f9a24376b94c977"
+      ]
+    ]
+  },
+  {
+    "id": "d7ce5027bc1e2eee",
+    "type": "matrix-create-room",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "x": 250,
+    "y": 1880,
+    "wires": [
+      [
+        "735b9d9fd1401e96"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "735b9d9fd1401e96",
+    "type": "matrix-invite-room",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "x": 410,
+    "y": 1880,
+    "wires": [
+      [
+        "089f2a7f0c079b6b"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "222ee3c08028c1df",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "messageType": "m.text",
+    "messageFormat": "",
+    "x": 760,
+    "y": 1880,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "089f2a7f0c079b6b",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "Welcome to my new room!",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 580,
+    "y": 1880,
+    "wires": [
+      [
+        "222ee3c08028c1df"
+      ]
+    ]
+  },
+  {
+    "id": "48a1fd26227f277e",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"newroom\" by creating new room and inviting person that said it then send welcome message",
+    "info": "",
+    "x": 520,
+    "y": 1780,
+    "wires": []
+  }
+]

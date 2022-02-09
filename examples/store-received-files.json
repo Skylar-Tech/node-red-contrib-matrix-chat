@@ -1,0 +1,166 @@
+[
+  {
+    "id": "d7573ed76980dc64",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": false,
+    "acceptEmotes": false,
+    "acceptStickers": false,
+    "acceptReactions": false,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 1740,
+    "y": 600,
+    "wires": [
+      [
+        "4d4e992ed895413f"
+      ]
+    ]
+  },
+  {
+    "id": "addcccdfea9935b1",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Download & store received files/images and decrypt if necessary",
+    "info": "",
+    "x": 1970,
+    "y": 560,
+    "wires": []
+  },
+  {
+    "id": "4d4e992ed895413f",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "property": "encrypted",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "true"
+      },
+      {
+        "t": "else"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 1890,
+    "y": 600,
+    "wires": [
+      [
+        "660782188696fc62"
+      ],
+      [
+        "857bce169036e3cb"
+      ]
+    ]
+  },
+  {
+    "id": "660782188696fc62",
+    "type": "matrix-decrypt-file",
+    "z": "f025a8b9fbd1b054",
+    "name": null,
+    "x": 2050,
+    "y": 600,
+    "wires": [
+      [
+        "cdbaf88f6631322e"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "b62db6caf4697242",
+    "type": "file",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "filename": "",
+    "appendNewline": true,
+    "createDir": false,
+    "overwriteFile": "true",
+    "encoding": "none",
+    "x": 2240,
+    "y": 660,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "857bce169036e3cb",
+    "type": "http request",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "method": "GET",
+    "ret": "bin",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": false,
+    "x": 1910,
+    "y": 660,
+    "wires": [
+      [
+        "7d0be52f8c3f1b54"
+      ]
+    ]
+  },
+  {
+    "id": "7d0be52f8c3f1b54",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "property": "statusCode",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "200",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 2050,
+    "y": 660,
+    "wires": [
+      [
+        "cdbaf88f6631322e"
+      ]
+    ]
+  },
+  {
+    "id": "cdbaf88f6631322e",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "set directory",
+    "rules": [
+      {
+        "t": "set",
+        "p": "filename",
+        "pt": "msg",
+        "to": "\"downloads/\" & msg.filename",
+        "tot": "jsonata"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 2230,
+    "y": 600,
+    "wires": [
+      [
+        "b62db6caf4697242"
+      ]
+    ]
+  }
+]

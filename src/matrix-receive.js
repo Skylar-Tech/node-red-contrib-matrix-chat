@@ -62,6 +62,7 @@ module.exports = function(RED) {
 
                 case 'm.file':
                     if(!node.acceptFiles) return;
+                    msg.filename = msg.content.filename || msg.content.body;
                     if(msg.encrypted) {
                         msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.file.url);
                         msg.mxc_url = msg.content.file.url;
@@ -73,7 +74,7 @@ module.exports = function(RED) {
 
                 case 'm.image':
                     if(!node.acceptImages) return;
-
+                    msg.filename = msg.content.filename || msg.content.body;
                     if(msg.encrypted) {
                         msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.file.url);
                         msg.mxc_url = msg.content.file.url;

@@ -1,27 +1,257 @@
 [
   {
-    "id": "a9b412957063b06c",
-    "type": "matrix-receive",
+    "id": "49e4b3a1ee3e9e1e",
+    "type": "matrix-synapse-users",
     "z": "f025a8b9fbd1b054",
     "name": "",
-    "roomId": "",
-    "ignoreText": false,
-    "ignoreReactions": false,
-    "ignoreFiles": false,
-    "ignoreImages": false,
-    "x": 460,
-    "y": 120,
+    "server": null,
+    "x": 610,
+    "y": 2240,
     "wires": [
       [
-        "4aa45cd8653ba898"
+        "d4978f7c2dad7ecf"
+      ],
+      [
+        "da9d25c324cb727e"
       ]
     ]
   },
   {
-    "id": "4aa45cd8653ba898",
+    "id": "e199d3db1ea6757c",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send HTML Notice",
+    "server": null,
+    "roomId": "",
+    "messageType": "m.notice",
+    "messageFormat": "html",
+    "x": 970,
+    "y": 2240,
+    "wires": [
+      [
+        "e248881d6749ba70"
+      ],
+      [
+        "da9d25c324cb727e"
+      ]
+    ]
+  },
+  {
+    "id": "d4978f7c2dad7ecf",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "func": "msg.next_token = msg.payload.next_token || false;\nlet new_payload = '<ul>';\nmsg.payload.users.forEach(function(user, index){\n    if(msg.guests == 'false' && user.is_guest) {\n        return;\n    }\n    new_payload += '<li>'+ JSON.stringify(user, null, 2).replace(/(?:\\r\\n|\\r|\\n)/g, \"\\n<br>\"); + '</li>'\n});\nmsg.payload = new_payload + '</ul>';\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 800,
+    "y": 2240,
+    "wires": [
+      [
+        "e199d3db1ea6757c"
+      ]
+    ]
+  },
+  {
+    "id": "880cac7307d9a786",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Response to \"users\" with full server user list (excluding guests)",
+    "info": "",
+    "x": 620,
+    "y": 2160,
+    "wires": []
+  },
+  {
+    "id": "469d2ebd9995747a",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "messageType": "m.notice",
+    "messageFormat": "",
+    "x": 600,
+    "y": 2300,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "da9d25c324cb727e",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "error",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 420,
+    "y": 2300,
+    "wires": [
+      [
+        "469d2ebd9995747a"
+      ]
+    ]
+  },
+  {
+    "id": "86577e484ca26aca",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "guests",
+        "pt": "msg",
+        "to": "false",
+        "tot": "str"
+      },
+      {
+        "t": "set",
+        "p": "limit",
+        "pt": "msg",
+        "to": "25",
+        "tot": "num"
+      },
+      {
+        "t": "set",
+        "p": "order_by",
+        "pt": "msg",
+        "to": "creation_ts",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 420,
+    "y": 2240,
+    "wires": [
+      [
+        "49e4b3a1ee3e9e1e"
+      ]
+    ]
+  },
+  {
+    "id": "e248881d6749ba70",
     "type": "switch",
     "z": "f025a8b9fbd1b054",
-    "name": "msg.payload == \"users\"",
+    "name": "More to paginate?",
+    "property": "next_token",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "istype",
+        "v": "string",
+        "vt": "string"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 1190,
+    "y": 2240,
+    "wires": [
+      [
+        "11d7fcf6335bc75b"
+      ]
+    ]
+  },
+  {
+    "id": "11d7fcf6335bc75b",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "rules": [
+      {
+        "t": "set",
+        "p": "from",
+        "pt": "msg",
+        "to": "next_token",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 1370,
+    "y": 2240,
+    "wires": [
+      [
+        "49e4b3a1ee3e9e1e"
+      ]
+    ]
+  },
+  {
+    "id": "8b48e27a118999ec",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 590,
+    "y": 2200,
+    "wires": [
+      [
+        "7a64319e26e8b689"
+      ]
+    ]
+  },
+  {
+    "id": "553da6dd77e5e03b",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 420,
+    "y": 2200,
+    "wires": [
+      [
+        "8b48e27a118999ec"
+      ]
+    ]
+  },
+  {
+    "id": "7a64319e26e8b689",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload filter",
     "property": "payload",
     "propertyType": "msg",
     "rules": [
@@ -34,70 +264,12 @@
     "checkall": "true",
     "repair": false,
     "outputs": 1,
-    "x": 670,
-    "y": 120,
+    "x": 770,
+    "y": 2200,
     "wires": [
       [
-        "b95a674179d93416"
+        "86577e484ca26aca"
       ]
     ]
-  },
-  {
-    "id": "b95a674179d93416",
-    "type": "matrix-synapse-users",
-    "z": "f025a8b9fbd1b054",
-    "name": "",
-    "x": 890,
-    "y": 120,
-    "wires": [
-      [
-        "19b654e5f28d93c4"
-      ],
-      []
-    ]
-  },
-  {
-    "id": "8720c66e867f89f6",
-    "type": "matrix-send-message",
-    "z": "f025a8b9fbd1b054",
-    "name": "Send HTML Notice",
-    "roomId": "",
-    "messageType": "m.notice",
-    "messageFormat": "html",
-    "x": 1230,
-    "y": 120,
-    "wires": [
-      [],
-      []
-    ]
-  },
-  {
-    "id": "19b654e5f28d93c4",
-    "type": "function",
-    "z": "f025a8b9fbd1b054",
-    "name": "",
-    "func": "let new_payload = '<ul>';\nmsg.payload.users.forEach(function(user, index){\n    new_payload += '<li>'+ JSON.stringify(user, null, 2).replace(/(?:\\r\\n|\\r|\\n)/g, \"\\n<br>\"); + '</li>'\n});\nmsg.payload = new_payload + '</ul>';\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1060,
-    "y": 120,
-    "wires": [
-      [
-        "8720c66e867f89f6"
-      ]
-    ]
-  },
-  {
-    "id": "563da45ab1747c2b",
-    "type": "comment",
-    "z": "f025a8b9fbd1b054",
-    "name": "Response to \"users\" with full server user list",
-    "info": "",
-    "x": 550,
-    "y": 80,
-    "wires": []
   }
 ]

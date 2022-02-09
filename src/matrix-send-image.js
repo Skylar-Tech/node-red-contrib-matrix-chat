@@ -72,20 +72,28 @@ module.exports = function(RED) {
                 })
                 .then(function(file){
                     node.server.matrixClient
-                        .sendImageMessage(msg.topic, file.content_uri, {}, (msg.body || msg.filename) || "")
+                        .sendImageMessage(
+                            msg.topic,
+                            file.content_uri,
+                            {},
+                            (msg.body || msg.filename) || null,
+                            null
+                        )
                         .then(function(e) {
                             node.log("Image message sent: " + e);
                             msg.eventId = e.event_id;
+                            msg.content_uri_mxc = file.content_uri;
+                            msg.content_uri = node.server.matrixClient.mxcUrlToHttp(file.content_uri);
                             node.send([msg, null]);
                         })
                         .catch(function(e){
-                            node.warn("Error sending image message " + e);
+                            node.warn("Error sending image message: " + e);
                             msg.error = e;
                             node.send([null, msg]);
                         });
                 })
                 .catch(function(e){
-                    node.warn("Error uploading image message " + e);
+                    node.warn("Error uploading image message: " + e);
                     msg.error = e;
                     node.send([null, msg]);
                 });

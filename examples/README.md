@@ -16,6 +16,14 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 - [Respond to "file" with an uploaded file](#respond-to-file-with-an-uploaded-file)
 - [Respond to "react" with a reaction](#respond-to-react-with-a-reaction)
 - [Respond to "users" with full list of server users](#respond-to-users-with-full-list-of-server-users)
+- [Respond to "newroom" by creating new room and inviting user](#respond-to-newroom-by-creating-new-room-and-inviting-user)
+- [Respond to "joinroom <room_id_or_alias>" by joining mentioned room](#respond-to-joinroom-room_id_or_alias-by-joining-mentioned-room)
+- [Respond to "rooms <user_id>" with user's rooms (list server's rooms if <user_id> is left blank)](#respond-to-rooms-user_id-with-users-rooms-list-servers-rooms-if-user_id-is-left-blank)
+- [Respond to "whois <user_id>" with information about the user's session](#respond-to-whois-user_id-with-information-about-the-users-session)
+- [Respond to "room_users" with current room's users](#respond-to-room_users-with-current-rooms-users)
+- [Download & store all received files/images](#download--store-all-received-filesimages)
+- [Kick/Ban user from room](#kickban-user-from-room)
+- [Deactivate user](#deactivate-user)
 
 
 ### Create user with Shared Secret Registration
@@ -28,7 +36,7 @@ Edit the object on the inject node to the user/pass combo you want to create and
 
 **Note:** This only works on Synapse servers.
 
-![img.png](shared-secret-registration.png)
+![shared-secret-registration.png](shared-secret-registration.png)
 
 
 ### Create/Edit Synapse User
@@ -37,7 +45,7 @@ Edit the object on the inject node to the user/pass combo you want to create and
 
 Allows an administrator to create or modify a user account with a specified `msg.userId`.
 
-![img.png](add-user-with-admin-user.png)
+![add-user-with-admin-user.png](add-user-with-admin-user.png)
 
 
 ### Use function node to run any command
@@ -50,7 +58,7 @@ If we do not have a node for something you want to do (such as redacting events/
 
 To view what sort of functions you have access to check out the `client.ts` file from `matrix-js-sdk` [here](https://github.com/matrix-org/matrix-js-sdk/blob/master/src/client.ts).
 
-![img.png](custom-redact-function-node.png)
+![custom-redact-function-node.png](custom-redact-function-node.png)
 
 ### Respond to "ping" with "pong"
 
@@ -58,7 +66,7 @@ To view what sort of functions you have access to check out the `client.ts` file
 
 Use this flow to respond to anyone that says "ping" with "pong" into the same room.
 
-![img.png](respond-ping-pong.png)
+![respond-ping-pong.png](respond-ping-pong.png)
 
 
 
@@ -68,7 +76,7 @@ Use this flow to respond to anyone that says "ping" with "pong" into the same ro
 
 Use this flow to respond to anyone that says "html" with an example HTML message. This shows how easy it is to send HTML.
 
-![img.png](respond-to-html-with-html.png)
+![respond-to-html-with-html.png](respond-to-html-with-html.png)
 
 
 
@@ -78,7 +86,7 @@ Use this flow to respond to anyone that says "html" with an example HTML message
 
 You will need an image on the machine running Node-RED. In this case example.png exists inside the Node-RED directory.
 
-![img_1.png](respond-image-with-image.png)
+![respond-image-with-image.png](respond-image-with-image.png)
 
 
 
@@ -88,7 +96,7 @@ You will need an image on the machine running Node-RED. In this case example.png
 
 You will need a file on the machine running Node-RED. In this case sample.pdf exists inside the Node-RED directory.
 
-![img.png](respond-file-with-file.png)
+![respond-file-with-file.png](respond-file-with-file.png)
 
 
 
@@ -98,7 +106,7 @@ You will need a file on the machine running Node-RED. In this case sample.pdf ex
 
 Give a 👍 reaction when someone says "react"
 
-![img.png](respond-react-with-reaction.png)
+![respond-react-with-reaction.png](respond-react-with-reaction.png)
 
 
 
@@ -106,8 +114,99 @@ Give a 👍 reaction when someone says "react"
 
 [View JSON](respond-users-list.json)
 
-When someone sends the text "users" they get a HTML message back containing all the current users on the server.
+When someone sends the text "users" they get a HTML message back containing all the current users on the server. If your server has a lot of users this paginates and sends a message with 25 users per message.
 
 This requires admin privileges.
 
-![img.png](respond-users-list.png)
+![respond-users-list.png](respond-users-list.png)
+
+
+### Respond to "newroom" by creating new room and inviting user
+
+[View JSON](respond-users-list.json)
+
+When someone sends "newroom" a new room will be created and the user that said the message will be invited. The client will also send a welcome message into the new room.
+
+![respond-newroom-invite.png](respond-newroom-invite.png)
+
+
+### Respond to "joinroom <room_id_or_alias>" by joining mentioned room
+
+[View JSON](respond-joinroom.json)
+
+When someone sends "newroom" a new room will be created and the user that said the message will be invited. The client will also send a welcome message into the new room.
+
+![respond-joinroom.png](respond-joinroom.png)
+
+### Respond to "rooms <user_id>" with user's rooms (list server's rooms if <user_id> is left blank)
+
+[View JSON](respond-rooms.json)
+
+Responds to "rooms <user_id>" with that user's rooms. If the message is just "rooms" it responds with a list of all rooms the server is participating in.
+
+Note: If there are a lot of rooms this may fail to send the message as it is too large. This also only works for user's that are on the current server.
+
+This requires admin privileges.
+
+![respond-rooms.png](respond-rooms.png)
+
+
+### Respond to "whois <user_id>" with information about the user's session
+
+[View JSON](respond-whois.json)
+
+This lists out the user's session info. Each session contains the IP address, when it was last seen, and the user agent. Useful to find out more about a specific user on your server.
+
+Note: If there are a lot of sessions this may fail to send the message as it is too large. This also only works for user's that are on the current server.
+
+This requires admin privileges.
+
+![respond-whois.png](respond-whois.png)
+
+
+### Respond to "room_users" with current room's users
+
+[View JSON](respond-room-users.json)
+
+List out the users participating in a room.
+
+Note: If there are a lot of users in the room this will fail to send due to a large message error.
+
+![respond-room-users.png](respond-room-users.png)
+
+
+### Download & store all received files/images
+
+[View JSON](store-received-files.json)
+
+Download received files/images. If the file is encrypted it will decrypt it for you. The decrypt node downloads the file for you otherwise you need to use a HTTP Request node to download the file.
+
+Note: You may need to edit the storage directory for this to work. Default action is to create a `downloads` folder in the Node-RED directory and places files in that but there is a good chance your Node-RED instance doesn't have access to write to this directory.
+
+![store-received-files.png](store-received-files.png)
+
+
+### Kick/Ban user from room
+
+[View JSON](room-kick-ban.json)
+
+If you say "kick @test:example.com" the bot will kick @test:example.com from the current room.
+
+If you say "ban @test:example.com" the bot will ban @test:example.com from the current room.
+
+Note: This requires the bot to have permissions to kick/ban in the current room.
+
+![room-kick-ban.png](room-kick-ban.png)
+
+
+### Deactivate user
+
+[View JSON](deactivate-user.json)
+
+If you say "deactivate_user @test:example.com" the bot will deactivate the @test:example.com account on the server.
+
+Note: This requires the bot to be a server admin. 
+
+WARNING: Accounts that are deleted cannot be restored. If you want to temp-disable edit the user instead.
+
+![room-kick-ban.png](deactivate-user.png)

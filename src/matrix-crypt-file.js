@@ -1,5 +1,4 @@
 module.exports = function(RED) {
-    const got = require('got');
     const crypto = require('isomorphic-webcrypto');
 
     function MatrixDecryptFile(n) {
@@ -10,6 +9,8 @@ module.exports = function(RED) {
         this.name = n.name;
 
         node.on("input", async function (msg) {
+            const { got } = await import('got');
+
             if(!msg.type) {
                 node.error('msg.type is required.');
                 return;

@@ -1,0 +1,90 @@
+[
+  {
+    "id": "9a737b0c57b35063",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 430,
+    "y": 2020,
+    "wires": [
+      [
+        "2a44927d9317a4b4"
+      ]
+    ]
+  },
+  {
+    "id": "f377ad37af7dc49e",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 260,
+    "y": 2020,
+    "wires": [
+      [
+        "9a737b0c57b35063"
+      ]
+    ]
+  },
+  {
+    "id": "f7112a1d2808cfbb",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Respond to \"joinroom <room_id_or_alias>\" by joining the mentioned room",
+    "info": "",
+    "x": 440,
+    "y": 1980,
+    "wires": []
+  },
+  {
+    "id": "2a44927d9317a4b4",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload == \"joinroom\"",
+    "func": "if(!msg.payload.startsWith(\"joinroom\")) {\n    return null;\n}\n\nlet split = msg.payload.split(\" \");\nif(split.length < 2) {\n    return; // no room provided\n}\n\nmsg.topic = split[1];\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 2020,
+    "wires": [
+      [
+        "a34d05c3b6f6bd27"
+      ]
+    ]
+  },
+  {
+    "id": "a34d05c3b6f6bd27",
+    "type": "matrix-join-room",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "x": 850,
+    "y": 2020,
+    "wires": [
+      [],
+      []
+    ]
+  }
+]

@@ -1,0 +1,153 @@
+[
+  {
+    "id": "93df869346a728d3",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Response to \"whois <user_id>\" with user information",
+    "info": "",
+    "x": 610,
+    "y": 2360,
+    "wires": []
+  },
+  {
+    "id": "656ed1e444fd2e0a",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "func": "let matches = msg.payload.match(/^whois ?(\\@.*)?/);\nmsg.userId = matches[1].trim() ? matches[1].trim() : msg.userId;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 2440,
+    "wires": [
+      [
+        "4869676dab929d20"
+      ]
+    ]
+  },
+  {
+    "id": "4869676dab929d20",
+    "type": "matrix-whois-user",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "x": 590,
+    "y": 2440,
+    "wires": [
+      [
+        "a894fcabf9e41dca"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "a894fcabf9e41dca",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "func": "try { \n  var sessions = msg.payload.devices[\"\"].sessions || null;\n} catch (error) { \n  var sessions = null;\n}\nlet html = \"whois (session) information for <strong>\" + msg.userId + \"</strong>\\n<ol>\";\nfor(let session of sessions) {\n    try { \n        var connections = session.connections;\n    } catch (error) { \n        var connections = null;\n    }\n    for(let connection of connections) {\n        html += \"\\n<li><pre><code>\"+JSON.stringify(connection, null, 2)+\"</code></pre></li>\"\n    }\n}\nhtml += \"</ol>\"\nmsg.payload = html;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 740,
+    "y": 2440,
+    "wires": [
+      [
+        "898b8974f2b24861"
+      ]
+    ]
+  },
+  {
+    "id": "898b8974f2b24861",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send HTML Notice",
+    "server": null,
+    "roomId": "",
+    "messageType": "m.notice",
+    "messageFormat": "html",
+    "x": 910,
+    "y": 2440,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "c8855c79f194796e",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "is from me",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 590,
+    "y": 2400,
+    "wires": [
+      [
+        "ae1537a16b9e3b4c"
+      ]
+    ]
+  },
+  {
+    "id": "39109d4f02d241ca",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 420,
+    "y": 2400,
+    "wires": [
+      [
+        "c8855c79f194796e"
+      ]
+    ]
+  },
+  {
+    "id": "ae1537a16b9e3b4c",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.payload filter",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "regex",
+        "v": "^whois",
+        "vt": "str",
+        "case": false
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 770,
+    "y": 2400,
+    "wires": [
+      [
+        "656ed1e444fd2e0a"
+      ]
+    ]
+  }
+]

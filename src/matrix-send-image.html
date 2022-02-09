@@ -43,7 +43,7 @@
 
 <script type="text/html" data-help-name="matrix-send-image">
     <h3>Details</h3>
-    <p>This node will send an image to a Matrix chat room. Supports direct linking to a File In node.</p>
+    <p>This node will send an image to a Matrix chat room. Supports direct linking to a File In node. It's recommended you set <code>msg.contentType</code> so the client knows how to render the image (otherwise the image could show blank).</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
