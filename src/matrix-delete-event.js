@@ -1,5 +1,5 @@
 module.exports = function(RED) {
-    function MatrixDeleteMessage(n) {
+    function MatrixDeleteEvent(n) {
         RED.nodes.createNode(this,n);
 
         var node = this;
@@ -28,6 +28,7 @@ module.exports = function(RED) {
 
             if(!msg.eventId) {
                 node.error("eventId is missing");
+                node.send([null, msg])
                 return;
             }
 
@@ -63,12 +64,12 @@ module.exports = function(RED) {
                 node.send([msg, null]);
             })
             .catch(function(e){
-                node.warn("Error sending message " + e);
+                node.warn("Error deleting event " + e);
                 msg.error = e;
                 msg.deleted = false
                 node.send([null, msg]);
             });
         });
     }
-    RED.nodes.registerType("matrix-delete-message",MatrixDeleteMessage);
+    RED.nodes.registerType("matrix-delete-event",MatrixDeleteEvent);
 }

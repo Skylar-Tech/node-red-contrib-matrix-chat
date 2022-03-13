@@ -17,7 +17,7 @@
       "matrix-server-config": "src/matrix-server-config.js",
       "matrix-receive": "src/matrix-receive.js",
       "matrix-send-message": "src/matrix-send-message.js",
-      "matrix-send-message": "src/matrix-delete-message.js",
+      "matrix-delete-event": "src/matrix-delete-event.js",
       "matrix-send-file": "src/matrix-send-file.js",
       "matrix-send-image": "src/matrix-send-image.js",
       "matrix-react": "src/matrix-react.js",
