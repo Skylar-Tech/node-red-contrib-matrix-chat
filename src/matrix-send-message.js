@@ -1,3 +1,5 @@
+const {RelationType} = require("matrix-js-sdk");
+
 module.exports = function(RED) {
     function MatrixSendImage(n) {
         RED.nodes.createNode(this, n);
@@ -9,6 +11,7 @@ module.exports = function(RED) {
         this.roomId = n.roomId;
         this.messageType = n.messageType;
         this.messageFormat = n.messageFormat;
+        this.replaceMessage = n.replaceMessage;
 
         // taken from https://github.com/matrix-org/synapse/blob/master/synapse/push/mailer.py
         this.allowedTags = [
@@ -114,6 +117,25 @@ module.exports = function(RED) {
                     (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
                         ? msg.formatted_payload.toString()
                         : msg.payload.toString();
+            }
+
+            if((node.replaceMessage || msg.replace) && msg.eventId) {
+                content['m.new_content'] = {
+                    msgtype: content.msgtype,
+                    body: content.body
+                };
+                if('format' in content) {
+                    content['m.new_content']['format'] = content['format'];
+                }
+                if('formatted_body' in content) {
+                    content['m.new_content']['formatted_body'] = content['formatted_body'];
+                }
+
+                content['m.relates_to'] = {
+                    rel_type: RelationType.Replace,
+                    event_id: msg.eventId
+                };
+                content['body'] = ' * ' + content['body'];
             }
 
             node.server.matrixClient.sendMessage(msg.topic, content)

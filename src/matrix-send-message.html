@@ -12,6 +12,7 @@
             roomId: { value: null },
             messageType: { value: 'm.text' },
             messageFormat: { value: '' },
+            replaceMessage : { value: false }
         },
         label: function() {
             return this.name || "Send Message";
@@ -60,6 +61,17 @@
             <option value="msg.format">msg.format input</option>
         </select>
     </div>
+
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-replaceMessage"
+                style="width: auto; margin-left: 105px; vertical-align: top"
+        />
+        <label for="node-input-replaceMessage" style="width: auto;max-width:50%;">
+            Update existing message if <code>msg.eventId</code> is set
+        </label>
+    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-message">
@@ -78,10 +90,15 @@
         </dt>
         <dd> the message text. </dd>
 
+        <dt>msg.replace
+            <span class="property-type">bool</span>
+        </dt>
+        <dd> If true and <code>msg.eventId</code> is present it will update an existing message. Posts a new message if false or <code>msg.eventId</code> is missing. </dd>
+
         <dt class="optional">msg.formatted_payload
             <span class="property-type">string</span>
         </dt>
-        <dd> the formatted HTML message (uses msg.payload if not defined). This only affects HTML messages.</dd>
+        <dd> the formatted HTML message (uses <code>msg.payload</code> if not defined). This only affects HTML messages.</dd>
 
         <dt class="optional">msg.type
             <span class="property-type">string | null</span>
