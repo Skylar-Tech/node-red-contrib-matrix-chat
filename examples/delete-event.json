@@ -1,0 +1,73 @@
+[
+  {
+    "id": "fed9197df27197a4",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptImages": true,
+    "x": 340,
+    "y": 1560,
+    "wires": [
+      [
+        "b289bb4fed9fa166"
+      ]
+    ]
+  },
+  {
+    "id": "b289bb4fed9fa166",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "cont",
+        "v": "delete",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 490,
+    "y": 1560,
+    "wires": [
+      [
+        "48766b632ab2e6a1"
+      ]
+    ]
+  },
+  {
+    "id": "48766b632ab2e6a1",
+    "type": "matrix-delete-event",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "reason": "Requested deletion",
+    "x": 630,
+    "y": 1560,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "11f9cbbed7b95c83",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Delete messages containing \"delete\"",
+    "info": "",
+    "x": 480,
+    "y": 1520,
+    "wires": []
+  }
+]

@@ -15,6 +15,7 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 - [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
 - [Respond to "file" with an uploaded file](#respond-to-file-with-an-uploaded-file)
 - [Respond to "react" with a reaction](#respond-to-react-with-a-reaction)
+- [Remove messages containing "delete"](#remove-messages-containing-delete)
 - [Respond to "users" with full list of server users](#respond-to-users-with-full-list-of-server-users)
 - [Respond to "newroom" by creating new room and inviting user](#respond-to-newroom-by-creating-new-room-and-inviting-user)
 - [Respond to "joinroom <room_id_or_alias>" by joining mentioned room](#respond-to-joinroom-room_id_or_alias-by-joining-mentioned-room)
@@ -107,6 +108,16 @@ You will need a file on the machine running Node-RED. In this case sample.pdf ex
 Give a 👍 reaction when someone says "react"
 
 ![respond-react-with-reaction.png](respond-react-with-reaction.png)
+
+
+
+### Remove messages containing "delete"
+
+[View JSON](delete-event.json)
+
+Any messages containing "delete" will try to be removed by the client.
+
+![respond-react-with-reaction.png](delete-event.png)
 
 
 
