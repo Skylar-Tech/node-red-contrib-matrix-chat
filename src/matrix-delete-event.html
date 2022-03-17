@@ -7,10 +7,10 @@
         inputs:1,
         outputs:2,
         defaults: {
-            name: {value:""},
+            name:   { value: null },
             server: { value: "", type: "matrix-server-config" },
             roomId: { value: null },
-            reason: {value:""},
+            reason: { value: "" },
         },
         label: function() {
             return this.name||"Delete Event";
