@@ -12,6 +12,7 @@ module.exports = function(RED) {
         this.messageType = n.messageType;
         this.messageFormat = n.messageFormat;
         this.replaceMessage = n.replaceMessage;
+        this.message = n.message;
 
         // taken from https://github.com/matrix-org/synapse/blob/master/synapse/push/mailer.py
         this.allowedTags = [
@@ -101,14 +102,15 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(!msg.payload) {
-                node.error('msg.payload is required');
+            let payload = n.message || msg.payload;
+            if(!payload) {
+                node.error('msg.payload must be defined or the message configured on the node.');
                 return;
             }
 
             let content = {
                 msgtype: msgType,
-                body: msg.payload.toString()
+                body: payload.toString()
             };
 
             if(msgFormat === 'html') {
@@ -116,7 +118,7 @@ module.exports = function(RED) {
                 content.formatted_body =
                     (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
                         ? msg.formatted_payload.toString()
-                        : msg.payload.toString();
+                        : payload.toString();
             }
 
             if((node.replaceMessage || msg.replace) && msg.eventId) {
@@ -140,7 +142,7 @@ module.exports = function(RED) {
 
             node.server.matrixClient.sendMessage(msg.topic, content)
                 .then(function(e) {
-                    node.log("Message sent: " + msg.payload);
+                    node.log("Message sent: " + payload);
                     msg.eventId = e.event_id;
                     node.send([msg, null]);
                 })

@@ -9,7 +9,8 @@
         defaults: {
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
-            roomId: { value: null }
+            roomId: { value: null },
+            reaction: { value: null }
         },
         label: function() {
             return this.name || "React";
@@ -20,7 +21,7 @@
 
 <script type="text/html" data-template-name="matrix-react">
     <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
  	 <div class="form-row">
@@ -28,8 +29,12 @@
      	<input type="text" id="node-input-server">
  	</div>
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-reaction"><i class="fa fa-thumbs-up"></i> Reaction</label>
+        <input type="text" id="node-input-reaction" placeholder="msg.payload">
     </div>
 </script>
 
@@ -42,7 +47,7 @@
         <dt>msg.payload
             <span class="property-type">string</span>
         </dt>
-        <dd> Usually an emoji but can also be text. </dd>
+        <dd> Usually an emoji but can also be text. If configured on the node this is ignored otherwise it required. </dd>
 
         <dt>msg.topic
             <span class="property-type">string | null</span>

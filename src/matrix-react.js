@@ -7,6 +7,7 @@ module.exports = function(RED) {
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
         this.roomId = n.roomId;
+        this.reaction = n.reaction;
 
         if (!node.server) {
             node.warn("No configuration node");
@@ -40,8 +41,9 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(!msg.payload) {
-                node.error('msg.payload is required');
+            let payload = n.reaction || msg.payload;
+            if(!payload) {
+                node.error('msg.payload must be defined or the reaction configured on the node.');
                 return;
             }
 
@@ -59,7 +61,7 @@ module.exports = function(RED) {
                 {
                     "m.relates_to": {
                         event_id: eventId,
-                        key: msg.payload,
+                        key: payload,
                         rel_type: "m.annotation"
                     }
                 }

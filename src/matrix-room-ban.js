@@ -7,6 +7,7 @@ module.exports = function(RED) {
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
         this.roomId = n.roomId;
+        this.reason = n.reason;
 
         if (!node.server) {
             node.warn("No configuration node");
@@ -45,7 +46,7 @@ module.exports = function(RED) {
                 return;
             }
 
-            node.server.matrixClient.ban(msg.topic, msg.userId, msg.reason || undefined)
+            node.server.matrixClient.ban(msg.topic, msg.userId, n.reason || msg.reason || undefined)
                 .then(function(e) {
                     node.log("Successfully banned " + msg.userId + " from " + msg.topic);
                     msg.eventId = e.event_id;

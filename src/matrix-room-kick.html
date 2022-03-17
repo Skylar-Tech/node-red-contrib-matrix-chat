@@ -9,7 +9,8 @@
         defaults: {
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
-            roomId: { value: null }
+            roomId: { value: null },
+            reason: { value: null }
         },
         label: function() {
             return this.name || "Room Kick";
@@ -20,7 +21,7 @@
 
 <script type="text/html" data-template-name="matrix-room-kick">
     <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
  	 <div class="form-row">
@@ -28,8 +29,12 @@
      	<input type="text" id="node-input-server">
  	</div>
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-reason"><i class="fa fa-comment"></i> Reason</label>
+        <input type="text" id="node-input-reason" placeholder="msg.topic">
     </div>
 </script>
 
@@ -52,7 +57,7 @@
         <dt class="optional">msg.reason
             <span class="property-type">string</span>
         </dt>
-        <dd> Reason for kicking the user.</dd>
+        <dd> Reason for kicking the user. If configured on the node it will overwrite this input</dd>
     </dl>
 
     <h3>Outputs</h3>

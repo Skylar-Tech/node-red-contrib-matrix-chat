@@ -10,6 +10,7 @@
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
             roomId: { value: null },
+            message: { value: null },
             messageType: { value: 'm.text' },
             messageFormat: { value: '' },
             replaceMessage : { value: false }
@@ -23,7 +24,7 @@
 
 <script type="text/html" data-template-name="matrix-send-message">
     <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
 
@@ -33,8 +34,24 @@
  	</div>
 
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-message"><i class="fa fa-comment"></i> Message</label>
+        <textarea id="node-input-message" placeholder="msg.payload" style="width: 70%;"></textarea>
+    </div>
+
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-replaceMessage"
+                style="width: auto; margin-left: 105px; vertical-align: top"
+        />
+        <label for="node-input-replaceMessage" style="width: auto;max-width:50%;">
+            Update existing message if <code>msg.eventId</code> is set
+        </label>
     </div>
 
     <div class="form-row">
@@ -61,17 +78,6 @@
             <option value="msg.format">msg.format input</option>
         </select>
     </div>
-
-    <div class="form-row">
-        <input
-                type="checkbox"
-                id="node-input-replaceMessage"
-                style="width: auto; margin-left: 105px; vertical-align: top"
-        />
-        <label for="node-input-replaceMessage" style="width: auto;max-width:50%;">
-            Update existing message if <code>msg.eventId</code> is set
-        </label>
-    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-message">
@@ -88,7 +94,7 @@
         <dt>msg.payload
             <span class="property-type">string</span>
         </dt>
-        <dd> the message text. </dd>
+        <dd> the message text. If configured on the node this is ignored otherwise it required. </dd>
 
         <dt>msg.replace
             <span class="property-type">bool</span>
