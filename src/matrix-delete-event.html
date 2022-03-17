@@ -1,0 +1,84 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-delete-event',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: {value:""},
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: null },
+            reason: {value:""},
+        },
+        label: function() {
+            return this.name||"Delete Event";
+        },
+        paletteLabel: 'Delete Event'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-delete-event">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-reason"><i class="fa fa-sticky-note"></i> Reason</label>
+        <input type="text" id="node-input-reason" placeholder="msg.reason">
+    </div>
+
+</script>
+
+<script type="text/html" data-help-name="matrix-delete-event">
+    <h3>Details</h3>
+    <p>Delete an event in a room</p>
+
+    <dl class="message-properties">
+        <dt>msg.topic
+            <span class="property-type">string</span>
+        </dt>
+        <dd> Room ID from where the event should be deleted from. Optional if configured on the node. If configured on the node this input will be overridden.</dd>
+        <dt>msg.eventId
+            <span class="property-type">string</span>
+        </dt>
+        <dd>Event ID of the Event which should be deleted.</dd>
+        <dt>msg.reason
+            <span class="property-type">string</span>
+        </dt>
+        <dd>Reason why the event is deleted. Default an empty string</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the deleted event.</dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>msg.deleted <span class="property-type">boolean</span></dt>
+                <dd>True, if the event is deleted</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+                <dl class="message-properties">
+                    <dt>msg.deleted <span class="property-type">boolean</span></dt>
+                    <dd>False, if the event is not deleted</dd>
+                </dl>
+            </dl>
+        </li>
+    </ol>
+</script>
