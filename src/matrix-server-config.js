@@ -64,32 +64,37 @@ module.exports = function(RED) {
                             // store Device ID internally
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
-                            if(!stored_device_id || stored_device_id !== device_id) {
-                                node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
-                                storeDeviceId(localStorage, device_id);
-                            }
 
-                            // update device label
-                            if(node.deviceLabel) {
-                                node.matrixClient
-                                    .getDevice(device_id)
-                                    .then(
-                                        function(response) {
-                                            if(response.display_name !== node.deviceLabel) {
-                                                node.matrixClient.setDeviceDetails(device_id, {
-                                                    display_name: node.deviceLabel
-                                                }).then(
-                                                    function(response) {},
-                                                    function(error) {
-                                                        node.error("Failed to set device label: " + error);
-                                                    }
-                                                );
+                            if(!device_id && node.enableE2ee) {
+                                node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
+                            } else {
+                                if(!stored_device_id || stored_device_id !== device_id) {
+                                    node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
+                                    storeDeviceId(localStorage, device_id);
+                                }
+
+                                // update device label
+                                if(node.deviceLabel) {
+                                    node.matrixClient
+                                        .getDevice(device_id)
+                                        .then(
+                                            function(response) {
+                                                if(response.display_name !== node.deviceLabel) {
+                                                    node.matrixClient.setDeviceDetails(device_id, {
+                                                        display_name: node.deviceLabel
+                                                    }).then(
+                                                        function(response) {},
+                                                        function(error) {
+                                                            node.error("Failed to set device label: " + error);
+                                                        }
+                                                    );
+                                                }
+                                            },
+                                            function(error) {
+                                                node.error("Failed to fetch device: " + error);
                                             }
-                                        },
-                                        function(error) {
-                                            node.error("Failed to fetch device: " + error);
-                                        }
-                                    );
+                                        );
+                                }
                             }
 
                             initialSetup = true;
@@ -326,9 +331,29 @@ module.exports = function(RED) {
                     return;
                 }
 
-                node.matrixClient.getAccountDataFromServer()
+                /**
+                 * We do a /whoami request before starting for a few reasons:
+                 * - validate our auth token
+                 * - make sure auth token belongs to provided node.userId
+                 * - fetch device_id if possible (only available on Synapse >= v1.40.0 under MSC2033)
+                 */
+                node.matrixClient.whoami()
                     .then(
-                        function() {
+                        function(data) {
+                            if((typeof data['device_id'] === undefined || !data['device_id']) && !node.deviceId && !getStoredDeviceId(localStorage)) {
+                                node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.");
+                            }
+                            if('device_id' in data && data['device_id'] && !node.deviceId) {
+                                // if we have no device_id configured lets use the one
+                                // returned by /whoami for this access_token
+                                node.matrixClient.deviceId = data['device_id'];
+                            }
+
+                            // make sure our userId matches the access token's
+                            if(data['user_id'].toLowerCase() !== node.userId.toLowerCase()) {
+                                node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`);
+                                return;
+                            }
                             run().catch((error) => node.error(error));
                         },
                         function(err) {
@@ -436,10 +461,18 @@ module.exports = function(RED) {
      * If a device ID is stored we will use that for the client
      */
     function getStoredDeviceId(localStorage) {
-        return localStorage.getItem('my_device_id');
+        let deviceId = localStorage.getItem('my_device_id');
+        if(deviceId === "null" || !deviceId) {
+            return null;
+        }
+        return deviceId;
     }
 
     function storeDeviceId(localStorage, deviceId) {
+        if(!deviceId) {
+            return false;
+        }
         localStorage.setItem('my_device_id', deviceId);
+        return true;
     }
 }
