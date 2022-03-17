@@ -6,9 +6,9 @@
     "fs-extra": "^10.0.0",
     "got": "^12.0.1",
     "isomorphic-webcrypto": "^2.3.8",
-    "matrix-js-sdk": "^15.5.0",
+    "matrix-js-sdk": "^16.0.0",
     "node-localstorage": "^2.2.1",
-    "olm": "https://packages.matrix.org/npm/olm/olm-3.2.1.tgz",
+    "olm": "./@matrix-org_olm-3.2.8.tgz",
     "utf8": "^3.0.0"
   },
   "node-red": {

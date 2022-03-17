@@ -4,6 +4,7 @@ const sdk = require("matrix-js-sdk");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
+const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
 
 module.exports = function(RED) {
     function MatrixFolderNameFromUserId(name) {
@@ -146,7 +147,7 @@ module.exports = function(RED) {
                 return node.connected;
             };
 
-            node.matrixClient.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data) {
+            node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
                 if (toStartOfTimeline) {
                     return; // ignore paginated results
                 }
@@ -167,6 +168,23 @@ module.exports = function(RED) {
                     return;
                 }
 
+                const isDmRoom = (room) => {
+                    // Find out if this is a direct message room.
+                    let isDM = !!room.getDMInviter();
+                    const allMembers = room.currentState.getMembers();
+                    if (!isDM && allMembers.length <= 2) {
+                        // if not a DM, but there are 2 users only
+                        // double check DM (needed because getDMInviter works only if you were invited, not if you invite)
+                        // hence why we check for each member
+                        if (allMembers.some((m) => m.getDMInviter())) {
+                            return true;
+                        }
+                    }
+                    return allMembers.length <= 2 && isDM;
+                };
+
+                node.matrixClient.getRoom(event.getRoomId())
+
                 let msg = {
                     encrypted : event.isEncrypted(),
                     redacted  : event.isRedacted(),
@@ -177,6 +195,7 @@ module.exports = function(RED) {
                     topic     : event.getRoomId(),
                     eventId   : event.getId(),
                     event     : event,
+                    isDirectMessage: isDmRoom(event.getRoomId())
                 };
 
                 node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
@@ -189,9 +208,9 @@ module.exports = function(RED) {
              *
              * @event module:client~MatrixClient#"crypto.suggestKeyRestore"
              */
-            node.matrixClient.on("crypto.suggestKeyRestore", function(){
-
-            });
+            // node.matrixClient.on("crypto.suggestKeyRestore", function(){
+            //
+            // });
 
             // node.matrixClient.on("RoomMember.typing", async function(event, member) {
             //     let isTyping = member.typing;
@@ -210,7 +229,8 @@ module.exports = function(RED) {
             // });
 
             // handle auto-joining rooms
-            node.matrixClient.on("RoomMember.membership", async function(event, member) {
+
+            node.matrixClient.on(RoomMemberEvent.Membership, async function(event, member) {
                 if (member.membership === "invite" && member.userId === node.userId) {
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
@@ -224,7 +244,7 @@ module.exports = function(RED) {
                 }
             });
 
-            node.matrixClient.on("sync", async function(state, prevState, data) {
+            node.matrixClient.on(ClientEvent.Sync, async function(state, prevState, data) {
                 node.debug("SYNC [STATE=" + state + "] [PREVSTATE=" + prevState + "]");
                 if(prevState === null && state === "PREPARED" ) {
                     // Occurs when the initial sync is completed first time.
@@ -292,7 +312,8 @@ module.exports = function(RED) {
                 }
             });
 
-            node.matrixClient.on("Session.logged_out", async function(errorObj){
+
+            node.matrixClient.on(HttpApiEvent.SessionLoggedOut, async function(errorObj){
                 // Example if user auth token incorrect:
                 // {
                 //     errcode: 'M_UNKNOWN_TOKEN',

@@ -55,7 +55,7 @@ module.exports = function(RED) {
                 msg.reason = '';
             }
 
-            node.server.matrixClient.redactEvent(msg.topic,msg.eventId,undefined ,{
+            node.server.matrixClient.redactEvent(msg.topic, msg.eventId, undefined,{
                 reason: msg.reason
             })
 
