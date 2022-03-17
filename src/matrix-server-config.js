@@ -183,19 +183,17 @@ module.exports = function(RED) {
                     return allMembers.length <= 2 && isDM;
                 };
 
-                node.matrixClient.getRoom(event.getRoomId())
-
                 let msg = {
                     encrypted : event.isEncrypted(),
                     redacted  : event.isRedacted(),
                     content   : event.getContent(),
                     type      : (event.getContent()['msgtype'] || event.getType()) || null,
                     payload   : (event.getContent()['body'] || event.getContent()) || null,
+                    isDM      : isDmRoom(room),
                     userId    : event.getSender(),
                     topic     : event.getRoomId(),
                     eventId   : event.getId(),
-                    event     : event,
-                    isDirectMessage: isDmRoom(event.getRoomId())
+                    event     : event
                 };
 
                 node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
