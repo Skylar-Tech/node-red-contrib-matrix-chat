@@ -52,6 +52,7 @@ module.exports = function(RED) {
         this.userId = this.credentials.userId;
         this.deviceLabel = this.credentials.deviceLabel || null;
         this.deviceId = this.credentials.deviceId || null;
+        this.secretStoragePassphrase = null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.e2ee = n.enableE2ee || false;
@@ -66,10 +67,37 @@ module.exports = function(RED) {
         node.deregister = function(consumerNode) {
             delete node.users[consumerNode.id];
         };
-        
+
         if(!this.userId) {
             node.log("Matrix connection failed: missing user ID in configuration.");
             return;
+        }
+
+        let cryptoCallbacks = undefined;
+        if(node.e2ee) {
+            cryptoCallbacks = {
+                getSecretStorageKey: async ({ keys }) => {
+                    return null; // we don't do secret storage right now
+                    const backupPassphrase = node.secretStoragePassphrase;
+                    if (!backupPassphrase) {
+                        node.WARN("Missing secret storage key");
+                        return null;
+                    }
+                    let keyId = await node.matrixClient.getDefaultSecretStorageKeyId();
+                    if (keyId && !keys[keyId]) {
+                        keyId = undefined;
+                    }
+                    if (!keyId) {
+                        keyId = keys[0][0];
+                    }
+                    const backupInfo = await node.matrixClient.getKeyBackupVersion();
+                    const key = await node.matrixClient.keyBackupKeyFromPassword(
+                        backupPassphrase,
+                        backupInfo
+                    );
+                    return [keyId, key];
+                },
+            }
         }
 
         let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId),
@@ -94,11 +122,23 @@ module.exports = function(RED) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
                         if(!initialSetup) {
+                            if(node.e2ee && !await node.matrixClient.isCrossSigningReady()) {
+                                // bootstrap cross-signing
+                                await node.matrixClient.bootstrapCrossSigning({
+                                    // maybe we can skip this?
+                                    authUploadDeviceSigningKeys: (makeRequest) => {
+                                        makeRequest()
+                                        return Promise.resolve();
+                                    }
+                                });
+                                await node.matrixClient.checkOwnCrossSigningTrust();
+                            }
+
                             // store Device ID internally
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
 
-                            if(!device_id && node.enableE2ee) {
+                            if(!device_id && node.e2ee) {
                                 node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.", {})
                             } else {
                                 if(!stored_device_id || stored_device_id !== device_id) {
