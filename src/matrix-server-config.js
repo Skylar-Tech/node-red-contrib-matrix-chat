@@ -30,10 +30,10 @@ module.exports = function(RED) {
         this.userId = this.credentials.userId;
         this.deviceLabel = this.credentials.deviceLabel || null;
         this.deviceId = this.credentials.deviceId || null;
-        this.secretStoragePassphrase = this.credentials.secretStoragePassphrase || null;
+        this.secretStoragePassphrase = null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
-        this.e2ee = this.enableE2ee = n.enableE2ee || false;
+        this.e2ee = n.enableE2ee || false;
 
         this.globalAccess = n.global;
         this.initializedAt = new Date();
@@ -44,30 +44,10 @@ module.exports = function(RED) {
         }
 
         let cryptoCallbacks = undefined;
-        if(node.enableE2ee && node.secretStoragePassphrase && false) {
-            // cryptoCallbacks = {
-            //     getSecretStorageKey: async function({ keys }, name) {
-            //         const ZERO_STR = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-            //         for (const [keyName, keyInfo] of Object.entries(keys)) {
-            //             const key = await deriveKey(node.secretStoragePassphrase, keyInfo.passphrase.salt, keyInfo.passphrase.iterations);
-            //             // const key = Uint8Array.of(36, 47, 159, 193, 29, 188, 180, 86, 189, 180, 207, 101, 79, 255, 93, 159, 228, 43, 160, 158, 98, 209, 84, 196, 137, 122, 119, 118, 11, 131, 75, 87);
-            //             const { mac } = await encryptAES(ZERO_STR, key, "", keyInfo.iv);
-            //             if (keyInfo.mac.replace(/=+$/g, '') === mac.replace(/=+$/g, '')) {
-            //                 return [keyName, key];
-            //             }
-            //         }
-            //         return null;
-            //     },
-            //     async getDehydrationKey() {
-            //         return node.secretStoragePassphrase;
-            //     },
-            //     async generateDehydrationKey() {
-            //         return {key: node.secretStoragePassphrase};
-            //     }
-            // };
-
+        if(node.e2ee) {
             cryptoCallbacks = {
                 getSecretStorageKey: async ({ keys }) => {
+                    return null; // we don't do secret storage right now
                     const backupPassphrase = node.secretStoragePassphrase;
                     if (!backupPassphrase) {
                         node.WARN("Missing secret storage key");
@@ -112,21 +92,23 @@ module.exports = function(RED) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
                         if(!initialSetup) {
-                            if(node.enableE2ee && node.secretStoragePassphrase && !await node.matrixClient.isCrossSigningReady() && false) {
+                            if(node.e2ee && !await node.matrixClient.isCrossSigningReady()) {
                                 // bootstrap cross-signing
                                 await node.matrixClient.bootstrapCrossSigning({
                                     // maybe we can skip this?
-                                    authUploadDeviceSigningKeys: () => {
-                                        return true;
+                                    authUploadDeviceSigningKeys: (makeRequest) => {
+                                        makeRequest()
+                                        return Promise.resolve();
                                     }
                                 });
+                                await node.matrixClient.checkOwnCrossSigningTrust();
                             }
 
                             // store Device ID internally
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
 
-                            if(!device_id && node.enableE2ee) {
+                            if(!device_id && node.e2ee) {
                                 node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
                             } else {
                                 if(!stored_device_id || stored_device_id !== device_id) {
