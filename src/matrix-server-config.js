@@ -30,10 +30,9 @@ module.exports = function(RED) {
         this.userId = this.credentials.userId;
         this.deviceLabel = this.credentials.deviceLabel || null;
         this.deviceId = this.credentials.deviceId || null;
-        this.secretStoragePassphrase = this.credentials.secretStoragePassphrase || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
-        this.e2ee = this.enableE2ee = n.enableE2ee || false;
+        this.e2ee = n.enableE2ee || false;
 
         this.globalAccess = n.global;
         this.initializedAt = new Date();
@@ -41,53 +40,6 @@ module.exports = function(RED) {
         if(!this.userId) {
             node.log("Matrix connection failed: missing user ID in configuration.");
             return;
-        }
-
-        let cryptoCallbacks = undefined;
-        if(node.enableE2ee && node.secretStoragePassphrase && false) {
-            // cryptoCallbacks = {
-            //     getSecretStorageKey: async function({ keys }, name) {
-            //         const ZERO_STR = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-            //         for (const [keyName, keyInfo] of Object.entries(keys)) {
-            //             const key = await deriveKey(node.secretStoragePassphrase, keyInfo.passphrase.salt, keyInfo.passphrase.iterations);
-            //             // const key = Uint8Array.of(36, 47, 159, 193, 29, 188, 180, 86, 189, 180, 207, 101, 79, 255, 93, 159, 228, 43, 160, 158, 98, 209, 84, 196, 137, 122, 119, 118, 11, 131, 75, 87);
-            //             const { mac } = await encryptAES(ZERO_STR, key, "", keyInfo.iv);
-            //             if (keyInfo.mac.replace(/=+$/g, '') === mac.replace(/=+$/g, '')) {
-            //                 return [keyName, key];
-            //             }
-            //         }
-            //         return null;
-            //     },
-            //     async getDehydrationKey() {
-            //         return node.secretStoragePassphrase;
-            //     },
-            //     async generateDehydrationKey() {
-            //         return {key: node.secretStoragePassphrase};
-            //     }
-            // };
-
-            cryptoCallbacks = {
-                getSecretStorageKey: async ({ keys }) => {
-                    const backupPassphrase = node.secretStoragePassphrase;
-                    if (!backupPassphrase) {
-                        node.WARN("Missing secret storage key");
-                        return null;
-                    }
-                    let keyId = await node.matrixClient.getDefaultSecretStorageKeyId();
-                    if (keyId && !keys[keyId]) {
-                        keyId = undefined;
-                    }
-                    if (!keyId) {
-                        keyId = keys[0][0];
-                    }
-                    const backupInfo = await node.matrixClient.getKeyBackupVersion();
-                    const key = await node.matrixClient.keyBackupKeyFromPassword(
-                        backupPassphrase,
-                        backupInfo
-                    );
-                    return [keyId, key];
-                },
-            }
         }
 
         let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId),
@@ -112,16 +64,6 @@ module.exports = function(RED) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
                         if(!initialSetup) {
-                            if(node.enableE2ee && node.secretStoragePassphrase && !await node.matrixClient.isCrossSigningReady() && false) {
-                                // bootstrap cross-signing
-                                await node.matrixClient.bootstrapCrossSigning({
-                                    // maybe we can skip this?
-                                    authUploadDeviceSigningKeys: () => {
-                                        return true;
-                                    }
-                                });
-                            }
-
                             // store Device ID internally
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
@@ -180,8 +122,7 @@ module.exports = function(RED) {
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
                 deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
-                verificationMethods: ["m.sas.v1"],
-                cryptoCallbacks: cryptoCallbacks
+                // verificationMethods: ["m.sas.v1"]
             });
 
             // set globally if configured to do so
