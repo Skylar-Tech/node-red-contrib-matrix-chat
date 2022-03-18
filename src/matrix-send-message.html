@@ -37,18 +37,6 @@
         <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
         <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
-        <script type="text/javascript">
-            $(function(){
-                $("#node-input-roomId").on("keyup", function() {
-                    if($(this).val() && !$(this).val().startsWith("!")) {
-                        $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
-                    } else {
-                        $("#node-input-roomId-error").hide();
-                    }
-                }).trigger('keyup');
-            });
-        </script>
-    </div>
     </div>
 
     <div class="form-row">
@@ -91,6 +79,17 @@
             <option value="msg.format">msg.format input</option>
         </select>
     </div>
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+    </script>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-message">

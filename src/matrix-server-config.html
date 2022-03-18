@@ -30,7 +30,8 @@
             deviceLabel: { type: "text", required: false },
             accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: false },
-            url: { type: "text", required: true }
+            secretStoragePassphrase: { type: "password", required: false },
+            url: { type: "text", required: true },
         },
         defaults: {
             name: { value: null },
@@ -81,6 +82,14 @@
     <div class="form-row">
         <label for="node-config-input-accessToken"><i class="fa fa-key"></i> Access Token</label>
         <input type="text" id="node-config-input-accessToken">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        You can either provide/generate an access token yourself or use the login button above to do it automatically. View the <a href="javascript:$('#red-ui-tab-help-link-button').click();">node docs</a> to figure out how to generate an Access Token manually. If you generated a user with shared secret registration you will already have an access token you can place here.
+    </div>
+
+    <div class="form-row">
+        <label for="node-config-input-secretStoragePassphrase"><i class="fa fa-key"></i> Secret Storage Passphrase</label>
+        <input type="text" id="node-config-input-secretStoragePassphrase">
     </div>
     <div class="form-tips" style="margin-bottom: 12px;">
         You can either provide/generate an access token yourself or use the login button above to do it automatically. View the <a href="javascript:$('#red-ui-tab-help-link-button').click();">node docs</a> to figure out how to generate an Access Token manually. If you generated a user with shared secret registration you will already have an access token you can place here.

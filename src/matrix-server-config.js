@@ -5,6 +5,8 @@ const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
+const {deriveKey} = require("matrix-js-sdk/lib/crypto/key_passphrase");
+const {encryptAES} = require("matrix-js-sdk/lib/crypto/aes");
 
 module.exports = function(RED) {
     function MatrixFolderNameFromUserId(name) {
@@ -28,16 +30,64 @@ module.exports = function(RED) {
         this.userId = this.credentials.userId;
         this.deviceLabel = this.credentials.deviceLabel || null;
         this.deviceId = this.credentials.deviceId || null;
+        this.secretStoragePassphrase = this.credentials.secretStoragePassphrase || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
-        this.enableE2ee = n.enableE2ee || false;
-        this.e2ee = (this.enableE2ee && this.deviceId);
+        this.e2ee = this.enableE2ee = n.enableE2ee || false;
+
         this.globalAccess = n.global;
         this.initializedAt = new Date();
         
         if(!this.userId) {
             node.log("Matrix connection failed: missing user ID in configuration.");
             return;
+        }
+
+        let cryptoCallbacks = undefined;
+        if(node.enableE2ee && node.secretStoragePassphrase && false) {
+            // cryptoCallbacks = {
+            //     getSecretStorageKey: async function({ keys }, name) {
+            //         const ZERO_STR = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+            //         for (const [keyName, keyInfo] of Object.entries(keys)) {
+            //             const key = await deriveKey(node.secretStoragePassphrase, keyInfo.passphrase.salt, keyInfo.passphrase.iterations);
+            //             // const key = Uint8Array.of(36, 47, 159, 193, 29, 188, 180, 86, 189, 180, 207, 101, 79, 255, 93, 159, 228, 43, 160, 158, 98, 209, 84, 196, 137, 122, 119, 118, 11, 131, 75, 87);
+            //             const { mac } = await encryptAES(ZERO_STR, key, "", keyInfo.iv);
+            //             if (keyInfo.mac.replace(/=+$/g, '') === mac.replace(/=+$/g, '')) {
+            //                 return [keyName, key];
+            //             }
+            //         }
+            //         return null;
+            //     },
+            //     async getDehydrationKey() {
+            //         return node.secretStoragePassphrase;
+            //     },
+            //     async generateDehydrationKey() {
+            //         return {key: node.secretStoragePassphrase};
+            //     }
+            // };
+
+            cryptoCallbacks = {
+                getSecretStorageKey: async ({ keys }) => {
+                    const backupPassphrase = node.secretStoragePassphrase;
+                    if (!backupPassphrase) {
+                        node.WARN("Missing secret storage key");
+                        return null;
+                    }
+                    let keyId = await node.matrixClient.getDefaultSecretStorageKeyId();
+                    if (keyId && !keys[keyId]) {
+                        keyId = undefined;
+                    }
+                    if (!keyId) {
+                        keyId = keys[0][0];
+                    }
+                    const backupInfo = await node.matrixClient.getKeyBackupVersion();
+                    const key = await node.matrixClient.keyBackupKeyFromPassword(
+                        backupPassphrase,
+                        backupInfo
+                    );
+                    return [keyId, key];
+                },
+            }
         }
 
         let localStorageDir = storageDir + '/' + MatrixFolderNameFromUserId(this.userId),
@@ -51,7 +101,7 @@ module.exports = function(RED) {
         } else if(!this.url) {
             node.error("Matrix connection failed: missing server URL in configuration.");
         } else {
-            node.setConnected = function(connected, cb) {
+            node.setConnected = async function(connected, cb) {
                 if (node.connected !== connected) {
                     node.connected = connected;
                     if(typeof cb === 'function') {
@@ -62,6 +112,16 @@ module.exports = function(RED) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
                         if(!initialSetup) {
+                            if(node.enableE2ee && node.secretStoragePassphrase && !await node.matrixClient.isCrossSigningReady() && false) {
+                                // bootstrap cross-signing
+                                await node.matrixClient.bootstrapCrossSigning({
+                                    // maybe we can skip this?
+                                    authUploadDeviceSigningKeys: () => {
+                                        return true;
+                                    }
+                                });
+                            }
+
                             // store Device ID internally
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
@@ -119,7 +179,9 @@ module.exports = function(RED) {
                 sessionStore: new sdk.WebStorageSessionStore(localStorage),
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
-                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
+                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
+                verificationMethods: ["m.sas.v1"],
+                cryptoCallbacks: cryptoCallbacks
             });
 
             // set globally if configured to do so
