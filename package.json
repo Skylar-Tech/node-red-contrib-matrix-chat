@@ -27,6 +27,7 @@
       "matrix-crypt-file": "src/matrix-crypt-file.js",
       "matrix-room-kick": "src/matrix-room-kick.js",
       "matrix-room-ban": "src/matrix-room-ban.js",
+      "matrix-device-verification": "src/matrix-device-verification.js",
       "matrix-synapse-users": "src/matrix-synapse-users.js",
       "matrix-synapse-register": "src/matrix-synapse-register.js",
       "matrix-synapse-create-edit-user": "src/matrix-synapse-create-edit-user.js",

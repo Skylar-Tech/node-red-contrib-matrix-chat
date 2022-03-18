@@ -1,0 +1,240 @@
+<script type="text/javascript">
+    let computeInputAndOutputCounts = function(node){
+        switch($("#node-input-mode").val()) {
+            default:
+                node.outputs = node.inputs = 0;
+                break;
+            case 'receive':
+                node.outputs = 1;
+                node.inputs = 0;
+                break;
+            case 'request':
+            case 'start':
+            case 'accept':
+            case 'cancel':
+                node.outputs = 2;
+                node.inputs = 1;
+                break;
+        }
+    };
+
+    RED.nodes.registerType('matrix-device-verification', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        inputs: 0,
+        outputs: 0,
+        outputLabels: ["success", "error"],
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            mode: { value: null, type: "text", required: true },
+            inputs: { value: 0 },
+            outputs: { value: 0 }
+        },
+        oneditprepare: function () {
+            computeInputAndOutputCounts(this);
+        },
+        oneditsave: function () {
+            computeInputAndOutputCounts(this);
+        },
+        label: function() {
+            if(this.name) {
+                return this.name;
+            }
+
+            switch(this.mode) {
+                default:
+                    return 'Device Verification';
+                case 'receive':
+                    return 'Receive Device Verification';
+                case 'request':
+                    return 'Request Device Verification';
+                case 'start':
+                    return 'Start Device Verification';
+                case 'accept':
+                    return 'Accept Device Verification';
+                case 'cancel':
+                    return 'Cancel Device Verification';
+            }
+            return this.name || "Device Verify Request";
+        },
+        paletteLabel: function(){
+            return "Device Verification";
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-device-verification">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-mode"><i class="fa fa-user"></i> Mode</label>
+        <select id="node-input-mode" style="width:70%;">
+            <option value="">Unconfigured</option>
+            <option value="receive">Receive Verification Request</option>
+            <option value="request">Request Verification</option>
+            <option value="start">Verification Start</option>
+            <option value="accept">Verification Accept</option>
+            <option value="cancel">Verification Cancel</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-device-verification">
+    <h3>Details</h3>
+    <p>
+        Handle device verification. Check out the <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme" target="_blank">examples</a> page for a good understanding of how this works.
+        <br />
+        General flow:
+        <ol>
+            <li>Request/Receive device verification</li>
+            <li>Start Verification</li>
+            <li>Compare Emojis</li>
+            <li>Accept/Cancel Verification</li>
+        </ol>
+        <br />
+        THIS NODE IS IN BETA. There is a good chance that we will change how this node works later down the road. Make sure to read the release notes before upgrading.
+    </p>
+    <a href="https://matrix-org.github.io/synapse/develop/admin_api/room_membership.html#edit-room-membership-api" target="_blank">Synapse API Endpoint Information</a>
+
+    <h3>Inputs</h3>
+    <ul class="node-inputs">
+        <li><code>mode</code> set to '<strong>Receive Verification Request</strong>'
+            <div class="form-tips" style="margin-bottom: 12px;">
+                Doesn't take an input
+            </div>
+        </li>
+
+        <li><code>mode</code> set to '<strong>Request Verification</strong>'
+            <dl class="message-properties">
+                <dt>msg.userId <span class="property-type">string</span></dt>
+                <dd>
+                    ID of the user to request device verification from
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.devices <span class="property-type">array[string]|null</span></dt>
+                <dd> list of <code>msg.userId</code>'s devices IDs to request verification from. If empty it will request from all known devices.</dd>
+            </dl>
+        </li>
+
+        <li><code>mode</code> set to '<strong>Verification Start</strong>'
+            <dl class="message-properties">
+                <dt>msg.verifyRequestId <span class="property-type">string</span></dt>
+                <dd>
+                    Internal ID to reference the verification request throughout the flows
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.cancel <span class="property-type">bool</span></dt>
+                <dd>
+                    If set and is true the verification request will be cancelled
+                </dd>
+            </dl>
+        </li>
+
+        <li><code>mode</code> set to '<strong>Verification Accept</strong>'
+            <dl class="message-properties">
+                <dt>msg.verifyRequestId <span class="property-type">string</span></dt>
+                <dd>
+                    Internal ID to reference the verification request throughout the flows
+                </dd>
+            </dl>
+        </li>
+
+        <li><code>mode</code> set to '<strong>Verification Cancel</strong>'
+            <dl class="message-properties">
+                <dt>msg.verifyRequestId <span class="property-type">string</span></dt>
+                <dd>
+                    Internal ID to reference the verification request throughout the flows
+                </dd>
+            </dl>
+        </li>
+    </ul>
+
+    <h3>Outputs</h3>
+    <ul class="node-outputs">
+        <li><code>mode</code> set to '<strong>Receive Verification Request</strong>' or '<strong>Request Verification</strong>'
+            <dl class="message-properties">
+                <dt>msg.verifyRequestId <span class="property-type">string</span></dt>
+                <dd>
+                    Internal ID to reference the verification request throughout the flows
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.verifyMethods <span class="property-type">string</span></dt>
+                <dd>
+                    Common verification methods supported by both sides
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.userId <span class="property-type">string</span></dt>
+                <dd>
+                    ID of the user to request device verification from
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.deviceIds <span class="property-type">array[string]</span></dt>
+                <dd>
+                    List of devices we are verifying
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.selfVerification <span class="property-type">bool</span></dt>
+                <dd>
+                    true if we are verifying one of our own devices
+                </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.phase <span class="property-type">string</span></dt>
+                <dd>
+                    what phase of verification we are in
+                </dd>
+            </dl>
+        </li>
+
+        <li><code>mode</code> set to '<strong>Verification Start</strong>'
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>
+                    sas verification payload
+                </dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>msg.emojis <span class="property-type">array[string]</span></dt>
+                <dd>
+                    array of emojis for verification request
+                </dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>msg.emojis_text <span class="property-type">array[string]</span></dt>
+                <dd>
+                    array of emojis in text form for verification request
+                </dd>
+            </dl>
+        </li>
+
+        <li><code>mode</code> set to '<strong>Verification Accept</strong>' or '<strong>Verification Cancel</strong>'
+            <div class="form-tips" style="margin-bottom: 12px;">
+                Passes input straight to output on success. If an error occurs it goes to the second output.
+            </div>
+        </li>
+    </ul>
+
+</script>
