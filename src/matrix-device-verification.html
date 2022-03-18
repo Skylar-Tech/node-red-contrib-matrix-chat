@@ -92,8 +92,16 @@
 <script type="text/html" data-help-name="matrix-device-verification">
     <h3>Details</h3>
     <p>
-        Handle device verification.
-        <br /><br />
+        Handle device verification. Check out the <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme" target="_blank">examples</a> page for a good understanding of how this works.
+        <br />
+        General flow:
+        <ol>
+            <li>Request/Receive device verification</li>
+            <li>Start Verification</li>
+            <li>Compare Emojis</li>
+            <li>Accept/Cancel Verification</li>
+        </ol>
+        <br />
         THIS NODE IS IN BETA. There is a good chance that we will change how this node works later down the road. Make sure to read the release notes before upgrading.
     </p>
     <a href="https://matrix-org.github.io/synapse/develop/admin_api/room_membership.html#edit-room-membership-api" target="_blank">Synapse API Endpoint Information</a>
