@@ -9,7 +9,8 @@
         defaults: {
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
-            roomId: { value: null }
+            roomId: { value: null },
+            reason: { value: null }
         },
         label: function() {
             return this.name || "Room Ban";
@@ -20,7 +21,7 @@
 
 <script type="text/html" data-template-name="matrix-room-ban">
     <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
  	 <div class="form-row">
@@ -28,9 +29,25 @@
      	<input type="text" id="node-input-server">
  	</div>
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
+        <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
     </div>
+    <div class="form-row">
+        <label for="node-input-reason"><i class="fa fa-comment"></i> Reason</label>
+        <input type="text" id="node-input-reason" placeholder="msg.topic">
+    </div>
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+    </script>
 </script>
 
 <script type="text/html" data-help-name="matrix-room-ban">
@@ -52,7 +69,7 @@
         <dt class="optional">msg.reason
             <span class="property-type">string</span>
         </dt>
-        <dd> Reason for banning the user.</dd>
+        <dd> Reason for banning the user. If configured on the node it will overwrite this input</dd>
     </dl>
 
     <h3>Outputs</h3>

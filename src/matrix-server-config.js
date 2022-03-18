@@ -4,6 +4,9 @@ const sdk = require("matrix-js-sdk");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
+const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
+const {deriveKey} = require("matrix-js-sdk/lib/crypto/key_passphrase");
+const {encryptAES} = require("matrix-js-sdk/lib/crypto/aes");
 
 module.exports = function(RED) {
     function MatrixFolderNameFromUserId(name) {
@@ -29,8 +32,8 @@ module.exports = function(RED) {
         this.deviceId = this.credentials.deviceId || null;
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
-        this.enableE2ee = n.enableE2ee || false;
-        this.e2ee = (this.enableE2ee && this.deviceId);
+        this.e2ee = n.enableE2ee || false;
+
         this.globalAccess = n.global;
         this.initializedAt = new Date();
         
@@ -50,7 +53,7 @@ module.exports = function(RED) {
         } else if(!this.url) {
             node.error("Matrix connection failed: missing server URL in configuration.");
         } else {
-            node.setConnected = function(connected, cb) {
+            node.setConnected = async function(connected, cb) {
                 if (node.connected !== connected) {
                     node.connected = connected;
                     if(typeof cb === 'function') {
@@ -64,32 +67,37 @@ module.exports = function(RED) {
                             // store Device ID internally
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
-                            if(!stored_device_id || stored_device_id !== device_id) {
-                                node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
-                                storeDeviceId(localStorage, device_id);
-                            }
 
-                            // update device label
-                            if(node.deviceLabel) {
-                                node.matrixClient
-                                    .getDevice(device_id)
-                                    .then(
-                                        function(response) {
-                                            if(response.display_name !== node.deviceLabel) {
-                                                node.matrixClient.setDeviceDetails(device_id, {
-                                                    display_name: node.deviceLabel
-                                                }).then(
-                                                    function(response) {},
-                                                    function(error) {
-                                                        node.error("Failed to set device label: " + error);
-                                                    }
-                                                );
+                            if(!device_id && node.enableE2ee) {
+                                node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
+                            } else {
+                                if(!stored_device_id || stored_device_id !== device_id) {
+                                    node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
+                                    storeDeviceId(localStorage, device_id);
+                                }
+
+                                // update device label
+                                if(node.deviceLabel) {
+                                    node.matrixClient
+                                        .getDevice(device_id)
+                                        .then(
+                                            function(response) {
+                                                if(response.display_name !== node.deviceLabel) {
+                                                    node.matrixClient.setDeviceDetails(device_id, {
+                                                        display_name: node.deviceLabel
+                                                    }).then(
+                                                        function(response) {},
+                                                        function(error) {
+                                                            node.error("Failed to set device label: " + error);
+                                                        }
+                                                    );
+                                                }
+                                            },
+                                            function(error) {
+                                                node.error("Failed to fetch device: " + error);
                                             }
-                                        },
-                                        function(error) {
-                                            node.error("Failed to fetch device: " + error);
-                                        }
-                                    );
+                                        );
+                                }
                             }
 
                             initialSetup = true;
@@ -113,7 +121,8 @@ module.exports = function(RED) {
                 sessionStore: new sdk.WebStorageSessionStore(localStorage),
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
-                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
+                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
+                // verificationMethods: ["m.sas.v1"]
             });
 
             // set globally if configured to do so
@@ -141,7 +150,7 @@ module.exports = function(RED) {
                 return node.connected;
             };
 
-            node.matrixClient.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data) {
+            node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
                 if (toStartOfTimeline) {
                     return; // ignore paginated results
                 }
@@ -162,16 +171,32 @@ module.exports = function(RED) {
                     return;
                 }
 
+                const isDmRoom = (room) => {
+                    // Find out if this is a direct message room.
+                    let isDM = !!room.getDMInviter();
+                    const allMembers = room.currentState.getMembers();
+                    if (!isDM && allMembers.length <= 2) {
+                        // if not a DM, but there are 2 users only
+                        // double check DM (needed because getDMInviter works only if you were invited, not if you invite)
+                        // hence why we check for each member
+                        if (allMembers.some((m) => m.getDMInviter())) {
+                            return true;
+                        }
+                    }
+                    return allMembers.length <= 2 && isDM;
+                };
+
                 let msg = {
                     encrypted : event.isEncrypted(),
                     redacted  : event.isRedacted(),
                     content   : event.getContent(),
                     type      : (event.getContent()['msgtype'] || event.getType()) || null,
                     payload   : (event.getContent()['body'] || event.getContent()) || null,
+                    isDM      : isDmRoom(room),
                     userId    : event.getSender(),
                     topic     : event.getRoomId(),
                     eventId   : event.getId(),
-                    event     : event,
+                    event     : event
                 };
 
                 node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
@@ -184,9 +209,9 @@ module.exports = function(RED) {
              *
              * @event module:client~MatrixClient#"crypto.suggestKeyRestore"
              */
-            node.matrixClient.on("crypto.suggestKeyRestore", function(){
-
-            });
+            // node.matrixClient.on("crypto.suggestKeyRestore", function(){
+            //
+            // });
 
             // node.matrixClient.on("RoomMember.typing", async function(event, member) {
             //     let isTyping = member.typing;
@@ -205,7 +230,8 @@ module.exports = function(RED) {
             // });
 
             // handle auto-joining rooms
-            node.matrixClient.on("RoomMember.membership", async function(event, member) {
+
+            node.matrixClient.on(RoomMemberEvent.Membership, async function(event, member) {
                 if (member.membership === "invite" && member.userId === node.userId) {
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
@@ -219,7 +245,7 @@ module.exports = function(RED) {
                 }
             });
 
-            node.matrixClient.on("sync", async function(state, prevState, data) {
+            node.matrixClient.on(ClientEvent.Sync, async function(state, prevState, data) {
                 node.debug("SYNC [STATE=" + state + "] [PREVSTATE=" + prevState + "]");
                 if(prevState === null && state === "PREPARED" ) {
                     // Occurs when the initial sync is completed first time.
@@ -287,7 +313,8 @@ module.exports = function(RED) {
                 }
             });
 
-            node.matrixClient.on("Session.logged_out", async function(errorObj){
+
+            node.matrixClient.on(HttpApiEvent.SessionLoggedOut, async function(errorObj){
                 // Example if user auth token incorrect:
                 // {
                 //     errcode: 'M_UNKNOWN_TOKEN',
@@ -326,9 +353,29 @@ module.exports = function(RED) {
                     return;
                 }
 
-                node.matrixClient.getAccountDataFromServer()
+                /**
+                 * We do a /whoami request before starting for a few reasons:
+                 * - validate our auth token
+                 * - make sure auth token belongs to provided node.userId
+                 * - fetch device_id if possible (only available on Synapse >= v1.40.0 under MSC2033)
+                 */
+                node.matrixClient.whoami()
                     .then(
-                        function() {
+                        function(data) {
+                            if((typeof data['device_id'] === undefined || !data['device_id']) && !node.deviceId && !getStoredDeviceId(localStorage)) {
+                                node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.");
+                            }
+                            if('device_id' in data && data['device_id'] && !node.deviceId) {
+                                // if we have no device_id configured lets use the one
+                                // returned by /whoami for this access_token
+                                node.matrixClient.deviceId = data['device_id'];
+                            }
+
+                            // make sure our userId matches the access token's
+                            if(data['user_id'].toLowerCase() !== node.userId.toLowerCase()) {
+                                node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`);
+                                return;
+                            }
                             run().catch((error) => node.error(error));
                         },
                         function(err) {
@@ -436,10 +483,18 @@ module.exports = function(RED) {
      * If a device ID is stored we will use that for the client
      */
     function getStoredDeviceId(localStorage) {
-        return localStorage.getItem('my_device_id');
+        let deviceId = localStorage.getItem('my_device_id');
+        if(deviceId === "null" || !deviceId) {
+            return null;
+        }
+        return deviceId;
     }
 
     function storeDeviceId(localStorage, deviceId) {
+        if(!deviceId) {
+            return false;
+        }
         localStorage.setItem('my_device_id', deviceId);
+        return true;
     }
 }

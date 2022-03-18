@@ -15,6 +15,7 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 - [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
 - [Respond to "file" with an uploaded file](#respond-to-file-with-an-uploaded-file)
 - [Respond to "react" with a reaction](#respond-to-react-with-a-reaction)
+- [Remove messages containing "delete"](#remove-messages-containing-delete)
 - [Respond to "users" with full list of server users](#respond-to-users-with-full-list-of-server-users)
 - [Respond to "newroom" by creating new room and inviting user](#respond-to-newroom-by-creating-new-room-and-inviting-user)
 - [Respond to "joinroom <room_id_or_alias>" by joining mentioned room](#respond-to-joinroom-room_id_or_alias-by-joining-mentioned-room)
@@ -52,13 +53,15 @@ Allows an administrator to create or modify a user account with a specified `msg
 
 [View JSON](custom-redact-function-node.json)
 
-If we do not have a node for something you want to do (such as redacting events/messages) you can do this manually with a function node.
+If we do not have a node for something you want to do you can do this manually with a function node. We now have a node for removing events but this is still a good example.
 
 **Note:** You should make sure to catch any errors in your function node otherwise you could cause Node-RED to crash.
 
 To view what sort of functions you have access to check out the `client.ts` file from `matrix-js-sdk` [here](https://github.com/matrix-org/matrix-js-sdk/blob/master/src/client.ts).
 
 ![custom-redact-function-node.png](custom-redact-function-node.png)
+
+
 
 ### Respond to "ping" with "pong"
 
@@ -107,6 +110,16 @@ You will need a file on the machine running Node-RED. In this case sample.pdf ex
 Give a 👍 reaction when someone says "react"
 
 ![respond-react-with-reaction.png](respond-react-with-reaction.png)
+
+
+
+### Remove messages containing "delete"
+
+[View JSON](delete-event.json)
+
+Any messages containing "delete" will try to be removed by the client.
+
+![respond-react-with-reaction.png](delete-event.png)
 
 
 

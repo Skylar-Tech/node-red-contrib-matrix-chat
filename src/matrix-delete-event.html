@@ -1,39 +1,43 @@
 <script type="text/javascript">
-    RED.nodes.registerType('matrix-invite-room', {
+    RED.nodes.registerType('matrix-delete-event',{
         category: 'matrix',
         color: '#00b7ca',
         icon: "matrix.png",
         outputLabels: ["success", "error"],
-        inputs: 1,
-        outputs: 2,
+        inputs:1,
+        outputs:2,
         defaults: {
-            name: { value: null },
+            name:   { value: null },
             server: { value: "", type: "matrix-server-config" },
             roomId: { value: null },
+            reason: { value: "" },
         },
         label: function() {
-            return this.name || "Room Invite";
+            return this.name||"Delete Event";
         },
-        paletteLabel: 'Room Invite'
+        paletteLabel: 'Delete Event'
     });
 </script>
 
-<script type="text/html" data-template-name="matrix-invite-room">
+<script type="text/html" data-template-name="matrix-delete-event">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
-
     <div class="form-row">
         <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
         <input type="text" id="node-input-server">
     </div>
-
     <div class="form-row">
         <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
         <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
     </div>
+    <div class="form-row">
+        <label for="node-input-reason"><i class="fa fa-sticky-note"></i> Reason</label>
+        <input type="text" id="node-input-reason" placeholder="msg.reason">
+    </div>
+
     <script type="text/javascript">
         $(function(){
             $("#node-input-roomId").on("keyup", function() {
@@ -47,45 +51,46 @@
     </script>
 </script>
 
-<script type="text/html" data-help-name="matrix-invite-room">
+<script type="text/html" data-help-name="matrix-delete-event">
     <h3>Details</h3>
-    <p>
-        This node invites a user to participate in a particular room. They do not start participating in the room until they actually join the room. The client must be in the room and have permissions to invite.
-    </p>
-    <a href="https://matrix-org.github.io/synapse/develop/admin_api/room_membership.html#edit-room-membership-api" target="_blank">Synapse API Endpoint Information</a>
+    <p>Delete an event in a room</p>
 
-    <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.topic
             <span class="property-type">string</span>
         </dt>
-        <dd> The room identifier to invite to: for example, <code>!h8zld9j31:example.com</code>. Ignored if configured on the node, otherwise required.</dd>
-
-        <dt>msg.userId
+        <dd> Room ID from where the event should be deleted from. Optional if configured on the node. If configured on the node this input will be overridden.</dd>
+        <dt>msg.eventId
             <span class="property-type">string</span>
         </dt>
-        <dd> User's ID that will be invited to the room.</dd>
-
-        <dt class="optional">msg.reason
+        <dd>Event ID of the Event which should be deleted.</dd>
+        <dt>msg.reason
             <span class="property-type">string</span>
         </dt>
-        <dd> Reason for the membership change.</dd>
+        <dd>Reason why the event is deleted. Default an empty string</dd>
     </dl>
 
     <h3>Outputs</h3>
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">object</span></dt>
-                <dd>Currently this endpoint returns an empty object</dd>
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the deleted event.</dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>msg.deleted <span class="property-type">boolean</span></dt>
+                <dd>True, if the event is deleted</dd>
             </dl>
         </li>
         <li>Error
             <dl class="message-properties">
                 <dt>msg.error <span class="property-type">string</span></dt>
                 <dd>the error that occurred.</dd>
+                <dl class="message-properties">
+                    <dt>msg.deleted <span class="property-type">boolean</span></dt>
+                    <dd>False, if the event is not deleted</dd>
+                </dl>
             </dl>
         </li>
     </ol>
-
 </script>

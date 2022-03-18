@@ -10,8 +10,10 @@
             name: { value: null },
             server: { value: "", type: "matrix-server-config" },
             roomId: { value: null },
+            message: { value: null },
             messageType: { value: 'm.text' },
             messageFormat: { value: '' },
+            replaceMessage : { value: false }
         },
         label: function() {
             return this.name || "Send Message";
@@ -22,7 +24,7 @@
 
 <script type="text/html" data-template-name="matrix-send-message">
     <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
 
@@ -32,8 +34,25 @@
  	</div>
 
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
+        <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-message"><i class="fa fa-comment"></i> Message</label>
+        <textarea id="node-input-message" placeholder="msg.payload" style="width: 70%;"></textarea>
+    </div>
+
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-replaceMessage"
+                style="width: auto; margin-left: 105px; vertical-align: top"
+        />
+        <label for="node-input-replaceMessage" style="width: auto;max-width:50%;">
+            Update existing message if <code>msg.eventId</code> is set
+        </label>
     </div>
 
     <div class="form-row">
@@ -60,6 +79,17 @@
             <option value="msg.format">msg.format input</option>
         </select>
     </div>
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+    </script>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-message">
@@ -76,12 +106,17 @@
         <dt>msg.payload
             <span class="property-type">string</span>
         </dt>
-        <dd> the message text. </dd>
+        <dd> the message text. If configured on the node this is ignored otherwise it required. </dd>
+
+        <dt>msg.replace
+            <span class="property-type">bool</span>
+        </dt>
+        <dd> If true and <code>msg.eventId</code> is present it will update an existing message. Posts a new message if false or <code>msg.eventId</code> is missing. </dd>
 
         <dt class="optional">msg.formatted_payload
             <span class="property-type">string</span>
         </dt>
-        <dd> the formatted HTML message (uses msg.payload if not defined). This only affects HTML messages.</dd>
+        <dd> the formatted HTML message (uses <code>msg.payload</code> if not defined). This only affects HTML messages.</dd>
 
         <dt class="optional">msg.type
             <span class="property-type">string | null</span>

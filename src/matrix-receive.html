@@ -34,8 +34,9 @@
      	<input type="text" id="node-input-server">
  	</div>
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-user"></i> Room ID</label>
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
         <input type="text" id="node-input-roomId">
+        <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
     </div>
     <div class="form-tips">Enter a single room, comma separated list of rooms, or leave blank to get from all</div>
     <div class="form-row" style="margin-left: 100px;margin-top:10px;font-weight:bold;">
@@ -101,6 +102,17 @@
             Accept images <code>m.image</code>
         </label>
     </div>
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+    </script>
 </script>
 
 <script type="text/html" data-help-name="matrix-receive">
@@ -114,6 +126,11 @@
                 <dd>
                     the message type. For example this will be either m.text, m.reaction, m.file, m.image, etc
                 </dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.isDM <span class="property-type">bool</span></dt>
+                <dd> returns true if message is from a direct message room.</dd>
             </dl>
 
             <dl class="message-properties">
