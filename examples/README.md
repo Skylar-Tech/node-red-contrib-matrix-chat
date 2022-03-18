@@ -51,6 +51,19 @@ Allows an administrator to create or modify a user account with a specified `msg
 ![add-user-with-admin-user.png](add-user-with-admin-user.png)
 
 
+### Use function node to run any command
+
+[View JSON](custom-redact-function-node.json)
+
+If we do not have a node for something you want to do you can do this manually with a function node. We now have a node for removing events but this is still a good example.
+
+**Note:** You should make sure to catch any errors in your function node otherwise you could cause Node-RED to crash.
+
+To view what sort of functions you have access to check out the `client.ts` file from `matrix-js-sdk` [here](https://github.com/matrix-org/matrix-js-sdk/blob/master/src/client.ts).
+
+![custom-redact-function-node.png](custom-redact-function-node.png)
+
+
 ### Request device verification & immediately accept
 
 [View JSON](request-device-verification.json)
@@ -69,19 +82,6 @@ Edit the switch node labeled "is from me" to match whatever user ID you would li
 After verification starts the bot automatically accepts the result (note: you should be validating the result and not just blindly accepting them, this is just an example)
 
 ![add-user-with-admin-user.png](start-accept-verification-from-user.png)
-
-
-### Use function node to run any command
-
-[View JSON](custom-redact-function-node.json)
-
-If we do not have a node for something you want to do (such as redacting events/messages) you can do this manually with a function node.
-
-**Note:** You should make sure to catch any errors in your function node otherwise you could cause Node-RED to crash.
-
-To view what sort of functions you have access to check out the `client.ts` file from `matrix-js-sdk` [here](https://github.com/matrix-org/matrix-js-sdk/blob/master/src/client.ts).
-
-![custom-redact-function-node.png](custom-redact-function-node.png)
 
 ### Respond to "ping" with "pong"
 
