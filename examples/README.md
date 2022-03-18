@@ -10,6 +10,8 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 - [Create User with Shared Secret Registration](#create-user-with-shared-secret-registration)
 - [Create/Edit Synapse User](#createedit-synapse-user)
 - [Use function node to run any command](#use-function-node-to-run-any-command)
+- [Start and accept device verification from specific user](#start-and-accept-device-verification-from-specific-user)
+- [Request device verification & immediately accept](#request-device-verification--immediately-accept)
 - [Respond to "ping" with "pong"](#respond-to-ping-with-pong)
 - [Respond to "html" with an HTML message](#respond-to-html-with-an-html-message)
 - [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
@@ -47,6 +49,26 @@ Edit the object on the inject node to the user/pass combo you want to create and
 Allows an administrator to create or modify a user account with a specified `msg.userId`.
 
 ![add-user-with-admin-user.png](add-user-with-admin-user.png)
+
+
+### Request device verification & immediately accept
+
+[View JSON](request-device-verification.json)
+
+Edit the inject node to match the details of a user & device you would like to request verification from.
+After the end user starts verification the bot automatically accepts the result (note: you should be validating the result and not just blindly accepting them, this is just an example)
+
+![add-user-with-admin-user.png](request-device-verification.png)
+
+
+### Start and accept device verification from specific user
+
+[View JSON](start-accept-verification-from-user.json)
+
+Edit the switch node labeled "is from me" to match whatever user ID you would like to accept verification requests from.
+After verification starts the bot automatically accepts the result (note: you should be validating the result and not just blindly accepting them, this is just an example)
+
+![add-user-with-admin-user.png](start-accept-verification-from-user.png)
 
 
 ### Use function node to run any command
