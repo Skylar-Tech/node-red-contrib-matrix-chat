@@ -11,7 +11,9 @@ module.exports = function(RED) {
         this.acceptStickers = n.acceptStickers;
         this.acceptReactions = n.acceptReactions;
         this.acceptFiles = n.acceptFiles;
+        this.acceptAudio = n.acceptAudio;
         this.acceptImages = n.acceptImages;
+        this.acceptLocations = n.acceptLocations;
         this.roomId = n.roomId;
         this.roomIds = this.roomId ? this.roomId.split(',') : [];
 
@@ -72,6 +74,27 @@ module.exports = function(RED) {
                     }
                     break;
 
+                case 'm.audio':
+                    if(!node.acceptAudio) return;
+                    if(msg.encrypted) {
+                        msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.file.url);
+                        msg.mxc_url = msg.content.file.url;
+                    } else {
+                        msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.url);
+                        msg.mxc_url = msg.content.url;
+                    }
+
+                    if('org.matrix.msc1767.file' in msg.content) {
+                        msg.filename = msg.content['org.matrix.msc1767.file'].name;
+                        msg.mimetype = msg.content['org.matrix.msc1767.file'].mimetype;
+                    }
+
+                    if('org.matrix.msc1767.audio' in msg.content) {
+                        msg.duration = msg.content['org.matrix.msc1767.audio'].duration;
+                        msg.waveform = msg.content['org.matrix.msc1767.audio'].waveform;
+                    }
+                    break;
+
                 case 'm.image':
                     if(!node.acceptImages) return;
                     msg.filename = msg.content.filename || msg.content.body;
@@ -86,6 +109,12 @@ module.exports = function(RED) {
                         msg.thumbnail_url = node.server.matrixClient.mxcUrlToHttp(msg.content.info.thumbnail_url);
                         msg.thumbnail_mxc_url = msg.content.info.thumbnail_url;
                     }
+                    break;
+
+                case 'm.location':
+                    if(!node.acceptLocations) return;
+                    msg.geo_uri = msg.content.geo_uri;
+                    msg.payload = msg.content.body;
                     break;
 
                 case 'm.reaction':
