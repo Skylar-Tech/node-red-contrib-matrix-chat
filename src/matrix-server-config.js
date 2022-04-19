@@ -5,8 +5,6 @@ const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
-const {deriveKey} = require("matrix-js-sdk/lib/crypto/key_passphrase");
-const {encryptAES} = require("matrix-js-sdk/lib/crypto/aes");
 
 module.exports = function(RED) {
     function MatrixFolderNameFromUserId(name) {
@@ -466,7 +464,7 @@ module.exports = function(RED) {
             fs.renameSync(oldStorageDir, oldStorageDir + "-backup");
         }
 
-        if(RED.settings.userDir !== resolve('./')) {
+        if(RED.settings.userDir !== resolve('./') && resolve(oldStorageDir2) !== resolve(storageDir)) {
             // user directory does not match running directory
             // check if we stored stuff in wrong directory and move it
             if(fs.pathExistsSync(oldStorageDir2)){

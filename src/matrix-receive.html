@@ -15,7 +15,9 @@
             acceptStickers: {"value": true},
             acceptReactions: {"value": true},
             acceptFiles: {"value": true},
+            acceptAudio: {"value": true},
             acceptImages: {"value": true},
+            acceptLocations: {"value": true},
         },
         label: function() {
             return this.name || "Matrix Receive";
@@ -49,7 +51,7 @@
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-acceptText" style="width: auto">
-            Accept text <code>m.text</code>
+            Accept text <code style="text-transform: none;">m.text</code>
         </label>
     </div>
     <div class="form-row">
@@ -59,7 +61,7 @@
                 style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-acceptEmotes" style="width: auto">
-            Accept emotes <code>m.emote</code>
+            Accept emotes <code style="text-transform: none;">m.emote</code>
         </label>
     </div>
     <div class="form-row">
@@ -69,7 +71,7 @@
                 style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-acceptStickers" style="width: auto">
-            Accept stickers <code>m.sticker</code>
+            Accept stickers <code style="text-transform: none;">m.sticker</code>
         </label>
     </div>
     <div class="form-row">
@@ -79,7 +81,7 @@
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-acceptReactions" style="width: auto">
-            Accept reactions <code>m.reaction</code>
+            Accept reactions <code style="text-transform: none;">m.reaction</code>
         </label>
     </div>
     <div class="form-row">
@@ -89,7 +91,17 @@
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-acceptFiles" style="width: auto">
-            Accept files <code>m.file</code>
+            Accept files <code style="text-transform: none;">m.file</code>
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-acceptAudio"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-acceptAudio" style="width: auto">
+            Accept files <code style="text-transform: none;">m.audio</code>
         </label>
     </div>
     <div class="form-row">
@@ -99,7 +111,17 @@
             style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-acceptImages" style="width: auto">
-            Accept images <code>m.image</code>
+            Accept images <code style="text-transform: none;">m.image</code>
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-acceptLocations"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-acceptLocations" style="width: auto">
+            Accept locations <code style="text-transform: none;">m.location</code>
         </label>
     </div>
     <script type="text/javascript">
@@ -237,6 +259,38 @@
             </dl>
         </li>
 
+        <li><code>msg.type</code> == '<strong>m.audio</strong>'
+            <dl class="message-properties">
+                <dt>msg.filename <span class="property-type">string</span></dt>
+                <dd>the image's parsed filename</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.mimetype <span class="property-type">string</span></dt>
+                <dd>audio file mimetype (ex: audio/ogg)</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.url <span class="property-type">string</span></dt>
+                <dd>the file's URL</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.mxc_url <span class="property-type">string</span></dt>
+                <dd>the file's Matrix URL</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.duration <span class="property-type">integer</span></dt>
+                <dd>duration of audio file in milliseconds</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.waveform <span class="property-type">array[int]</span></dt>
+                <dd>waveform of the audio clip</dd>
+            </dl>
+        </li>
+
         <li><code>msg.type</code> == '<strong>m.image</strong>'
             <dl class="message-properties">
                 <dt>msg.filename <span class="property-type">string</span></dt>
@@ -261,6 +315,13 @@
             <dl class="message-properties">
                 <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
                 <dd>the image's thumbnail Matrix URL</dd>
+            </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.location</strong>'
+            <dl class="message-properties">
+                <dt>msg.geo_uri <span class="property-type">string</span></dt>
+                <dd>URI format of the geolocation</dd>
             </dl>
         </li>
     </ul>
