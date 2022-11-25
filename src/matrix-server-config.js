@@ -239,6 +239,13 @@ module.exports = function(RED) {
                         });
                     } else {
                         node.log("Got invite to join room " + member.roomId);
+												let msg = {
+														type      : 'r.invite',
+														payload   : 'Invitation',
+														userId    : member.userId,
+														topic     : member.roomId
+												};
+												node.emit("Room.invite", msg);
                     }
                 }
             });
