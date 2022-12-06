@@ -1,0 +1,94 @@
+[
+  {
+    "id": "64f76474ff7a3727",
+    "type": "matrix-room-invite",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "8da0ef83f77f8e24",
+    "roomId": null,
+    "x": 270,
+    "y": 2380,
+    "wires": [
+      [
+        "22f6056fa5bc5bd0"
+      ]
+    ]
+  },
+  {
+    "id": "6d6f304a0a6342b8",
+    "type": "matrix-join-room",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": "8da0ef83f77f8e24",
+    "x": 770,
+    "y": 2380,
+    "wires": [
+      [
+        "1409ebb4a0e65663"
+      ],
+      [
+        "1409ebb4a0e65663"
+      ]
+    ]
+  },
+  {
+    "id": "22f6056fa5bc5bd0",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "name": "msg.userId == @skylord123:skylar.tech",
+    "property": "userId",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 520,
+    "y": 2380,
+    "wires": [
+      [
+        "6d6f304a0a6342b8"
+      ]
+    ]
+  },
+  {
+    "id": "043f74e6d76b1eb0",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Only accept room invites from specific user",
+    "info": "",
+    "x": 360,
+    "y": 2340,
+    "wires": []
+  },
+  {
+    "id": "1409ebb4a0e65663",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 910,
+    "y": 2380,
+    "wires": []
+  },
+  {
+    "id": "8da0ef83f77f8e24",
+    "type": "matrix-server-config",
+    "name": null,
+    "autoAcceptRoomInvites": false,
+    "enableE2ee": true,
+    "global": true
+  }
+]

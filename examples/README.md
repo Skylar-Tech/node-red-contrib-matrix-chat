@@ -15,6 +15,8 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 - [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
 - [Respond to "file" with an uploaded file](#respond-to-file-with-an-uploaded-file)
 - [Respond to "react" with a reaction](#respond-to-react-with-a-reaction)
+- [Accept room invites from specific user](#accept-room-invites-from-specific-user)
+- [Leave room when someone says "bye"](#leave-room-when-someone-says-bye)
 - [Remove messages containing "delete"](#remove-messages-containing-delete)
 - [Respond to "users" with full list of server users](#respond-to-users-with-full-list-of-server-users)
 - [Respond to "newroom" by creating new room and inviting user](#respond-to-newroom-by-creating-new-room-and-inviting-user)
@@ -110,6 +112,26 @@ You will need a file on the machine running Node-RED. In this case sample.pdf ex
 Give a 👍 reaction when someone says "react"
 
 ![respond-react-with-reaction.png](respond-react-with-reaction.png)
+
+
+
+### Accept room invites from specific user
+
+[View JSON](accept-room-invites.json)
+
+Accept room invites from specific user.
+
+![accept-room-invites.png](accept-room-invites.png)
+
+
+
+### Leave room when someone says bye
+
+[View JSON](leave-room-bye.json)
+
+Leave room when someone says "bye".
+
+![leave-room-bye.png](leave-room-bye.png)
 
 
 

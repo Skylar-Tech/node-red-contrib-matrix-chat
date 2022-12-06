@@ -251,23 +251,30 @@ module.exports = function(RED) {
             // handle auto-joining rooms
 
             node.matrixClient.on(RoomMemberEvent.Membership, async function(event, member) {
+                if(node.initializedAt > event.getDate()) {
+                    return; // skip events that occurred before our client initialized
+                }
+
                 if (member.membership === "invite" && member.userId === node.userId) {
+                    node.log("Got invite to join room " + member.roomId);
+                    console.log(event);
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
                             node.log("Automatically accepted invitation to join room " + member.roomId);
                         }).catch(function(e) {
                             node.warn("Cannot join room (could be from being kicked/banned) " + member.roomId + ": " + e);
                         });
-                    } else {
-                        node.log("Got invite to join room " + member.roomId);
-												let msg = {
-														type      : 'r.invite',
-														payload   : 'Invitation',
-														userId    : member.userId,
-														topic     : member.roomId
-												};
-												node.emit("Room.invite", msg);
                     }
+
+                    let room = node.matrixClient.getRoom(event.getRoomId());
+                    node.emit("Room.invite", {
+                        type      : 'm.room.member',
+                        userId    : event.getSender(),
+                        topic     : event.getRoomId(),
+                        topicName : (room ? room.name : null) || null,
+                        event     : event,
+                        eventId   : event.getId(),
+                    });
                 }
             });
 

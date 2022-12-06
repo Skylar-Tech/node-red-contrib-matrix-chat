@@ -32,12 +32,6 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-
-        node.server.on("Room.invite", async function(msg) {
-            node.send(msg);
-        });
-
-
         node.server.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
             // if node has a room ID set we only listen on that room
             if(node.roomIds.length && node.roomIds.indexOf(room.roomId) === -1) {
