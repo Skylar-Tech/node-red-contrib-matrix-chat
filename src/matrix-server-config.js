@@ -5,8 +5,20 @@ const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
+const request = require("request");
 
 module.exports = function(RED) {
+    // disable logging if set to "off"
+    let loggingSettings = RED.settings.get('logging');
+    if(
+        typeof loggingSettings.console !== 'undefined' &&
+        typeof loggingSettings.console.level !== 'undefined' &&
+        ['info','debug','trace'].indexOf(loggingSettings.console.level.toLowerCase()) >= 0
+    ) {
+        const { logger } = require('matrix-js-sdk/lib/logger');
+        logger.disableAll();
+    }
+
     function MatrixFolderNameFromUserId(name) {
         return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     }
@@ -116,10 +128,10 @@ module.exports = function(RED) {
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
-                sessionStore: new sdk.WebStorageSessionStore(localStorage),
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
                 userId: this.userId,
                 deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
+                request
                 // verificationMethods: ["m.sas.v1"]
             });
 
@@ -411,7 +423,8 @@ module.exports = function(RED) {
             const matrixClient = sdk.createClient({
                 baseUrl: baseUrl,
                 deviceId: deviceId,
-                localTimeoutMs: '30000'
+                localTimeoutMs: '30000',
+                request
             });
 
             matrixClient.login(
