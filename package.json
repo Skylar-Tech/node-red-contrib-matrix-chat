@@ -3,10 +3,12 @@
   "version": "0.6.1",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
+    "abort-controller": "^3.0.0",
     "fs-extra": "^10.0.1",
     "got": "^12.0.2",
     "isomorphic-webcrypto": "^2.3.8",
-    "matrix-js-sdk": "^20.0.0",
+    "matrix-js-sdk": "^21.2.0",
+    "node-fetch": "^3.3.0",
     "node-localstorage": "^2.2.1",
     "olm": "https://gitlab.matrix.org/matrix-org/olm/-/package_files/472/download",
     "request": "^2.88.2",

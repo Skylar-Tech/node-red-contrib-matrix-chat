@@ -6,6 +6,15 @@ const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
 const request = require("request");
+require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
+if (!globalThis.fetch) {
+    // polyfill fetch if we don't have it
+    if (!globalThis.fetch) {
+        import('node-fetch').then(({ default: fetch, Headers, Request, Response }) => {
+            Object.assign(globalThis, { fetch, Headers, Request, Response })
+        })
+    }
+}
 
 module.exports = function(RED) {
     // disable logging if set to "off"
@@ -455,7 +464,7 @@ module.exports = function(RED) {
         let oldStorageDir = './matrix-local-storage',
             oldStorageDir2 = './matrix-client-storage';
 
-        // if the old storage location exists lets move it to it's new location
+        // if the old storage location exists lets move it to the new location
         if(fs.pathExistsSync(oldStorageDir)){
             RED.nodes.eachNode(function(n){
                 try {
@@ -468,7 +477,7 @@ module.exports = function(RED) {
                         fs.copySync(oldStorageDir, dir);
                     }
                 } catch (err) {
-                    console.error(err)
+                    node.error(err);
                 }
             });
 
