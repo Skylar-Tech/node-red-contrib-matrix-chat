@@ -60,7 +60,6 @@ module.exports = function(RED) {
             // we need the status code, so set onlydata to false for this request
             node.server.matrixClient.http
                 .authedRequest(
-                    undefined,
                     'POST',
                     node.encodeUri(
                         "/_synapse/admin/v1/join/$room_id_or_alias",

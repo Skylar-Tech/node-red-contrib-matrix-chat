@@ -48,7 +48,6 @@ module.exports = function(RED) {
 
             node.server.matrixClient.http
                 .authedRequest(
-                    undefined,
                     'GET',
                     "/_synapse/admin/v2/users",
                     queryParams,
