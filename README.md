@@ -26,9 +26,7 @@ The following is supported from this package:
 - Get a user list from a room
 - Kick user from room
 - Ban user from room
-- Join a room
-- Create a room
-- Invite to a room
+- Join, Create, Invite, and Leave rooms
 - Synapse admin API to force add user to room (requires bot to be in same room already)
 
 
