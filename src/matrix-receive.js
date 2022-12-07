@@ -13,6 +13,7 @@ module.exports = function(RED) {
         this.acceptFiles = n.acceptFiles;
         this.acceptAudio = n.acceptAudio;
         this.acceptImages = n.acceptImages;
+        this.acceptVideos = n.acceptVideos;
         this.acceptLocations = n.acceptLocations;
         this.roomId = n.roomId;
         this.roomIds = this.roomId ? this.roomId.split(',') : [];
@@ -97,6 +98,23 @@ module.exports = function(RED) {
 
                 case 'm.image':
                     if(!node.acceptImages) return;
+                    msg.filename = msg.content.filename || msg.content.body;
+                    if(msg.encrypted) {
+                        msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.file.url);
+                        msg.mxc_url = msg.content.file.url;
+                        msg.thumbnail_url = node.server.matrixClient.mxcUrlToHttp(msg.content.info.thumbnail_file.url);
+                        msg.thumbnail_mxc_url = msg.content.info.thumbnail_file.url;
+                    } else {
+                        msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.url);
+                        msg.mxc_url = msg.content.url;
+                        msg.thumbnail_url = node.server.matrixClient.mxcUrlToHttp(msg.content.info.thumbnail_url);
+                        msg.thumbnail_mxc_url = msg.content.info.thumbnail_url;
+                    }
+                    break;
+
+
+                case 'm.video':
+                    if(!node.acceptVideos) return;
                     msg.filename = msg.content.filename || msg.content.body;
                     if(msg.encrypted) {
                         msg.url = node.server.matrixClient.mxcUrlToHttp(msg.content.file.url);

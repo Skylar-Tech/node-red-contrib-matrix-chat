@@ -4,7 +4,7 @@ const sdk = require("matrix-js-sdk");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
-const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
+const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent, MemoryStore} = require("matrix-js-sdk");
 const request = require("request");
 require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
 if (!globalThis.fetch) {
@@ -138,6 +138,9 @@ module.exports = function(RED) {
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
+                store: new MemoryStore({
+                    localStorage: localStorage,
+                }),
                 userId: this.userId,
                 deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
                 request
