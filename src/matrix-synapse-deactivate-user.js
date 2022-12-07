@@ -56,7 +56,6 @@ module.exports = function(RED) {
             );
             node.server.matrixClient.http
                 .authedRequest(
-                    undefined,
                     'POST',
                     path,
                     undefined,

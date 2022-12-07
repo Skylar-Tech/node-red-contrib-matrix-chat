@@ -1,0 +1,63 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-leave-room', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs: 1,
+        outputs: 2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: null },
+        },
+        label: function() {
+            return this.name || "Leave Room";
+        },
+        paletteLabel: 'Leave Room'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-leave-room">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-leave-room">
+    <h3>Details</h3>
+    <p>
+        This node leaves a room
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic
+            <span class="property-type">string</span>
+        </dt>
+        <dd> The room identifier to leave: for example, <code>!h8zld9j31:example.com</code>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>Returns the same message that was received</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+</script>

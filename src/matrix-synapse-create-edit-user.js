@@ -52,7 +52,6 @@ module.exports = function(RED) {
 
             node.server.matrixClient.http
                 .authedRequest(
-                    undefined,
                     'PUT',
                     node.encodeUri(
                         "/_synapse/admin/v2/users/$userId",
@@ -62,13 +61,13 @@ module.exports = function(RED) {
                     msg.payload,
                     { prefix: '' }
                 ).then(function(e){
-                msg.payload = e;
-                node.send([msg, null]);
-            }).catch(function(e){
-                node.warn("Error creating/editing user " + e);
-                msg.error = e;
-                node.send([null, msg]);
-            });
+                    msg.payload = e;
+                    node.send([msg, null]);
+                }).catch(function(e){
+                    node.warn("Error creating/editing user " + e);
+                    msg.error = e;
+                    node.send([null, msg]);
+                });
         });
     }
     RED.nodes.registerType("matrix-synapse-create-edit-user", MatrixSynapseCreateEditUser);

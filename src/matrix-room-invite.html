@@ -1,0 +1,80 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-invite', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs: 0,
+        outputs: 1,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: null },
+        },
+        label: function() {
+            return this.name || "Room Invite";
+        },
+        paletteLabel: 'Room Invite'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-invite">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-invite">
+    <h3>Details</h3>
+    <p>
+        This node receives room invites.
+    </p>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.type <span class="property-type">string</span></dt>
+                <dd>Always <code>m.room.member</code></dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.userId <span class="property-type">string</span></dt>
+                <dd>ID of the user the invite is from</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.topic <span class="property-type">string</span></dt>
+                <dd>The room identifier for the invite: for example, <code>!h8zld9j31:example.com</code>.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.topicName <span class="property-type">string</span></dt>
+                <dd>The invited room name.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.event <span class="property-type">object</span></dt>
+                <dd>The event object for this invite to get extra details.</dd>
+            </dl>
+
+            <dl class="message-properties">
+                <dt>msg.eventId <span class="property-type">object</span></dt>
+                <dd>The ID of the event for this invite.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+</script>

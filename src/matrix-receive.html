@@ -17,6 +17,7 @@
             acceptFiles: {"value": true},
             acceptAudio: {"value": true},
             acceptImages: {"value": true},
+            acceptVideos: {"value": true},
             acceptLocations: {"value": true},
         },
         label: function() {
@@ -112,6 +113,16 @@
         />
         <label for="node-input-acceptImages" style="width: auto">
             Accept images <code style="text-transform: none;">m.image</code>
+        </label>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-acceptVideos"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-acceptVideos" style="width: auto">
+            Accept videos <code style="text-transform: none;">m.video</code>
         </label>
     </div>
     <div class="form-row">

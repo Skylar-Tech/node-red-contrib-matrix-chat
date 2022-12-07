@@ -53,7 +53,6 @@ module.exports = function(RED) {
             // we need the status code, so set onlydata to false for this request
             node.server.matrixClient.http
                 .authedRequest(
-                    undefined,
                     'GET',
                     node.encodeUri(
                         "/_matrix/client/r0/admin/whois/$userId",

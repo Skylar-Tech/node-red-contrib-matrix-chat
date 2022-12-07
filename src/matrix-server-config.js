@@ -4,9 +4,30 @@ const sdk = require("matrix-js-sdk");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
-const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent} = require("matrix-js-sdk");
+const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent, MemoryStore} = require("matrix-js-sdk");
+const request = require("request");
+require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
+if (!globalThis.fetch) {
+    // polyfill fetch if we don't have it
+    if (!globalThis.fetch) {
+        import('node-fetch').then(({ default: fetch, Headers, Request, Response }) => {
+            Object.assign(globalThis, { fetch, Headers, Request, Response })
+        })
+    }
+}
 
 module.exports = function(RED) {
+    // disable logging if set to "off"
+    let loggingSettings = RED.settings.get('logging');
+    if(
+        typeof loggingSettings.console !== 'undefined' &&
+        typeof loggingSettings.console.level !== 'undefined' &&
+        ['info','debug','trace'].indexOf(loggingSettings.console.level.toLowerCase()) >= 0
+    ) {
+        const { logger } = require('matrix-js-sdk/lib/logger');
+        logger.disableAll();
+    }
+
     function MatrixFolderNameFromUserId(name) {
         return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     }
@@ -116,10 +137,13 @@ module.exports = function(RED) {
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
-                sessionStore: new sdk.WebStorageSessionStore(localStorage),
                 cryptoStore: new LocalStorageCryptoStore(localStorage),
+                store: new MemoryStore({
+                    localStorage: localStorage,
+                }),
                 userId: this.userId,
                 deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
+                request
                 // verificationMethods: ["m.sas.v1"]
             });
 
@@ -230,16 +254,30 @@ module.exports = function(RED) {
             // handle auto-joining rooms
 
             node.matrixClient.on(RoomMemberEvent.Membership, async function(event, member) {
+                if(node.initializedAt > event.getDate()) {
+                    return; // skip events that occurred before our client initialized
+                }
+
                 if (member.membership === "invite" && member.userId === node.userId) {
+                    node.log("Got invite to join room " + member.roomId);
+                    console.log(event);
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
                             node.log("Automatically accepted invitation to join room " + member.roomId);
                         }).catch(function(e) {
                             node.warn("Cannot join room (could be from being kicked/banned) " + member.roomId + ": " + e);
                         });
-                    } else {
-                        node.log("Got invite to join room " + member.roomId);
                     }
+
+                    let room = node.matrixClient.getRoom(event.getRoomId());
+                    node.emit("Room.invite", {
+                        type      : 'm.room.member',
+                        userId    : event.getSender(),
+                        topic     : event.getRoomId(),
+                        topicName : (room ? room.name : null) || null,
+                        event     : event,
+                        eventId   : event.getId(),
+                    });
                 }
             });
 
@@ -411,7 +449,8 @@ module.exports = function(RED) {
             const matrixClient = sdk.createClient({
                 baseUrl: baseUrl,
                 deviceId: deviceId,
-                localTimeoutMs: '30000'
+                localTimeoutMs: '30000',
+                request
             });
 
             matrixClient.login(
@@ -442,7 +481,7 @@ module.exports = function(RED) {
         let oldStorageDir = './matrix-local-storage',
             oldStorageDir2 = './matrix-client-storage';
 
-        // if the old storage location exists lets move it to it's new location
+        // if the old storage location exists lets move it to the new location
         if(fs.pathExistsSync(oldStorageDir)){
             RED.nodes.eachNode(function(n){
                 try {
@@ -455,7 +494,7 @@ module.exports = function(RED) {
                         fs.copySync(oldStorageDir, dir);
                     }
                 } catch (err) {
-                    console.error(err)
+                    node.error(err);
                 }
             });
 
