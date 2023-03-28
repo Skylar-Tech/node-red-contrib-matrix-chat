@@ -126,10 +126,15 @@ module.exports = function(RED) {
                                 // bootstrap cross-signing
                                 await node.matrixClient.bootstrapCrossSigning({
                                     // maybe we can skip this?
-                                    authUploadDeviceSigningKeys: (makeRequest) => {
-                                        makeRequest()
-                                        return Promise.resolve();
+                                    authUploadDeviceSigningKeys: async (func) => {
+                                        await func({});
                                     }
+                                    // authUploadDeviceSigningKeys: async (makeRequest) => {
+                                    //     return await makeRequest({
+                                    //         type: 'm.login.token',
+                                    //         token: node.credentials.accessToken,
+                                    //     });
+                                    // }
                                 });
                                 await node.matrixClient.checkOwnCrossSigningTrust();
                             }
@@ -185,6 +190,17 @@ module.exports = function(RED) {
 
             fs.ensureDirSync(storageDir); // create storage directory if it doesn't exist
             upgradeDirectoryIfNecessary(node, storageDir);
+
+            // taken from https://github.com/matrix-org/matrix-react-sdk/blob/d9d0ab3d98dea8f260bd7037482c3c8cf288ae82/cypress/support/bot.ts
+            // these next lines are to fix "Device verification cancelled Error: No getCrossSigningKey callback supplied" error
+            const privateKeys = {};
+            const getCrossSigningKey = (type) => {
+                return privateKeys[type];
+            };
+            const saveCrossSigningKeys = (k) => {
+                Object.assign(privateKeys, k);
+            };
+
             node.matrixClient = sdk.createClient({
                 baseUrl: this.url,
                 accessToken: this.credentials.accessToken,
@@ -194,8 +210,9 @@ module.exports = function(RED) {
                 }),
                 userId: this.userId,
                 deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
-                request
-                // verificationMethods: ["m.sas.v1"]
+                request,
+                verificationMethods: ["m.sas.v1"],
+                cryptoCallbacks: { getCrossSigningKey, saveCrossSigningKeys },
             });
 
             node.debug(`hasLazyLoadMembersEnabled=${node.matrixClient.hasLazyLoadMembersEnabled()}`);
