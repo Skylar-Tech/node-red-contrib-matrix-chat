@@ -44,6 +44,7 @@ module.exports = function(RED) {
             this.credentials = {};
         }
 
+        this.users = {};
         this.connected = null;
         this.name = n.name;
         this.userId = this.credentials.userId;
@@ -423,6 +424,14 @@ module.exports = function(RED) {
                         }
                     )
             })();
+
+            // Keep track of all consumers of this node to be able to catch errors
+            node.register = function(consumerNode) {
+                node.users[consumerNode.id] = consumerNode;
+            };
+            node.deregister = function(consumerNode) {
+                delete node.users[consumerNode.id];
+            };
         }
     }
 
