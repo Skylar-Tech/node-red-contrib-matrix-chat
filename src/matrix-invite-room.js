@@ -12,6 +12,7 @@ module.exports = function(RED) {
             node.error('Server must be configured on the node.', {});
             return;
         }
+        node.server.register(node);
 
         this.encodeUri = function(pathTemplate, variables) {
             for (const key in variables) {
@@ -63,6 +64,10 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-invite-room", MatrixInviteRoom);

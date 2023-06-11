@@ -12,6 +12,7 @@ module.exports = function(RED) {
             node.error('Server must be configured on the node.', {});
             return;
         }
+        node.server.register(node);
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -25,6 +26,10 @@ module.exports = function(RED) {
 
         node.server.on("Room.invite", async function(msg) {
             node.send(msg);
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-room-invite", MatrixRoomInvite);

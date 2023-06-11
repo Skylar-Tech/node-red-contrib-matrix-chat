@@ -14,6 +14,7 @@ module.exports = function(RED) {
             node.error("No configuration node", {});
             return;
         }
+        node.server.register(node);
 
         node.server.on("disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
@@ -48,6 +49,10 @@ module.exports = function(RED) {
                 msg.payload = e;
                 node.send([null, msg]);
             }
+        });
+        
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-leave-room", MatrixLeaveRoom);
