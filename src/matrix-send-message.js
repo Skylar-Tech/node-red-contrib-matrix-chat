@@ -71,7 +71,7 @@ module.exports = function(RED) {
 
             if(msgType === 'msg.type') {
                 if(!msg.type) {
-                    node.error("msg.type type is set to be passed in via msg.type but was not defined");
+                    node.error("msg.type type is set to be passed in via msg.type but was not defined", {});
                     return;
                 }
                 msgType = msg.type;
@@ -79,7 +79,7 @@ module.exports = function(RED) {
 
             if(msgFormat === 'msg.format') {
                 if(!msg.format) {
-                    node.error("Message format is set to be passed in via msg.format but was not defined");
+                    node.error("Message format is set to be passed in via msg.format but was not defined", {});
                     return;
                 }
                 msgFormat = msg.format;
@@ -91,7 +91,7 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", {});
                 node.send([null, msg]);
                 return;
             }
@@ -104,7 +104,7 @@ module.exports = function(RED) {
 
             let payload = n.message || msg.payload;
             if(!payload) {
-                node.error('msg.payload must be defined or the message configured on the node.');
+                node.error('msg.payload must be defined or the message configured on the node.', {});
                 return;
             }
 
