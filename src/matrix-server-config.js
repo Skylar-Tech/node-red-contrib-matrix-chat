@@ -69,9 +69,9 @@ module.exports = function(RED) {
         let retryStartTimeout = null;
 
         if(!this.credentials.accessToken) {
-            node.error("Matrix connection failed: missing access token in configuration.");
+            node.error("Matrix connection failed: missing access token in configuration.", {});
         } else if(!this.url) {
-            node.error("Matrix connection failed: missing server URL in configuration.");
+            node.error("Matrix connection failed: missing server URL in configuration.", {});
         } else {
             node.setConnected = async function(connected, cb) {
                 if (node.connected !== connected) {
@@ -89,7 +89,7 @@ module.exports = function(RED) {
                                 device_id = this.matrixClient.getDeviceId();
 
                             if(!device_id && node.enableE2ee) {
-                                node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
+                                node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.", {})
                             } else {
                                 if(!stored_device_id || stored_device_id !== device_id) {
                                     node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
@@ -108,13 +108,13 @@ module.exports = function(RED) {
                                                     }).then(
                                                         function(response) {},
                                                         function(error) {
-                                                            node.error("Failed to set device label: " + error);
+                                                            node.error("Failed to set device label: " + error, {});
                                                         }
                                                     );
                                                 }
                                             },
                                             function(error) {
-                                                node.error("Failed to fetch device: " + error);
+                                                node.error("Failed to fetch device: " + error, {});
                                             }
                                         );
                                 }
@@ -190,7 +190,7 @@ module.exports = function(RED) {
                 try {
                     await node.matrixClient.decryptEventIfNeeded(event);
                 } catch (error) {
-                    node.error(error);
+                    node.error(error, {});
                     return;
                 }
 
@@ -293,7 +293,7 @@ module.exports = function(RED) {
                 } else if(prevState === null && state === "ERROR") {
                     // Occurs when the initial sync failed first time.
                     node.setConnected(false, function(){
-                        node.error("Failed to connect to Matrix server");
+                        node.error("Failed to connect to Matrix server", {});
                     });
                 } else if(prevState === "ERROR" && state === "PREPARED") {
                     // Occurs when the initial sync succeeds
@@ -310,18 +310,18 @@ module.exports = function(RED) {
                 } else if(prevState === "SYNCING" && state === "RECONNECTING") {
                     // Occurs when the live update fails.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "RECONNECTING" && state === "RECONNECTING") {
                     // Can occur if the update calls continue to fail,
                     // but the keepalive calls (to /versions) succeed.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "RECONNECTING" && state === "ERROR") {
                     // Occurs when the keepalive call also fails
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "ERROR" && state === "SYNCING") {
                     // Occurs when the client has performed a
@@ -333,7 +333,7 @@ module.exports = function(RED) {
                     // Occurs when the client has failed to
                     // keepalive for a second time or more.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "SYNCING" && state === "SYNCING") {
                     // Occurs when the client has performed a live update.
@@ -345,7 +345,7 @@ module.exports = function(RED) {
                     // Occurs once the client has stopped syncing or
                     // trying to sync after stopClient has been called.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 }
             });
@@ -363,7 +363,7 @@ module.exports = function(RED) {
                 //     httpStatus: 401
                 // }
 
-                node.error("Authentication failure: " + errorObj);
+                node.error("Authentication failure: " + errorObj, {});
                 stopClient();
             });
 
@@ -379,7 +379,7 @@ module.exports = function(RED) {
                         initialSyncLimit: 8
                     });
                 } catch(error) {
-                    node.error(error);
+                    node.error(error, {});
                 }
             }
 
@@ -400,7 +400,7 @@ module.exports = function(RED) {
                     .then(
                         function(data) {
                             if((typeof data['device_id'] === undefined || !data['device_id']) && !node.deviceId && !getStoredDeviceId(localStorage)) {
-                                node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.");
+                                node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.", {});
                             }
                             if('device_id' in data && data['device_id'] && !node.deviceId) {
                                 // if we have no device_id configured lets use the one
@@ -410,7 +410,7 @@ module.exports = function(RED) {
 
                             // make sure our userId matches the access token's
                             if(data['user_id'].toLowerCase() !== node.userId.toLowerCase()) {
-                                node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`);
+                                node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`, {});
                                 return;
                             }
                             run().catch((error) => node.error(error));
@@ -419,7 +419,7 @@ module.exports = function(RED) {
                             // if the error isn't authentication related retry in a little bit
                             if(err.code !== "M_UNKNOWN_TOKEN") {
                                 retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
-                                node.error("Auth check failed: " + err);
+                                node.error("Auth check failed: " + err, {});
                             }
                         }
                     )
@@ -503,7 +503,7 @@ module.exports = function(RED) {
                         fs.copySync(oldStorageDir, dir);
                     }
                 } catch (err) {
-                    node.error(err);
+                    node.error(err, {});
                 }
             });
 
