@@ -9,10 +9,9 @@ module.exports = function(RED) {
         this.roomId = n.roomId;
 
         if(!this.server) {
-            node.error('Server must be configured on the node.');
+            node.error('Server must be configured on the node.', {});
             return;
         }
-
         this.encodeUri = function(pathTemplate, variables) {
             for (const key in variables) {
                 if (!variables.hasOwnProperty(key)) {
@@ -42,18 +41,18 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", {});
                 node.send([null, msg]);
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("room must be defined in either msg.topic or in node config");
+                node.error("room must be defined in either msg.topic or in node config", {});
                 return;
             }
 
             if(!msg.userId) {
-                node.error("msg.userId is required to set user into a room");
+                node.error("msg.userId is required to set user into a room", {});
                 return;
             }
 
@@ -76,6 +75,10 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-synapse-join-room", MatrixJoinRoom);

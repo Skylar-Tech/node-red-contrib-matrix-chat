@@ -12,25 +12,27 @@ module.exports = function(RED) {
         this.sharedSecret = this.credentials.sharedSecret;
 
         if(!this.server) {
-            node.error('Server URL must be configured on the node.');
+            node.error('Server URL must be configured on the node.', {});
             return;
         }
 
         if(!this.sharedSecret) {
-            node.error('Shared registration secret must be configured on the node.');
+            node.error('Shared registration secret must be configured on the node.', {});
             return;
         }
+
+        node.server.register(node);
 
         node.on("input", async function (msg) {
             const { got } = await import('got');
 
             if(!msg.payload.username) {
-                node.error("msg.payload.username is required");
+                node.error("msg.payload.username is required", {});
                 return;
             }
 
             if(!msg.payload.password) {
-                node.error("msg.payload.password is required");
+                node.error("msg.payload.password is required", {});
                 return;
             }
 
@@ -50,7 +52,7 @@ module.exports = function(RED) {
 
                 var nonce = response.body.nonce;
                 if(!nonce) {
-                    node.error('Could not get nonce from /_synapse/admin/v1/register');
+                    node.error('Could not get nonce from /_synapse/admin/v1/register', {});
                     return;
                 }
 
@@ -95,6 +97,10 @@ module.exports = function(RED) {
                 msg.payload = response.body;
                 node.send(msg);
             })();
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-synapse-register", MatrixSynapseRegister, {
