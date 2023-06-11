@@ -31,13 +31,13 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", {});
                 node.send([null, msg]);
             }
 
             let roomId = node.roomId || msg.topic;
             if(!roomId) {
-                node.error("msg.topic is required. Specify in the input or configure the room ID on the node.");
+                node.error("msg.topic is required. Specify in the input or configure the room ID on the node.", {});
                 return;
             }
 

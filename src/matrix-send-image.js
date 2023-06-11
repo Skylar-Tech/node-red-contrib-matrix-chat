@@ -31,7 +31,7 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", {});
                 node.send([null, msg]);
             }
 
@@ -57,7 +57,7 @@ module.exports = function(RED) {
             }
 
             if(!msg.payload) {
-                node.error('msg.payload is required');
+                node.error('msg.payload is required', {});
                 return;
             }
 

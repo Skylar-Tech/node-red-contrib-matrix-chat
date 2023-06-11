@@ -8,7 +8,7 @@ module.exports = function(RED) {
         this.server = RED.nodes.getNode(n.server);
 
         if(!this.server) {
-            node.error('Server must be configured on the node.');
+            node.error('Server must be configured on the node.', {});
             return;
         }
 
@@ -41,7 +41,7 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", {});
                 node.send([null, msg]);
             }
 

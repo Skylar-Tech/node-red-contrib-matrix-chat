@@ -9,7 +9,7 @@ module.exports = function(RED) {
         this.roomId = n.roomId;
 
         if(!this.server) {
-            node.error('Server must be configured on the node.');
+            node.error('Server must be configured on the node.', {});
             return;
         }
 

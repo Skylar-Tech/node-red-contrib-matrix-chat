@@ -26,23 +26,23 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.error("No matrix server selected");
+                node.error("No matrix server selected", {});
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", {});
                 node.send([null, msg]);
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("Room must be specified in msg.topic or in configuration");
+                node.error("Room must be specified in msg.topic or in configuration", {});
                 return;
             }
 
             if(!msg.userId) {
-                node.error("msg.userId was not set.");
+                node.error("msg.userId was not set.", {});
                 return;
             }
 
@@ -53,7 +53,7 @@ module.exports = function(RED) {
                     node.send([msg, null]);
                 })
                 .catch(function(e){
-                    node.error("Error trying to kick " + msg.userId + " from " + msg.topic);
+                    node.error("Error trying to kick " + msg.userId + " from " + msg.topic, {});
                     msg.error = e;
                     node.send([null, msg]);
                 });

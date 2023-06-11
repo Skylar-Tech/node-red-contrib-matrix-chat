@@ -21,7 +21,7 @@ module.exports = function(RED) {
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
         if (!node.server) {
-            node.error("No configuration node");
+            node.error("No configuration node", {});
             return;
         }
 
