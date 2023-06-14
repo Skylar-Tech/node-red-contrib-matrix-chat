@@ -41,18 +41,18 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed", {});
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("room must be defined in either msg.topic or in node config", {});
+                node.error("room must be defined in either msg.topic or in node config", msg);
                 return;
             }
 
             if(!msg.userId) {
-                node.error("msg.userId is required to set user into a room", {});
+                node.error("msg.userId is required to set user into a room", msg);
                 return;
             }
 

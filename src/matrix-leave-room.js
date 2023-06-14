@@ -26,17 +26,17 @@ module.exports = function(RED) {
 
         node.on('input', function(msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.error("No matrix server selected", {});
+                node.error("No matrix server selected", msg);
                 return;
             }
 
             if(!msg.topic) {
-                node.error('No room provided in msg.topic', {});
+                node.error('No room provided in msg.topic', msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed", {});
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
             }
 
@@ -45,7 +45,7 @@ module.exports = function(RED) {
                 node.server.matrixClient.leave(msg.topic);
                 node.send([msg, null]);
             } catch(e) {
-                node.error("Failed to leave room " + msg.topic + ": " + e, {});
+                node.error("Failed to leave room " + msg.topic + ": " + e, msg);
                 msg.payload = e;
                 node.send([null, msg]);
             }

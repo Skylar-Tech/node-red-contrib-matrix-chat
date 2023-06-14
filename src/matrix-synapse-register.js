@@ -27,12 +27,12 @@ module.exports = function(RED) {
             const { got } = await import('got');
 
             if(!msg.payload.username) {
-                node.error("msg.payload.username is required", {});
+                node.error("msg.payload.username is required", msg);
                 return;
             }
 
             if(!msg.payload.password) {
-                node.error("msg.payload.password is required", {});
+                node.error("msg.payload.password is required", msg);
                 return;
             }
 
@@ -52,7 +52,7 @@ module.exports = function(RED) {
 
                 var nonce = response.body.nonce;
                 if(!nonce) {
-                    node.error('Could not get nonce from /_synapse/admin/v1/register', {});
+                    node.error('Could not get nonce from /_synapse/admin/v1/register', msg);
                     return;
                 }
 

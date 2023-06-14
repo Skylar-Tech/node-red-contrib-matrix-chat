@@ -28,7 +28,7 @@ module.exports = function(RED) {
         node.on('input', function(msg) {
 
             if(!msg.eventId) {
-                node.error("eventId is missing", {});
+                node.error("eventId is missing", msg);
                 node.send([null, msg])
                 return;
             }
@@ -39,7 +39,7 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed", {});
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
             }
