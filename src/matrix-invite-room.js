@@ -38,18 +38,18 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.error("No matrix server selected", {});
+                node.error("No matrix server selected", msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed", {});
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("room must be defined in either msg.topic or in node config", {});
+                node.error("room must be defined in either msg.topic or in node config", msg);
                 return;
             }
 

@@ -31,7 +31,7 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed", {});
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
             }
 
