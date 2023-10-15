@@ -17,7 +17,6 @@ if (!globalThis.fetch) {
 }
 
 module.exports = function(RED) {
-    console.log(RED.settings.contextStorage);
     // disable logging if set to "off"
     let loggingSettings = RED.settings.get('logging');
     if(
@@ -270,7 +269,6 @@ module.exports = function(RED) {
 
                 if (member.membership === "invite" && member.userId === node.userId) {
                     node.log("Got invite to join room " + member.roomId);
-                    console.log(event);
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
                             node.log("Automatically accepted invitation to join room " + member.roomId);
