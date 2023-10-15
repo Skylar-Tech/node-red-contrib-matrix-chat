@@ -21,8 +21,6 @@ module.exports = function(RED) {
             return;
         }
 
-        node.server.register(node);
-
         node.on("input", async function (msg) {
             const { got } = await import('got');
 

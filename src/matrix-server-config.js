@@ -17,6 +17,7 @@ if (!globalThis.fetch) {
 }
 
 module.exports = function(RED) {
+    console.log(RED.settings.contextStorage);
     // disable logging if set to "off"
     let loggingSettings = RED.settings.get('logging');
     if(
@@ -56,6 +57,14 @@ module.exports = function(RED) {
 
         this.globalAccess = n.global;
         this.initializedAt = new Date();
+
+        // Keep track of all consumers of this node to be able to catch errors
+        node.register = function(consumerNode) {
+            node.users[consumerNode.id] = consumerNode;
+        };
+        node.deregister = function(consumerNode) {
+            delete node.users[consumerNode.id];
+        };
         
         if(!this.userId) {
             node.log("Matrix connection failed: missing user ID in configuration.");
@@ -424,14 +433,6 @@ module.exports = function(RED) {
                         }
                     )
             })();
-
-            // Keep track of all consumers of this node to be able to catch errors
-            node.register = function(consumerNode) {
-                node.users[consumerNode.id] = consumerNode;
-            };
-            node.deregister = function(consumerNode) {
-                delete node.users[consumerNode.id];
-            };
         }
     }
 
