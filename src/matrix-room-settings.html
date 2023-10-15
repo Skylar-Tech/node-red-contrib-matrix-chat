@@ -1,0 +1,115 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-settings',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { value: "", type: "matrix-server-config" },
+            roomId: { value: null },
+            reason: { value: null },
+            returnValues: { value: true }
+        },
+        label: function() {
+            return this.name || "Room Settings";
+        },
+        paletteLabel: 'Room Settings'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-settings">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+ 	 <div class="form-row">
+     	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+     	<input type="text" id="node-input-server">
+ 	</div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+        <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-returnValues"
+                style="width: auto; margin-left: 105px; vertical-align: top"
+        />
+        <label for="node-input-returnValues" style="width: auto">
+            Return current name, topic, and avatar in <code style="white-space: normal;">msg.payload</code>
+        </label>
+        <div class="form-tips" style="margin-bottom: 12px;">
+            You can set the payload to <code style="white-space: normal;">null</code>, <code style="white-space: normal;">undefined</code>, or <code style="white-space: normal;">false</code> to just get the current settings without changing them.
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+    </script>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-settings">
+    <h3>Details</h3>
+    <p>
+        Set or get room name, topic, and avatar.
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.topic
+            <span class="property-type">string | null</span>
+        </dt>
+        <dd> The room to set/get settings for.</dd>
+
+        <dt class="optional">msg.payload.name
+            <span class="property-type">string</span>
+        </dt>
+        <dd> New name for the room</dd>
+
+        <dt class="optional">msg.payload.topic
+            <span class="property-type">string</span>
+        </dt>
+        <dd> New topic for the room</dd>
+
+        <dt class="optional">msg.payload.avatar
+            <span class="property-type">string</span>
+        </dt>
+        <dd> MXC URL for the new room avatar (ex: mxc://localhost/JWEIFJgwEIhweiWJE)</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg <span class="property-type">object</span></dt>
+                <dd>Original message object.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error.name <span class="property-type">string</span></dt>
+                <dd>Error if name failed to set on room.</dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>msg.error.topic <span class="property-type">string</span></dt>
+                <dd>Error if topic failed to set on room.</dd>
+            </dl>
+            <dl class="message-properties">
+                <dt>msg.error.avatar <span class="property-type">string</span></dt>
+                <dd>Error if avatar failed to set on room.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>
