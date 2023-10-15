@@ -101,7 +101,7 @@ module.exports = function(RED) {
                     "aliases": (await node.server.matrixClient.getLocalAliases(msg.topic))?.aliases,
                     "guest_access": (await node.server.matrixClient.getStateEvent(msg.topic, "m.room.guest_access", ""))?.guest_access,
                     "join_rule": join_rules?.join_rule,
-                    "join_allow_rules": join_rules?.allow_rules
+                    "join_allow_rules": join_rules?.allow
                 };
             }
 
