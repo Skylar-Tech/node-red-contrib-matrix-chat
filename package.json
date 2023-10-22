@@ -39,7 +39,8 @@
       "matrix-synapse-create-edit-user": "src/matrix-synapse-create-edit-user.js",
       "matrix-synapse-deactivate-user": "src/matrix-synapse-deactivate-user.js",
       "matrix-synapse-join-room": "src/matrix-synapse-join-room.js",
-      "matrix-whois-user": "src/matrix-whois-user.js"
+      "matrix-whois-user": "src/matrix-whois-user.js",
+      "matrix-typing": "src/matrix-typing.js"
     }
   },
   "engines": {

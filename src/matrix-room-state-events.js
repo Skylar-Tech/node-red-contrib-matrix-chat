@@ -74,24 +74,19 @@ module.exports = function(RED) {
                 if (rule.tot === "msg") {
                     value = RED.util.getMessageProperty(msg,rule.to);
                 } else if ((rule.tot === 'flow') || (rule.tot === 'global')) {
-                    RED.util.evaluateNodeProperty(rule.to, rule.tot, node, msg, (err,value) => {
-                        if (err) {
-                            throw new Error("Invalid value evaluation");
-                        } else {
-                            return value;
-                        }
-                    });
-                    return
+                    try {
+                        value = RED.util.evaluateNodeProperty(rule.to, rule.tot, node, msg);
+                    } catch(e2) {
+                        throw new Error("Invalid value evaluation");
+                    }
                 } else if (rule.tot === 'date') {
                     value = Date.now();
                 } else if (rule.tot === 'jsonata') {
-                    RED.util.evaluateJSONataExpression(rule.to,msg, (err, value) => {
-                        if (err) {
-                            throw new Error("Invalid expression");
-                        } else {
-                            return value;
-                        }
-                    });
+                    try {
+                        value = RED.util.evaluateJSONataExpression(rule.to,msg);
+                    } catch(e3) {
+                        throw new Error("Invalid expression");
+                    }
                     return;
                 }
                 return value;
