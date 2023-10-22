@@ -379,7 +379,7 @@ module.exports = function(RED) {
                     if(node.e2ee){
                         node.log("Initializing crypto...");
                         await node.matrixClient.initCrypto();
-                        node.matrixClient.setGlobalErrorOnUnknownDevices(false);
+                        node.matrixClient.getCrypto().globalBlacklistUnverifiedDevices = false; // prevent errors from unverified devices
                     }
                     node.log("Connecting to Matrix server...");
                     await node.matrixClient.startClient({

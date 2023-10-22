@@ -34,6 +34,7 @@ module.exports = function(RED) {
             if(!node.server.isConnected()) {
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             let roomId = node.roomId || msg.topic;

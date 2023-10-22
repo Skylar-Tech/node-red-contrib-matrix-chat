@@ -33,7 +33,7 @@
       "matrix-room-kick": "src/matrix-room-kick.js",
       "matrix-room-ban": "src/matrix-room-ban.js",
       "matrix-room-users": "src/matrix-room-users.js",
-      "matrix-room-settings": "src/matrix-room-settings.js",
+      "matrix-room-state-events": "src/matrix-room-state-events.js",
       "matrix-synapse-users": "src/matrix-synapse-users.js",
       "matrix-synapse-register": "src/matrix-synapse-register.js",
       "matrix-synapse-create-edit-user": "src/matrix-synapse-create-edit-user.js",
