@@ -7,7 +7,6 @@ module.exports = function(RED) {
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
         this.roomId = n.roomId;
-        this.returnValues = n.returnValues;
         this.rules = n.rules;
 
         if (!node.server) {

@@ -12,19 +12,6 @@
         <input type="text" id="node-input-roomId" placeholder="msg.topic">
         <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
     </div>
-    <div class="form-row">
-        <input
-                type="checkbox"
-                id="node-input-returnValues"
-                style="width: auto; margin-left: 105px; vertical-align: top"
-        />
-        <label for="node-input-returnValues" style="width: auto">
-            Return current name, topic, and avatar in <code style="white-space: normal;">msg.payload</code>
-        </label>
-        <div class="form-tips" style="margin-bottom: 12px;">
-            You can set the payload to <code style="white-space: normal;">null</code>, <code style="white-space: normal;">undefined</code>, <code style="white-space: normal;">false</code>, or an object that doesn't contain the keys needed to apply a change so you can just get the current settings without changing them.
-        </div>
-    </div>
     <div class="form-row" style="margin-bottom:0;">
         <label><i class="fa fa-list"></i> <span data-i18n="change.label.rules"></span></label>
     </div>
@@ -134,7 +121,6 @@
                 server: { value: "", type: "matrix-server-config" },
                 roomId: { value: null },
                 reason: { value: null },
-                returnValues: { value: true },
                 rules: {
                     value: defaultRules,
                     validate: function(rules, opt) {
