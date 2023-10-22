@@ -33,6 +33,7 @@ module.exports = function(RED) {
         node.on('input', async function(msg) {
             if (! node.server || ! node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
@@ -54,6 +55,8 @@ module.exports = function(RED) {
                     }
                 } else if(type === "bool") {
                     value = (property === 'true');
+                } else if(type === "num") {
+                    value = Number(property);
                 }
                 return value;
             }
@@ -68,7 +71,6 @@ module.exports = function(RED) {
                     return;
                 }
 
-                console.log("sending typing",roomId, typing, timeoutMs);
                 await node.server.matrixClient.sendTyping(roomId, typing, timeoutMs);
                 node.send([msg, null]);
             } catch(e) {

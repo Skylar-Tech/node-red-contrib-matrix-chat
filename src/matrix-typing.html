@@ -12,7 +12,7 @@
             roomType: { value: "msg" },
             roomValue: { value: "topic" },
             typingType: { value: "bool" },
-            typingValue: { value: true },
+            typingValue: { value: "true" },
             timeoutMsType: { value: "num" },
             timeoutMsValue: { value: 20000 },
         },
@@ -73,6 +73,10 @@
     <div class="form-row">
         <label for="node-input-room"><i class="fa fa-clock-o"></i> Timeout Milliseconds</label>
         <input type="text" id="node-input-timeoutMs">
+    </div>
+
+    <div class="form-row form-tips">
+        Timeout MS is how many milliseconds the server should show the user typing for.
     </div>
 </script>
 
