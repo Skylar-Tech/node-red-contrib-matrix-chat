@@ -140,11 +140,11 @@ module.exports = function(RED) {
                                     msg.topic,
                                     "m.room.name",
                                     typeof value === "string"
-                                        ? { name: value }
+                                        ? {name: value}
                                         : value);
                                 break;
                             case "m.room.topic":
-                                if(typeof value === "string") {
+                                if (typeof value === "string") {
                                     await node.server.matrixClient.setRoomTopic(msg.topic, value);
                                 } else {
                                     await node.server.matrixClient.sendStateEvent(
@@ -159,27 +159,7 @@ module.exports = function(RED) {
                                     msg.topic,
                                     "m.room.avatar",
                                     typeof value === "string"
-                                        ? { "url": value }
-                                        : value,
-                                    "");
-                                break;
-                            case "m.room.power_levels":
-                                if(typeof value !== 'object') {
-                                    setterErrors[rule.p] = "m.room.power_levels content must be object";
-                                } else {
-                                    await node.server.matrixClient.sendStateEvent(
-                                        msg.topic,
-                                        "m.room.power_levels",
-                                        value,
-                                        "");
-                                }
-                                break;
-                            case "m.room.guest_access":
-                                await node.server.matrixClient.sendStateEvent(
-                                    msg.topic,
-                                    "m.room.guest_access",
-                                    typeof value === "string"
-                                        ? { "guest_access": value }
+                                        ? {"url": value}
                                         : value,
                                     "");
                                 break;
@@ -205,15 +185,50 @@ module.exports = function(RED) {
                                         "");
                                 }
                                 break;
+                            case "m.space.parent":
+                                if (typeof value !== 'object') {
+                                    setterErrors[rule.p] = "m.space.parent content must be object";
+                                } else if (!msg.state_key) {
+                                    setterErrors[rule.p] = "m.space.parent required msg.state_key input to be set to the child roomId";
+                                }else {
+                                    await node.server.matrixClient.sendStateEvent(
+                                        msg.topic,
+                                        "m.room.power_levels",
+                                        value,
+                                        msg.state_key);
+                                }
+                                break;
+                            case "m.space.child":
+                                if (typeof value !== 'object') {
+                                    setterErrors[rule.p] = "m.space.child content must be object";
+                                } else if (!msg.state_key) {
+                                    setterErrors[rule.p] = "m.space.child required msg.state_key input to be set to the parent roomId";
+                                }else {
+                                    await node.server.matrixClient.sendStateEvent(
+                                        msg.topic,
+                                        "m.room.power_levels",
+                                        value,
+                                        msg.state_key);
+                                }
+                                break;
+                            case "m.room.guest_access":
+                                await node.server.matrixClient.sendStateEvent(
+                                    msg.topic,
+                                    "m.room.guest_access",
+                                    typeof value === "string"
+                                        ? { "guest_access": value }
+                                        : value,
+                                    "");
+                                break;
                             default:
                                 if(typeof value !== 'object') {
-                                    setterErrors[rule.p] = "Custom event content must be object";
+                                    setterErrors[rule.p] = `${rule.p} content must be object`;
                                 } else {
                                     await node.server.matrixClient.sendStateEvent(
                                         msg.topic,
                                         rule.p,
                                         value,
-                                        "");
+                                        msg.state_key || "");
                                 }
                                 break;
                         }

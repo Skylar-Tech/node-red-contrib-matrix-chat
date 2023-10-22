@@ -49,6 +49,11 @@
             <span class="property-type">string|object</span>
         </dt>
         <dd> You configure what room state events in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> allow you to pass a string to set their value but all other room state events will require the full content object (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>)</dd>
+
+        <dt class="optional">msg.state_key
+            <span class="property-type">string</span>
+        </dt>
+        <dd> Required for some events such as <code style="white-space: normal;">m.space.parent</code> and <code style="white-space: normal;">m.room.child</code> to set the referenced child/parent room</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -77,13 +82,18 @@
 <script type="text/javascript">
     (function(){
         var roomEventTypeOptions = [
-            { value: "m.room.name", label: "m.room.name"},
-            { value: "m.room.topic", label: "m.room.topic"},
-            { value: "m.room.avatar", label: "m.room.avatar"},
-            { value: "m.room.power_levels", label: "m.room.power_levels"},
-            { value: "m.room.guest_access", label: "m.room.guest_access"},
-            { value: "m.room.join_rules", label: "m.room.join_rules"},
-            { value: "m.room.canonical_alias", label: "m.room.canonical_alias"}
+            { value: "m.room.name", label: "m.room.name" },
+            { value: "m.room.topic", label: "m.room.topic" },
+            { value: "m.room.avatar", label: "m.room.avatar" },
+            { value: "m.room.power_levels", label: "m.room.power_levels" },
+            { value: "m.room.guest_access", label: "m.room.guest_access" },
+            { value: "m.room.join_rules", label: "m.room.join_rules" },
+            { value: "m.room.canonical_alias", label: "m.room.canonical_alias" },
+            { value: "m.room.history_visibility", label: "m.room.history_visibility" },
+            { value: "m.room.server_acl", label: "m.room.server_acl" },
+            { value: "m.room.pinned_events", label: "m.room.pinned_events"},
+            { value: "m.space.child", label: "m.space.child" },
+            { value: "m.space.parent", label: "m.space.parent" },
         ];
         var defaultRules = [{
             t: "set",
@@ -305,9 +315,9 @@
                             propertyValue.typedInput('value',rule.to);
                             localStorageEl.prop("checked", !!rule.ls);
                             if(rule.t === 'get') {
-                                localStorageEl.show();
+                                localStorageEl.parent().show();
                             } else {
-                                localStorageEl.hide();
+                                localStorageEl.parent().hide();
                             }
                         }
                         selectField.change();
