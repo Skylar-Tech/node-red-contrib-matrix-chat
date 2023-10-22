@@ -174,6 +174,13 @@ module.exports = function(RED) {
 
             node.on('close', function(done) {
                 stopClient();
+                if(node.globalAccess) {
+                    try {
+                        node.context().global.delete('matrixClient["'+node.userId+'"]');
+                    } catch(e){
+                        node.error(e.message, {});
+                    }
+                }
                 done();
             });
 

@@ -44,6 +44,7 @@ module.exports = function(RED) {
             try {
                 node.log("Leaving room " + msg.topic);
                 node.server.matrixClient.leave(msg.topic);
+                node.server.matrixClient.store.removeRoom(msg.topic);
                 node.send([msg, null]);
             } catch(e) {
                 node.error("Failed to leave room " + msg.topic + ": " + e, msg);

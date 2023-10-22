@@ -226,23 +226,33 @@ module.exports = function(RED) {
                         value = cachedGetters[rule.p];
                     } else {
                         try {
-                            // we may want to fetch from local storage in the future, this is how to do that
-                            // const room = this.getRoom(roomId);
-                            // const ev = room.currentState.getStateEvents(EventType.RoomEncryption, "");
-                            value = await node.server.matrixClient.getStateEvent(msg.topic, rule.p, "");
-                            switch(rule.p) {
-                                case "m.room.name":
-                                    value = value?.name
-                                    break;
-                                case "m.room.topic":
-                                    value = value?.topic
-                                    break;
-                                case "m.room.avatar":
-                                    value = value?.url
-                                    break;
-                                case "m.room.guest_access":
-                                    value = value?.guest_access;
-                                    break;
+                            if(rule.ls) {
+                                // we opted to lookup from local storage, will fallback to server if necessary
+                                let room = node.server.matrixClient.getRoom(msg.topic);
+                                if(room) {
+                                    value = await room.getLiveTimeline().getState("f").getStateEvents(rule.p, "");
+                                }
+                            }
+                            if(!value) {
+                                // fetch the latest state event by type from server
+                                value = await node.server.matrixClient.getStateEvent(msg.topic, rule.p, "");
+                                if(value) {
+                                    // normalize some simpler events for easier access
+                                    switch(rule.p) {
+                                        case "m.room.name":
+                                            value = value?.name
+                                            break;
+                                        case "m.room.topic":
+                                            value = value?.topic
+                                            break;
+                                        case "m.room.avatar":
+                                            value = value?.url
+                                            break;
+                                        case "m.room.guest_access":
+                                            value = value?.guest_access;
+                                            break;
+                                    }
+                                }
                             }
                             setToValue(value, rule);
                         } catch(e) {

@@ -69,7 +69,7 @@
             <dt class="optional">dynamic
                 <span class="property-type">string|object</span>
             </dt>
-            <dd> You configure what room state events to output in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> will come back as strings otherwise you will get the full content object of the event (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>)</dd>
+            <dd> You configure what room state events to output in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> will come back as strings otherwise you will get the full content object of the event (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>). Additionally there is a setting when configuring a getter called "Fetch from local storage" that if enabled will search the local storage for the room and try to fetch the state event that way and fallback to hitting the server if that isn't possible.</dd>
         </li>
     </ol>
 </script>
@@ -156,15 +156,17 @@
                         .appendTo(row2_1)
                         .typedInput({
                             default: defaultType || (type === 'set' ? 'str' : 'msg'),
-                            types: (type === 'set' ? ['msg','flow','global','str','num','bool','json','bin','date','jsonata'] : ['msg', 'flow', 'global'])
+                            types: (type === 'set' ? ['msg','flow','global','str','json','jsonata'] : ['msg', 'flow', 'global'])
                         });
 
-                    var dcLabel = $('<label style="padding-left: 130px;"></label>').appendTo(row2_2);
+                    var lsLabel = $('<label style="padding-left: 130px;"></label>').appendTo(row2_2);
+                    var localStorageEl = $('<input type="checkbox" class="node-input-rule-property-localStorage" style="width: auto; margin: 0 6px 0 0">').appendTo(lsLabel);
+                    $('<span>').text("Fetch from local storage").appendTo(lsLabel);
 
                     propValInput.on("change", function(evt,type,val) {
                         row2_2.toggle(type === "msg" || type === "flow" || type === "global" || type === "env");
                     })
-                    return [propValInput];
+                    return [propValInput, localStorageEl];
                 }
 
                 $('#node-input-rule-container').css('min-height','150px').css('min-width','450px').editableList({
@@ -259,6 +261,7 @@
                             .appendTo(row4);
 
                         let propertyValue = null;
+                        let localStorageEl = null;
                         let fromValue = null;
                         let toValue = null;
 
@@ -277,12 +280,18 @@
                             if (!propertyValue) {
                                 var parts = createPropertyValue(row2_1, row2_2, type);
                                 propertyValue = parts[0];
+                                localStorageEl = parts[1];
                             } else {
-                                propertyValue.typedInput('types', (type === 'set' ? ['msg','flow','global','str','num','bool','json','bin','date','jsonata','env'] : ['msg', 'flow', 'global']));
+                                propertyValue.typedInput('types', (type === 'set' ? ['msg','flow','global','str','json','jsonata'] : ['msg', 'flow', 'global']));
                             }
 
                             propertyValue.typedInput('show');
                             row2.show();
+                            if(type === 'get') {
+                                localStorageEl.parent().show();
+                            } else {
+                                localStorageEl.parent().hide();
+                            }
                             row3.hide();
                             row4.hide();
                         });
@@ -292,7 +301,14 @@
                         if (rule.t === "set" || rule.t === "get") {
                             var parts = createPropertyValue(row2_1, row2_2, rule.t, rule.tot);
                             propertyValue = parts[0];
+                            localStorageEl = parts[1];
                             propertyValue.typedInput('value',rule.to);
+                            localStorageEl.prop("checked", !!rule.ls);
+                            if(rule.t === 'get') {
+                                localStorageEl.show();
+                            } else {
+                                localStorageEl.hide();
+                            }
                         }
                         selectField.change();
                         container[0].appendChild(fragment);
@@ -319,6 +335,10 @@
                         to:rule.find(".node-input-rule-property-value").typedInput('value'),
                         tot:rule.find(".node-input-rule-property-value").typedInput('type')
                     };
+
+                    if (r.t === "get" && rule.find(".node-input-rule-property-localStorage").prop("checked")) {
+                        r.ls = true;
+                    }
                     node.rules.push(r);
                 });
             },
