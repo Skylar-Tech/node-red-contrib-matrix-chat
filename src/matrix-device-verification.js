@@ -84,7 +84,7 @@ module.exports = function(RED) {
                  * @param {Function} data.cancel a function to call if the key verification is
                  *     rejected.
                  */
-                node.server.matrixClient.on(CryptoEvent.VerificationRequest, async function(data){
+                node.server.matrixClient.on(CryptoEvent.VerificationRequestReceived, async function(data){
                     if(data.phase === Phase.Cancelled || data.phase === Phase.Done) {
                         return;
                     }
@@ -118,13 +118,15 @@ module.exports = function(RED) {
 
                     var data = verificationRequests.get(msg.verifyRequestId);
                     if(msg.cancel) {
-                        await data._verifier.cancel();
+                        await data.verifier.cancel();
                         verificationRequests.delete(msg.verifyRequestId);
                     } else {
                         try {
                             data.on('change', async function() {
+                                console.log("VERIFIER EVENT CHANGE", this.phase);
                                 var that = this;
                                 if(this.phase === Phase.Started) {
+                                    console.log("VERIFIER EVENT PHASE STARTED");
                                     let verifierCancel = function(){
                                         let verifyRequestId = that.targetDevice.userId + ':' + that.targetDevice.deviceId;
                                         if(verificationRequests.has(verifyRequestId)) {
@@ -132,51 +134,57 @@ module.exports = function(RED) {
                                         }
                                     };
 
-                                    data._verifier.on('cancel', function(e){
+                                    data.verifier.on('cancel', function(e){
                                         node.warn("Device verification cancelled " + e);
-                                        console.log(e.value);
+                                        console.log(JSON.stringify(e.value));
                                         verifierCancel();
                                     });
+                                    const sasEventPromise = new Promise(resolve =>
+                                        data.verifier.once("show_sas", resolve)
+                                    );
+                                    console.log("VERIFIER VERIFY");
+                                    await data.verifier.verify();
+                                    console.log("WAITING FOR SHOW SAS EVENT");
+                                    const sasEvent = await sasEventPromise;
 
-                                    let show_sas = function(e) {
-                                        // e = {
-                                        //     sas: {
-                                        //         decimal: [ 8641, 3153, 2357 ],
-                                        //         emoji: [
-                                        //             [Array], [Array],
-                                        //             [Array], [Array],
-                                        //             [Array], [Array],
-                                        //             [Array]
-                                        //         ]
-                                        //     },
-                                        //     confirm: [AsyncFunction: confirm],
-                                        //     cancel: [Function: cancel],
-                                        //     mismatch: [Function: mismatch]
-                                        // }
-                                        msg.payload = e.sas;
-                                        msg.emojis = e.sas.emoji.map(function(emoji, i) {
-                                            return emoji[0];
-                                        });
-                                        msg.emojis_text = e.sas.emoji.map(function(emoji, i) {
-                                            return emoji[1];
-                                        });
-                                        node.send(msg);
-                                    };
-                                    data._verifier.on('show_sas', show_sas);
-                                    data._verifier.verify()
-                                        .then(function(e){
-                                            data._verifier.off('show_sas', show_sas);
-                                            data._verifier.done();
-                                        }, function(e) {
-                                            verifierCancel();
-                                            node.warn(e);
-                                            // @todo return over second output
-                                        });
+                                    console.log("SHOW SAS", sasEvent);
+                                    // e = {
+                                    //     sas: {
+                                    //         decimal: [ 8641, 3153, 2357 ],
+                                    //         emoji: [
+                                    //             [Array], [Array],
+                                    //             [Array], [Array],
+                                    //             [Array], [Array],
+                                    //             [Array]
+                                    //         ]
+                                    //     },
+                                    //     confirm: [AsyncFunction: confirm],
+                                    //     cancel: [Function: cancel],
+                                    //     mismatch: [Function: mismatch]
+                                    // }
+                                    msg.payload = sasEvent.sas;
+                                    msg.emojis = sasEvent.sas.emoji.map(function(emoji, i) {
+                                        return emoji[0];
+                                    });
+                                    msg.emojis_text = sasEvent.sas.emoji.map(function(emoji, i) {
+                                        return emoji[1];
+                                    });
+                                    node.send(msg);
+
+                                    // sasEvent.mismatch();
                                 }
                             });
 
-                            data.emit("change");
-                            await data.accept();
+                            console.log("STARTING VERIFICATION");
+                            try {
+                                await data.accept();
+                                await data.beginKeyVerification(
+                                    data.methods[0],
+                                    data.targetDevice
+                                );
+                            } catch(e) {
+                                console.log("OOPS SOMETHING BROKE", e);
+                            }
                         } catch(e) {
                             console.log("ERROR", e);
                         }
@@ -211,15 +219,15 @@ module.exports = function(RED) {
                     }
 
                     var data = verificationRequests.get(msg.verifyRequestId);
-                    if(data._verifier && data._verifier.sasEvent) {
-                        data._verifier.sasEvent.confirm()
-                            .then(function(e){
-                                node.send([msg, null]);
-                            })
-                            .catch(function(e) {
-                                msg.error = e;
-                                node.send([null, msg]);
-                            });
+                    if(data.verifier && data.verifier.sasEvent) {
+                        try {
+                            await data.verifier.sasEvent.confirm();
+                            node.send([msg, null]);
+                        } catch(e) {
+
+                            msg.error = e;
+                            node.send([null, msg]);
+                        }
                     } else {
                         node.error("Verification must be started");
                     }
