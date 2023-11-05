@@ -1,0 +1,163 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-upload-file',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            inputType: { value: "msg" },
+            inputValue: { value: "payload" },
+            fileNameType: { value: "msg" },
+            fileNameValue: { value: "filename" },
+            contentType: { value: null },
+            generateThumbnails: { type: "checkbox", value: true },
+        },
+        label: function() {
+            return this.name || "Upload File";
+        },
+        oneditprepare: function() {
+            $("#node-input-input").typedInput({
+                type: this.inputType,
+                types:['msg','flow','global','str'],
+            }).typedInput('value', this.inputValue);
+
+            $("#node-input-file-name").typedInput({
+                type: this.fileNameType,
+                types:['msg','flow','global','str'],
+            }).typedInput('value', this.fileNameValue);
+        },
+        oneditsave: function() {
+            this.inputType = $("#node-input-input").typedInput('type');
+            this.inputValue = $("#node-input-input").typedInput('value');
+            this.fileNameType = $("#node-input-file-name").typedInput('type');
+            this.fileNameValue = $("#node-input-file-name").typedInput('value');
+        },
+        paletteLabel: 'Upload File'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-upload-file">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+     	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+     	<input type="text" id="node-input-server">
+ 	</div>
+
+    <div class="form-row">
+        <label for="node-input-input"><i class="fa fa-file"></i> File Input</label>
+        <input type="text" id="node-input-input">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Must be a buffer or string. If it is a string it assumes it is a path to a file on the filesystem.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-file-name"><i class="fa fa-file"></i> File Name</label>
+        <input type="text" id="node-input-file-name">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Name to give file on remote server. Required if file input is a buffer otherwise it uses the original file name.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-contentType"><i class="fa fa-user"></i> Content-Type</label>
+        <input type="text" id="node-input-contentType" placeholder="msg.contentType">
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Must be a valid <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a> (ex: application/pdf) or left undefined to auto detect
+    </div>
+
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-generateThumbnails"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-generateThumbnails" style="width: auto;max-width:50%;">
+            Generate m.video thumbnails using ffmpeg
+        </label>
+    </div>
+
+    <div class="form-tips">
+        ffmpeg & ffprobe must be installed for thumbnail generation, calculating duration of video or audio file, and getting width & height for videos. This functionality is disabled otherwise.
+    </div>
+
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+    </script>
+</script>
+
+<script type="text/html" data-help-name="matrix-upload-file">
+    <h3>Details</h3>
+    <p>This node will send a file to a Matrix chat room. Supports direct linking to a File In node.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.payload
+            <span class="property-type">string | Buffer</span>
+        </dt>
+        <dd> If this is not a buffer it assumes it is a path to the file. </dd>
+
+        <dt>msg.topic
+            <span class="property-type">string</span>
+        </dt>
+        <dd> Room ID to send file to. Ignored if configured on the node, otherwise required.</dd>
+
+        <dt class="optional">msg.filename
+            <span class="property-type">string | null</span>
+        </dt>
+        <dd> name of the file to upload. You REALLY should pass this if you want the file type to be detected correctly. If no filename is provided it will be auto-detected but note that this is not perfect (for example: .doc word files are detected incorrectly as application/x-cfb) and only works with binary files.</dd>
+
+        <dt class="optional">msg.body
+            <span class="property-type">string | null</span>
+        </dt>
+        <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty it will just display as "Attachment".</dd>
+
+        <dt class="optional">msg.contentType
+            <span class="property-type">string | null</span>
+        </dt>
+        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. If set this forces the mime type. If you do not provide this it will try to be auto-detected.</dd>
+
+        <dt class="optional">msg.content
+            <span class="property-type">object | null</span>
+        </dt>
+        <dd> craft your own msg.content to send to the server. If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.eventId <span class="property-type">string</span></dt>
+                <dd>the eventId from the posted message.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MIME Types</a> - description of <code>msg.contentType</code> format</li>
+    </ul>
+</script>

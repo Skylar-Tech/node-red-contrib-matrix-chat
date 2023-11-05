@@ -70,22 +70,6 @@ module.exports = function(RED) {
             let msgType = node.messageType,
                 msgFormat = node.messageFormat;
 
-            if(msgType === 'msg.type') {
-                if(!msg.type) {
-                    node.error("msg.type type is set to be passed in via msg.type but was not defined", msg);
-                    return;
-                }
-                msgType = msg.type;
-            }
-
-            if(msgFormat === 'msg.format') {
-                if(!msg.format) {
-                    node.error("Message format is set to be passed in via msg.format but was not defined", msg);
-                    return;
-                }
-                msgFormat = msg.format;
-            }
-
             if (!node.server || !node.server.matrixClient) {
                 node.warn("No matrix server selected");
                 return;
@@ -109,36 +93,57 @@ module.exports = function(RED) {
                 return;
             }
 
-            let content = {
-                msgtype: msgType,
-                body: payload.toString()
-            };
-
-            if(msgFormat === 'html') {
-                content.format = "org.matrix.custom.html";
-                content.formatted_body =
-                    (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
-                        ? msg.formatted_payload.toString()
-                        : payload.toString();
-            }
-
-            if((node.replaceMessage || msg.replace) && msg.eventId) {
-                content['m.new_content'] = {
-                    msgtype: content.msgtype,
-                    body: content.body
-                };
-                if('format' in content) {
-                    content['m.new_content']['format'] = content['format'];
-                }
-                if('formatted_body' in content) {
-                    content['m.new_content']['formatted_body'] = content['formatted_body'];
+            let content = null;
+            if(typeof payload === 'object') {
+                content = payload;
+            } else {
+                if(msgType === 'msg.type') {
+                    if(!msg.type) {
+                        node.error("msg.type type is set to be passed in via msg.type but was not defined", msg);
+                        return;
+                    }
+                    msgType = msg.type;
                 }
 
-                content['m.relates_to'] = {
-                    rel_type: RelationType.Replace,
-                    event_id: msg.eventId
+                if(msgFormat === 'msg.format') {
+                    if(!msg.format) {
+                        node.error("Message format is set to be passed in via msg.format but was not defined", msg);
+                        return;
+                    }
+                    msgFormat = msg.format;
+                }
+
+                content = {
+                    msgtype: msgType,
+                    body: payload.toString()
                 };
-                content['body'] = ' * ' + content['body'];
+
+                if(msgFormat === 'html') {
+                    content.format = "org.matrix.custom.html";
+                    content.formatted_body =
+                        (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
+                            ? msg.formatted_payload.toString()
+                            : payload.toString();
+                }
+
+                if((node.replaceMessage || msg.replace) && msg.eventId) {
+                    content['m.new_content'] = {
+                        msgtype: content.msgtype,
+                        body: content.body
+                    };
+                    if('format' in content) {
+                        content['m.new_content']['format'] = content['format'];
+                    }
+                    if('formatted_body' in content) {
+                        content['m.new_content']['formatted_body'] = content['formatted_body'];
+                    }
+
+                    content['m.relates_to'] = {
+                        rel_type: RelationType.Replace,
+                        event_id: msg.eventId
+                    };
+                    content['body'] = ' * ' + content['body'];
+                }
             }
 
             node.server.matrixClient.sendMessage(msg.topic, content)

@@ -4,14 +4,18 @@
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "abort-controller": "^3.0.0",
+    "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
     "got": "^12.0.2",
+    "image-size": "^1.0.2",
     "isomorphic-webcrypto": "^2.3.8",
     "matrix-js-sdk": "^28.0.0",
+    "mime": "^3.0.0",
     "node-fetch": "^3.3.0",
     "node-localstorage": "^2.2.1",
     "olm": "https://gitlab.matrix.org/matrix-org/olm/-/package_files/2572/download",
     "request": "^2.88.2",
+    "tmp": "^0.2.1",
     "utf8": "^3.0.0"
   },
   "node-red": {
@@ -23,6 +27,7 @@
       "matrix-delete-event": "src/matrix-delete-event.js",
       "matrix-send-file": "src/matrix-send-file.js",
       "matrix-send-image": "src/matrix-send-image.js",
+      "matrix-upload-file": "src/matrix-upload-file.js",
       "matrix-react": "src/matrix-react.js",
       "matrix-create-room": "src/matrix-create-room.js",
       "matrix-invite-room": "src/matrix-invite-room.js",
