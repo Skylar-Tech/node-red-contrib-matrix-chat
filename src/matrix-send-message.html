@@ -43,6 +43,9 @@
         <label for="node-input-message"><i class="fa fa-comment"></i> Message</label>
         <textarea id="node-input-message" placeholder="msg.payload" style="width: 70%;"></textarea>
     </div>
+    <div class="form-row form-tips">
+        If message is an object it sets the full content of the message.
+    </div>
 
     <div class="form-row">
         <input
@@ -104,9 +107,9 @@
         <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this input will be overridden.</dd>
 
         <dt>msg.payload
-            <span class="property-type">string</span>
+            <span class="property-type">string|object</span>
         </dt>
-        <dd> the message text. If configured on the node this is ignored otherwise it required. </dd>
+        <dd> the message text or an object to customize the full content. If configured on the node this is ignored otherwise it required. </dd>
 
         <dt>msg.replace
             <span class="property-type">bool</span>
