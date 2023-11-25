@@ -13,6 +13,8 @@ module.exports = function(RED) {
         this.messageFormat = n.messageFormat;
         this.replaceMessage = n.replaceMessage;
         this.message = n.message;
+        this.threadReplyType = n.threadReplyType || null;
+        this.threadReplyValue = n.threadReplyValue || null;
 
         // taken from https://github.com/matrix-org/synapse/blob/master/synapse/push/mailer.py
         this.allowedTags = [
@@ -67,8 +69,27 @@ module.exports = function(RED) {
         });
 
         node.on("input", function (msg) {
+            function getToValue(msg, type, property) {
+                let value = property;
+                if (type === "msg") {
+                    value = RED.util.getMessageProperty(msg, property);
+                } else if ((type === 'flow') || (type === 'global')) {
+                    try {
+                        value = RED.util.evaluateNodeProperty(property, type, node, msg);
+                    } catch(e2) {
+                        throw new Error("Invalid value evaluation");
+                    }
+                } else if(type === "bool") {
+                    value = (property === 'true');
+                } else if(type === "num") {
+                    value = Number(property);
+                }
+                return value;
+            }
+
             let msgType = node.messageType,
-                msgFormat = node.messageFormat;
+                msgFormat = node.messageFormat,
+                threadReply = getToValue(msg, node.threadReplyType, node.threadReplyValue);
 
             if (!node.server || !node.server.matrixClient) {
                 node.warn("No matrix server selected");
@@ -143,6 +164,25 @@ module.exports = function(RED) {
                         event_id: msg.eventId
                     };
                     content['body'] = ' * ' + content['body'];
+                } else if(threadReply) {
+                    // if incoming message is a reply to a thread we fetch the thread parent from the m.relates_to property
+                    // otherwise fallback to msg.eventId
+                    console.log(msg);
+                    console.log(msg?.content?.['m.relates_to']?.rel_type);
+                    console.log(msg?.content?.['m.relates_to']?.event_id);
+                    let threadParent = (msg?.content?.['m.relates_to']?.rel_type === RelationType.Thread ? msg?.content?.['m.relates_to']?.event_id : null) || msg.eventId;
+                    if(threadParent) {
+                        content["m.relates_to"] = {
+                            "rel_type": RelationType.Thread,
+                            "event_id": threadParent,
+                            "is_falling_back": true,
+                        };
+                        if(msg.eventId !== threadParent) {
+                            content["m.relates_to"]["m.in_reply_to"] = {
+                                "event_id": msg.eventId
+                            };
+                        }
+                    }
                 }
             }
 

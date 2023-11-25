@@ -6,6 +6,7 @@
         outputLabels: ["success", "error"],
         inputs:1,
         outputs:2,
+        paletteLabel: 'Send Message',
         defaults: {
             name: { value: null },
             server: { type: "matrix-server-config" },
@@ -13,12 +14,24 @@
             message: { value: null },
             messageType: { value: 'm.text' },
             messageFormat: { value: '' },
-            replaceMessage : { value: false }
+            replaceMessage : { value: false },
+            threadReplyType: { value: "msg" },
+            threadReplyValue: { value: "isThread" },
         },
         label: function() {
             return this.name || "Send Message";
         },
-        paletteLabel: 'Send Message'
+        oneditprepare: function() {
+            $("#node-input-threadReply").typedInput({
+                types:['msg','flow','global','bool'],
+            })
+                .typedInput('value', this.threadReplyValue || "isThread")
+                .typedInput('type', this.threadReplyType || "msg");
+        },
+        oneditsave: function() {
+            this.threadReplyType = $("#node-input-threadReply").typedInput('type');
+            this.threadReplyValue = $("#node-input-threadReply").typedInput('value');
+        },
     });
 </script>
 
@@ -70,6 +83,11 @@
     </div>
     <div class="form-row form-tips">
         It's recommended to use m.notice for bots because the message will render in a lighter text (at least in Element client) for users to distinguish bot and real user messages.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-threadReply"><i class="fa fa-commenting-o"></i> Thread Reply</label>
+        <input type="text" id="node-input-threadReply">
     </div>
 
     <div class="form-row">

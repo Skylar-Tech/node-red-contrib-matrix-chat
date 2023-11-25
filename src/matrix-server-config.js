@@ -1,3 +1,5 @@
+const {RelationType} = require("matrix-js-sdk");
+
 global.Olm = require('olm');
 const fs = require("fs-extra");
 const sdk = require("matrix-js-sdk");
@@ -225,16 +227,18 @@ module.exports = function(RED) {
                 };
 
                 let msg = {
-                    encrypted : event.isEncrypted(),
-                    redacted  : event.isRedacted(),
-                    content   : event.getContent(),
-                    type      : (event.getContent()['msgtype'] || event.getType()) || null,
-                    payload   : (event.getContent()['body'] || event.getContent()) || null,
-                    isDM      : isDmRoom(room),
-                    userId    : event.getSender(),
-                    topic     : event.getRoomId(),
-                    eventId   : event.getId(),
-                    event     : event
+                    encrypted    : event.isEncrypted(),
+                    redacted     : event.isRedacted(),
+                    content      : event.getContent(),
+                    type         : (event.getContent()['msgtype'] || event.getType()) || null,
+                    payload      : (event.getContent()['body'] || event.getContent()) || null,
+                    isDM         : isDmRoom(room),
+                    isThread     : event.getContent()?.['m.relates_to']?.rel_type === RelationType.Thread,
+                    mentions     : event.getContent()["m.mentions"] || null,
+                    userId       : event.getSender(),
+                    topic        : event.getRoomId(),
+                    eventId      : event.getId(),
+                    event        : event,
                 };
 
                 node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
