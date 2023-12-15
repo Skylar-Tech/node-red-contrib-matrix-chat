@@ -1,5 +1,5 @@
 module.exports = function(RED) {
-    function MatrixRoomSettings(n) {
+    function MatrixRoomStateEvents(n) {
         RED.nodes.createNode(this, n);
 
         var node = this;
@@ -265,6 +265,7 @@ module.exports = function(RED) {
                                 }
                             }
                             setToValue(value, rule);
+                            cachedGetters[rule.p] = value;
                         } catch(e) {
                             getterErrors[rule.p] = e;
                         }
@@ -288,5 +289,5 @@ module.exports = function(RED) {
             node.server.deregister(node);
         });
     }
-    RED.nodes.registerType("matrix-room-state-events", MatrixRoomSettings);
+    RED.nodes.registerType("matrix-room-state-events", MatrixRoomStateEvents);
 }
