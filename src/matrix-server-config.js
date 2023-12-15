@@ -236,10 +236,18 @@ module.exports = function(RED) {
                     isThread     : event.getContent()?.['m.relates_to']?.rel_type === RelationType.Thread,
                     mentions     : event.getContent()["m.mentions"] || null,
                     userId       : event.getSender(),
+                    user         : node.matrixClient.getUser(event.getSender()),
                     topic        : event.getRoomId(),
                     eventId      : event.getId(),
                     event        : event,
                 };
+
+                // remove keys from user property that start with an underscore
+                Object.keys(msg.user).forEach(function (key) {
+                    if (/^_/.test(key)) {
+                        delete msg.user[key];
+                    }
+                });
 
                 node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
                 node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
