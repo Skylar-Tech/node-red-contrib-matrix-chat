@@ -8,9 +8,8 @@
      	<input type="text" id="node-input-server">
  	</div>
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
-        <input type="text" id="node-input-roomId" placeholder="msg.topic">
-        <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
+        <label for="node-input-room"><i class="fa fa-comments"></i> Room</label>
+        <input type="text" id="node-input-room">
     </div>
     <div class="form-row" style="margin-bottom:0;">
         <label><i class="fa fa-list"></i> <span data-i18n="change.label.rules"></span></label>
@@ -18,18 +17,6 @@
     <div class="form-row node-input-rule-container-row">
         <ol id="node-input-rule-container"></ol>
     </div>
-
-    <script type="text/javascript">
-        $(function(){
-            $("#node-input-roomId").on("keyup", function() {
-                if($(this).val() && !$(this).val().startsWith("!")) {
-                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
-                } else {
-                    $("#node-input-roomId-error").hide();
-                }
-            }).trigger('keyup');
-        });
-    </script>
 </script>
 
 <script type="text/html" data-help-name="matrix-room-state-events">
@@ -129,7 +116,8 @@
             defaults: {
                 name: { value: null },
                 server: { type: "matrix-server-config" },
-                roomId: { value: null },
+                roomType: { value: "msg" },
+                roomValue: { value: "topic" },
                 rules: {
                     value: defaultRules,
                     validate: function(rules, opt) {
@@ -153,6 +141,13 @@
                 },
             },
             oneditprepare: function() {
+                $("#node-input-room").typedInput({
+                    type: this.roomType,
+                    types:['msg','flow','global','str'],
+                })
+                    .typedInput('value', this.roomValue)
+                    .typedInput('type', this.roomType);
+
                 var set = "Set";
                 var to = "to the value";
                 var toValueLabel = "to the property";
@@ -332,6 +327,9 @@
                 }
             },
             oneditsave: function() {
+                this.roomType = $("#node-input-room").typedInput('type');
+                this.roomValue = $("#node-input-room").typedInput('value');
+
                 var rules = $("#node-input-rule-container").editableList('items');
                 var node = this;
                 node.rules= [];
