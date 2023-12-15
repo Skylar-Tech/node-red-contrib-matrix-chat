@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="matrix-user-settings">
+<script type="text/html" data-template-name="matrix-get-user">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -7,6 +7,17 @@
      	<label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
      	<input type="text" id="node-input-server">
  	</div>
+    <div class="form-row">
+        <label for="node-input-user"><i class="fa fa-user"></i> User ID</label>
+        <input type="text" id="node-input-user">
+    </div>
+    <div class="form-row">
+        <label for="node-input-property"><i class="fa fa-user"></i> Property</label>
+        <input type="text" id="node-input-property">
+    </div>
+    <div class="form-row form-tips">
+        This is the property the user data object will be set to
+    </div>
     <div class="form-row" style="margin-bottom:0;">
         <label><i class="fa fa-list"></i> <span data-i18n="change.label.rules"></span></label>
     </div>
@@ -14,31 +25,20 @@
         <ol id="node-input-rule-container"></ol>
     </div>
 
-    <script type="text/javascript">
-        $(function(){
-            $("#node-input-roomId").on("keyup", function() {
-                if($(this).val() && !$(this).val().startsWith("!")) {
-                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
-                } else {
-                    $("#node-input-roomId-error").hide();
-                }
-            }).trigger('keyup');
-        });
-    </script>
 </script>
 
-<script type="text/html" data-help-name="matrix-user-settings">
+<script type="text/html" data-help-name="matrix-get-user">
     <h3>Details</h3>
     <p>
-        Set and get the current user's display name or avatar.
+        Get data for a user. Data includes display name, avatar URL, presence, last active, currently active, and latest user events.
     </p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
-        <dt class="optional">dynamic
-            <span class="property-type">string|object</span>
+        <dt class="optional">msg.userId | dynamic
+            <span class="property-type">string</span>
         </dt>
-        <dd> The properties used to set the avatar_url or display name are configured on the node.</dd>
+        <dd> The user to get details for.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -49,30 +49,36 @@
                 <dd>Original message object with modifications based on config.</dd>
             </dl>
             <dl class="message-properties">
-                <dt>msg.setter_errors <span class="property-type">undefined|object</span></dt>
-                <dd>Returned if saving a setting failed.</dd>
-            </dl>
-            <dl class="message-properties">
-                <dt>msg.getter_errors <span class="property-type">undefined|object</span></dt>
-                <dd>Returned if there is an error thrown getting a user setting</dd>
+                <dt>msg.error <span class="property-type">undefined|object</span></dt>
+                <dd>Returned if there was an error getting the user</dd>
             </dl>
             <dt class="optional">dynamic
                 <span class="property-type">string|object</span>
             </dt>
-            <dd> You configure what user settings to output in the node configuration.</dd>
+            <dd> You configure what to return on the node.</dd>
         </li>
     </ol>
 </script>
 
 <script type="text/javascript">
     (function(){
-        var userSettingOptions = [
-            { value: "display_name", label: "Display name" },
-            { value: "avatar_url", label: "Avatar URL" },
+        var roomEventTypeOptions = [
+            { value: "m.room.name", label: "m.room.name" },
+            { value: "m.room.topic", label: "m.room.topic" },
+            { value: "m.room.avatar", label: "m.room.avatar" },
+            { value: "m.room.power_levels", label: "m.room.power_levels" },
+            { value: "m.room.guest_access", label: "m.room.guest_access" },
+            { value: "m.room.join_rules", label: "m.room.join_rules" },
+            { value: "m.room.canonical_alias", label: "m.room.canonical_alias" },
+            { value: "m.room.history_visibility", label: "m.room.history_visibility" },
+            { value: "m.room.server_acl", label: "m.room.server_acl" },
+            { value: "m.room.pinned_events", label: "m.room.pinned_events"},
+            { value: "m.space.child", label: "m.space.child" },
+            { value: "m.space.parent", label: "m.space.parent" },
         ];
         var defaultRules = [{
             t: "set",
-            p: userSettingOptions[0].value,
+            p: roomEventTypeOptions[0].value,
             to: "payload",
             tot: "msg"
         }];
@@ -94,7 +100,7 @@
             return false;
         }
 
-        RED.nodes.registerType('matrix-user-settings',{
+        RED.nodes.registerType('matrix-get-user',{
             category: 'matrix',
             color: '#00b7ca',
             icon: "matrix.png",
@@ -104,30 +110,26 @@
             defaults: {
                 name: { value: null },
                 server: { type: "matrix-server-config" },
-                roomId: { value: null },
-                rules: {
-                    value: defaultRules,
-                    validate: function(rules, opt) {
-                        let msg;
-                        const errors = []
-                        if (!rules || rules.length === 0) { return true }
-                        for (let i=0;i<rules.length;i++) {
-                            const opt = { label: "Rule"+' '+(i+1) }
-                            const r = rules[i];
-                            if (r.t === 'set' || r.t === 'get') {
-                                if ((msg = isInvalidProperty(r.p,r.pt)) !== false) {
-                                    return msg;
-                                }
-                                if ((msg = isInvalidProperty(r.to,r.tot)) !== false) {
-                                    return msg;
-                                }
-                            }
-                        }
-                        return errors.length ? errors : true;
-                    }
-                },
+                userType: { value: "msg" },
+                userValue: { value: "userId" },
+                propertyType: { value: "msg" },
+                propertyValue: { value: "user" },
             },
             oneditprepare: function() {
+                $("#node-input-user").typedInput({
+                    type: this.roomType,
+                    types:['msg','flow','global','str'],
+                })
+                    .typedInput('value', this.userValue)
+                    .typedInput('type', this.userType);
+
+                $("#node-input-property").typedInput({
+                    type: this.roomType,
+                    types:['msg','flow','global','str'],
+                })
+                    .typedInput('value', this.propertyValue)
+                    .typedInput('type', this.propertyType);
+
                 var set = "Set";
                 var to = "to the value";
                 var toValueLabel = "to the property";
@@ -157,7 +159,7 @@
                     addItem: function(container,i,opt) {
                         var rule = opt;
                         if (!rule.hasOwnProperty('t')) {
-                            rule = {t:"set",p:userSettingOptions[0].value,to:"payload",tot:"msg"};
+                            rule = {t:"set",p:roomEventTypeOptions[0].value,to:"payload",tot:"msg"};
                         }
                         if (rule.t === "set" && !rule.tot) {
                             if (rule.to.indexOf("msg.") === 0 && !rule.tot) {
@@ -188,10 +190,27 @@
 
                         var propertyName = $('<input/>',{class:"node-input-rule-property-name",type:"text"})
                             .appendTo(row1)
-                            .typedInput({type:"property", types:[{
-                                value: userSettingOptions[0]['value'],
-                                options: userSettingOptions
-                            }]})
+                            .autoComplete({
+                                minLength:0,
+                                search: function(val) {
+                                    if(!val) {
+                                        return roomEventTypeOptions.sort(function(A,B){return A.i-B.i});
+                                    }
+                                    var matches = [];
+                                    roomEventTypeOptions.map((x) => x.value).forEach(v => {
+                                        var i = v.toLowerCase().indexOf(val.toLowerCase());
+                                        if (i > -1) {
+                                            matches.push({
+                                                value: v,
+                                                label: v,
+                                                i: i
+                                            })
+                                        }
+                                    });
+                                    matches.sort(function(A,B){return A.i-B.i})
+                                    return matches
+                                }
+                            })
                             .on('focus', function(evt){
                                 // following is a fix so autocomplete will show list on focus
                                 if(!evt.isTrigger) {
@@ -290,6 +309,10 @@
                 }
             },
             oneditsave: function() {
+                this.userType = $("#node-input-user").typedInput('type');
+                this.userValue = $("#node-input-user").typedInput('value');
+                this.propertyType = $("#node-input-property").typedInput('type');
+                this.propertyValue = $("#node-input-property").typedInput('value');
                 var rules = $("#node-input-rule-container").editableList('items');
                 var node = this;
                 node.rules= [];
@@ -321,9 +344,9 @@
                 $("#node-input-rule-container").editableList('height',height);
             },
             label: function() {
-                return this.name || "User Settings";
+                return this.name || "Get User";
             },
-            paletteLabel: 'User Settings'
+            paletteLabel: 'Get User'
         });
     })();
 </script>

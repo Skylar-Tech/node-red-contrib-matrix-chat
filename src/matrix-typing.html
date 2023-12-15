@@ -23,7 +23,9 @@
             $("#node-input-room").typedInput({
                 type: this.roomType,
                 types:['msg','flow','global','str'],
-            }).typedInput('value', this.roomValue);
+            })
+                .typedInput('value', this.roomValue)
+                .typedInput('type', this.roomType);
 
             $("#node-input-typing").typedInput({
                 types:['msg','flow','global','bool'],
@@ -66,12 +68,12 @@
     </div>
 
     <div class="form-row">
-        <label for="node-input-room"><i class="fa fa-commenting-o"></i> Is Typing</label>
+        <label for="node-input-typing"><i class="fa fa-commenting-o"></i> Is Typing</label>
         <input type="text" id="node-input-typing">
     </div>
 
     <div class="form-row">
-        <label for="node-input-room"><i class="fa fa-clock-o"></i> Timeout Milliseconds</label>
+        <label for="node-input-timeoutMs"><i class="fa fa-clock-o"></i> Timeout Milliseconds</label>
         <input type="text" id="node-input-timeoutMs">
     </div>
 
