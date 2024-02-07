@@ -1,4 +1,4 @@
-const {RelationType} = require("matrix-js-sdk");
+const {RelationType, TimelineWindow} = require("matrix-js-sdk");
 
 global.Olm = require('olm');
 const fs = require("fs-extra");
@@ -55,9 +55,9 @@ module.exports = function(RED) {
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.e2ee = n.enableE2ee || false;
-
         this.globalAccess = n.global;
         this.initializedAt = new Date();
+        node.initialSyncLimit = 25;
 
         // Keep track of all consumers of this node to be able to catch errors
         node.register = function(consumerNode) {
@@ -158,6 +158,8 @@ module.exports = function(RED) {
                 // verificationMethods: ["m.sas.v1"]
             });
 
+            node.debug(`hasLazyLoadMembersEnabled=${node.matrixClient.hasLazyLoadMembersEnabled()}`);
+
             // set globally if configured to do so
             if(this.globalAccess) {
                 this.context().global.set('matrixClient["'+this.userId+'"]', node.matrixClient);
@@ -178,7 +180,7 @@ module.exports = function(RED) {
                 stopClient();
                 if(node.globalAccess) {
                     try {
-                        node.context().global.delete('matrixClient["'+node.userId+'"]');
+                        node.context().global.set('matrixClient["'+node.userId+'"]', undefined);
                     } catch(e){
                         node.error(e.message, {});
                     }
@@ -192,15 +194,15 @@ module.exports = function(RED) {
 
             node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
                 if (toStartOfTimeline) {
+                    node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: paginated result");
                     return; // ignore paginated results
                 }
-                if (!event.getSender() || event.getSender() === node.userId) {
-                    return; // ignore our own messages
-                }
                 if (!data || !data.liveEvent) {
+                    node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: old message");
                     return; // ignore old message (we only want live events)
                 }
                 if(node.initializedAt > event.getDate()) {
+                    node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: old message before init");
                     return; // skip events that occurred before our client initialized
                 }
 
@@ -249,7 +251,7 @@ module.exports = function(RED) {
                     }
                 });
 
-                node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
+                node.log(`Received ${msg.encrypted ? 'encrypted ' : ''}timeline event [${msg.type}]: (${room.name}) ${event.getSender()} :: ${msg.content.body} ${toStartOfTimeline ? ' [PAGINATED]' : ''}`);
                 node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
             });
 
@@ -402,7 +404,7 @@ module.exports = function(RED) {
                     }
                     node.log("Connecting to Matrix server...");
                     await node.matrixClient.startClient({
-                        initialSyncLimit: 8
+                        initialSyncLimit: node.initialSyncLimit
                     });
                 } catch(error) {
                     node.error(error, {});
@@ -476,9 +478,14 @@ module.exports = function(RED) {
             const matrixClient = sdk.createClient({
                 baseUrl: baseUrl,
                 deviceId: deviceId,
+                timelineSupport: true,
                 localTimeoutMs: '30000',
                 request
             });
+
+            new TimelineWindow()
+
+            matrixClient.timelineSupport = true;
 
             matrixClient.login(
                 'm.login.password', {

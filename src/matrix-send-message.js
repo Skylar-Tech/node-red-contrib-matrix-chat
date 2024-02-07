@@ -167,9 +167,6 @@ module.exports = function(RED) {
                 } else if(threadReply) {
                     // if incoming message is a reply to a thread we fetch the thread parent from the m.relates_to property
                     // otherwise fallback to msg.eventId
-                    console.log(msg);
-                    console.log(msg?.content?.['m.relates_to']?.rel_type);
-                    console.log(msg?.content?.['m.relates_to']?.event_id);
                     let threadParent = (msg?.content?.['m.relates_to']?.rel_type === RelationType.Thread ? msg?.content?.['m.relates_to']?.event_id : null) || msg.eventId;
                     if(threadParent) {
                         content["m.relates_to"] = {
@@ -190,6 +187,7 @@ module.exports = function(RED) {
                 .then(function(e) {
                     node.log("Message sent: " + payload);
                     msg.eventId = e.event_id;
+                    node.log(JSON.stringify(e));
                     node.send([msg, null]);
                 })
                 .catch(function(e){

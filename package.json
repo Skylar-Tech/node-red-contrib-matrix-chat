@@ -24,11 +24,15 @@
       "matrix-server-config": "src/matrix-server-config.js",
       "matrix-receive": "src/matrix-receive.js",
       "matrix-send-message": "src/matrix-send-message.js",
+      "matrix-typing": "src/matrix-typing.js",
+      "matrix-mark-read": "src/matrix-mark-read.js",
       "matrix-delete-event": "src/matrix-delete-event.js",
       "matrix-send-file": "src/matrix-send-file.js",
       "matrix-send-image": "src/matrix-send-image.js",
       "matrix-upload-file": "src/matrix-upload-file.js",
       "matrix-react": "src/matrix-react.js",
+      "matrix-user-settings": "src/matrix-user-settings.js",
+      "matrix-get-user": "src/matrix-get-user.js",
       "matrix-create-room": "src/matrix-create-room.js",
       "matrix-invite-room": "src/matrix-invite-room.js",
       "matrix-room-invite": "src/matrix-room-invite.js",
@@ -45,9 +49,7 @@
       "matrix-synapse-deactivate-user": "src/matrix-synapse-deactivate-user.js",
       "matrix-synapse-join-room": "src/matrix-synapse-join-room.js",
       "matrix-whois-user": "src/matrix-whois-user.js",
-      "matrix-typing": "src/matrix-typing.js",
-      "matrix-user-settings": "src/matrix-user-settings.js",
-      "matrix-get-user": "src/matrix-get-user.js"
+      "matrix-paginate-room": "src/matrix-paginate-room.js"
     }
   },
   "engines": {
