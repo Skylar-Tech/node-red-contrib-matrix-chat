@@ -6,19 +6,32 @@
         outputLabels: ["success", "error"],
         inputs:1,
         outputs:2,
+        paletteLabel: 'Send Message',
         defaults: {
             name: { value: null },
-            server: { value: "", type: "matrix-server-config" },
+            server: { type: "matrix-server-config" },
             roomId: { value: null },
             message: { value: null },
             messageType: { value: 'm.text' },
             messageFormat: { value: '' },
-            replaceMessage : { value: false }
+            replaceMessage : { value: false },
+            threadReplyType: { value: "msg" },
+            threadReplyValue: { value: "isThread" },
         },
         label: function() {
             return this.name || "Send Message";
         },
-        paletteLabel: 'Send Message'
+        oneditprepare: function() {
+            $("#node-input-threadReply").typedInput({
+                types:['msg','flow','global','bool'],
+            })
+                .typedInput('value', this.threadReplyValue || "isThread")
+                .typedInput('type', this.threadReplyType || "msg");
+        },
+        oneditsave: function() {
+            this.threadReplyType = $("#node-input-threadReply").typedInput('type');
+            this.threadReplyValue = $("#node-input-threadReply").typedInput('value');
+        },
     });
 </script>
 
@@ -42,6 +55,9 @@
     <div class="form-row">
         <label for="node-input-message"><i class="fa fa-comment"></i> Message</label>
         <textarea id="node-input-message" placeholder="msg.payload" style="width: 70%;"></textarea>
+    </div>
+    <div class="form-row form-tips">
+        If message is an object it sets the full content of the message.
     </div>
 
     <div class="form-row">
@@ -67,6 +83,11 @@
     </div>
     <div class="form-row form-tips">
         It's recommended to use m.notice for bots because the message will render in a lighter text (at least in Element client) for users to distinguish bot and real user messages.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-threadReply"><i class="fa fa-commenting-o"></i> Thread Reply</label>
+        <input type="text" id="node-input-threadReply">
     </div>
 
     <div class="form-row">
@@ -104,9 +125,9 @@
         <dd> Room ID to send image to. Optional if configured on the node. If configured on the node this input will be overridden.</dd>
 
         <dt>msg.payload
-            <span class="property-type">string</span>
+            <span class="property-type">string|object</span>
         </dt>
-        <dd> the message text. If configured on the node this is ignored otherwise it required. </dd>
+        <dd> the message text or an object to customize the full content. If configured on the node this is ignored otherwise it required. </dd>
 
         <dt>msg.replace
             <span class="property-type">bool</span>

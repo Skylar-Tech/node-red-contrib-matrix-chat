@@ -12,22 +12,22 @@ module.exports = function(RED) {
             const { got } = await import('got');
 
             if(!msg.type) {
-                node.error('msg.type is required.');
+                node.error('msg.type is required.', msg);
                 return;
             }
 
             if(!msg.content) {
-                node.error('msg.content is required.');
+                node.error('msg.content is required.', msg);
                 return;
             }
 
             if(!msg.content.file) {
-                node.error('msg.content.file is required.');
+                node.error('msg.content.file is required.', msg);
                 return;
             }
 
             if(!msg.url) {
-                node.error('msg.url is required.');
+                node.error('msg.url is required.', msg);
                 return;
             }
 

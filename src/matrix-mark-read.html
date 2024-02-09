@@ -1,166 +1,70 @@
 <script type="text/javascript">
-    RED.nodes.registerType('matrix-receive',{
+    RED.nodes.registerType('matrix-mark-read',{
         category: 'matrix',
         color: '#00b7ca',
         icon: "matrix.png",
         outputLabels: ["message"],
-        inputs:0,
-        outputs:1,
+        inputs: 1,
+        outputs: 2,
         defaults: {
             name: { value: null },
             server: { type: "matrix-server-config" },
-            roomId: {"value": null},
-            acceptOwnEvents: {"value": false},
-            acceptText: {"value": true},
-            acceptEmotes: {"value": true},
-            acceptStickers: {"value": true},
-            acceptReactions: {"value": true},
-            acceptFiles: {"value": true},
-            acceptAudio: {"value": true},
-            acceptImages: {"value": true},
-            acceptVideos: {"value": true},
-            acceptLocations: {"value": true},
+            roomType: { value: "msg" },
+            roomValue: { value: "topic" },
+            eventIdType: { value: "msg" },
+            eventIdValue: { value: "eventId" }
         },
         label: function() {
-            return this.name || "Matrix Receive";
+            return this.name || "Mark Read";
         },
-        paletteLabel: 'Receive'
+        paletteLabel: 'Mark Read',
+        oneditprepare: function() {
+            $("#node-input-room").typedInput({
+                type: this.roomType,
+                types:['msg','flow','global','str'],
+            })
+                .typedInput('value', this.roomValue)
+                .typedInput('type', this.roomType);
+
+            $("#node-input-eventId").typedInput({
+                types:['msg','flow','global','bool'],
+            })
+                .typedInput('value', this.eventIdValue)
+                .typedInput('type', this.eventIdType);
+        },
+        oneditsave: function() {
+            this.roomType = $("#node-input-room").typedInput('type');
+            this.roomValue = $("#node-input-room").typedInput('value');
+            this.eventIdType = $("#node-input-eventId").typedInput('type');
+            this.eventIdValue = $("#node-input-eventId").typedInput('value');
+        }
     });
 </script>
 
-<script type="text/html" data-template-name="matrix-receive">
+<script type="text/html" data-template-name="matrix-mark-read">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
- 	 <div class="form-row">
-     	<label for="node-input-server"><i class="fa fa-server"></i> Matrix Server</label>
-     	<input type="text" id="node-input-server">
- 	</div>
+
     <div class="form-row">
-        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
-        <input type="text" id="node-input-roomId">
-        <pre class="form-tips" id="node-input-roomId-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;margin-top: 12px;display:none;"></pre>
+        <label for="node-input-server"><i class="fa fa-server"></i> Matrix Server</label>
+        <input type="text" id="node-input-server">
     </div>
-    <div class="form-tips">Enter a single room, comma separated list of rooms, or leave blank to get from all</div>
-    <div class="form-row" style="margin-left: 100px;margin-top:10px;font-weight:bold;">
-        Timeline event filters
+
+    <div class="form-row">
+        <label for="node-input-room"><i class="fa fa-comments"></i> Room</label>
+        <input type="text" id="node-input-room">
     </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-                type="checkbox"
-                id="node-input-acceptOwnEvents"
-                style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptOwnEvents" style="width: auto">
-            Receive own events
-        </label>
+
+    <div class="form-row">
+        <label for="node-input-eventId"><i class="fa fa-comments"></i> Event Id</label>
+        <input type="text" id="node-input-eventId">
     </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-            type="checkbox"
-            id="node-input-acceptText"
-            style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptText" style="width: auto">
-            Accept text <code style="text-transform: none;">m.text</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-                type="checkbox"
-                id="node-input-acceptEmotes"
-                style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptEmotes" style="width: auto">
-            Accept emotes <code style="text-transform: none;">m.emote</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-                type="checkbox"
-                id="node-input-acceptStickers"
-                style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptStickers" style="width: auto">
-            Accept stickers <code style="text-transform: none;">m.sticker</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-            type="checkbox"
-            id="node-input-acceptReactions"
-            style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptReactions" style="width: auto">
-            Accept reactions <code style="text-transform: none;">m.reaction</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-            type="checkbox"
-            id="node-input-acceptFiles"
-            style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptFiles" style="width: auto">
-            Accept files <code style="text-transform: none;">m.file</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-                type="checkbox"
-                id="node-input-acceptAudio"
-                style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptAudio" style="width: auto">
-            Accept files <code style="text-transform: none;">m.audio</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-            type="checkbox"
-            id="node-input-acceptImages"
-            style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptImages" style="width: auto">
-            Accept images <code style="text-transform: none;">m.image</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-                type="checkbox"
-                id="node-input-acceptVideos"
-                style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptVideos" style="width: auto">
-            Accept videos <code style="text-transform: none;">m.video</code>
-        </label>
-    </div>
-    <div class="form-row" style="margin-bottom:0;">
-        <input
-                type="checkbox"
-                id="node-input-acceptLocations"
-                style="width: auto; margin-left: 125px; vertical-align: top"
-        />
-        <label for="node-input-acceptLocations" style="width: auto">
-            Accept locations <code style="text-transform: none;">m.location</code>
-        </label>
-    </div>
-    <script type="text/javascript">
-        $(function(){
-            $("#node-input-roomId").on("keyup", function() {
-                if($(this).val() && !$(this).val().startsWith("!")) {
-                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
-                } else {
-                    $("#node-input-roomId-error").hide();
-                }
-            }).trigger('keyup');
-        });
-    </script>
 </script>
 
-<script type="text/html" data-help-name="matrix-receive">
-    <p>Receive events from Matrix.</p>
+<script type="text/html" data-help-name="matrix-mark-read">
+    <p>Mark an event in a room as read.</p>
 
     <h3>Outputs</h3>
     <ul class="node-ports">

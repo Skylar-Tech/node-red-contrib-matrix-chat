@@ -1,3 +1,4 @@
+const {RelationType} = require("matrix-js-sdk");
 module.exports = function(RED) {
     function MatrixReceiveMessage(n) {
         RED.nodes.createNode(this, n);
@@ -6,6 +7,7 @@ module.exports = function(RED) {
 
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
+        this.acceptOwnEvents = n.acceptOwnEvents;
         this.acceptText = n.acceptText;
         this.acceptEmotes = n.acceptEmotes;
         this.acceptStickers = n.acceptStickers;
@@ -21,9 +23,10 @@ module.exports = function(RED) {
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
         if (!node.server) {
-            node.error("No configuration node");
+            node.error("No configuration node", {});
             return;
         }
+        node.server.register(node);
 
         node.server.on("disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
@@ -36,6 +39,11 @@ module.exports = function(RED) {
         node.server.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
             // if node has a room ID set we only listen on that room
             if(node.roomIds.length && node.roomIds.indexOf(room.roomId) === -1) {
+                return;
+            }
+
+            if (!node.acceptOwnEvents && ( !event.getSender() || event.getSender() === node.userId ) ) {
+                node.log("Ignoring" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getId() + " for reason: own event");
                 return;
             }
 
@@ -148,6 +156,10 @@ module.exports = function(RED) {
             }
 
             node.send(msg);
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-receive", MatrixReceiveMessage);

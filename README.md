@@ -11,9 +11,11 @@ The following is supported from this package:
 
 - End-to-end encryption
   - [Currently a WIP](#end-to-end-encryption-notes)
+  - Can also use [pantalaimon](https://github.com/matrix-org/pantalaimon) as an alternative solution to E2EE (if you need multiple sessions synced up with keys)
 - Receive events from a room (messages, reactions, images, audio, locations, and files) whether encrypted or not
 - Send Images/Files (sending files to e2ee room doesn't currently encrypt them yet)
 - Edit messages
+- Send typing events (Bot is typing ...)
 - Delete events (messages, reactions, etc)
 - Decrypt files in e2ee rooms
 - Send HTML/Plain Text Message/Notice

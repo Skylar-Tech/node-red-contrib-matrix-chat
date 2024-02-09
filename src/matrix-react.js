@@ -13,6 +13,7 @@ module.exports = function(RED) {
             node.warn("No configuration node");
             return;
         }
+        node.server.register(node);
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -26,30 +27,31 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (!node.server || !node.server.matrixClient) {
-                node.error("No matrix server selected");
+                node.error("No matrix server selected", msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("Room must be specified in msg.topic or in configuration");
+                node.error("Room must be specified in msg.topic or in configuration", msg);
                 return;
             }
 
             let payload = n.reaction || msg.payload;
             if(!payload) {
-                node.error('msg.payload must be defined or the reaction configured on the node.');
+                node.error('msg.payload must be defined or the reaction configured on the node.', msg);
                 return;
             }
 
             let eventId = msg.referenceEventId || msg.eventId;
             if(!eventId) {
-                node.error('Either msg.referenceEventId or msg.eventId must be defined to react to a message.');
+                node.error('Either msg.referenceEventId or msg.eventId must be defined to react to a message.', msg);
                 return;
             }
 
@@ -74,6 +76,10 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-react", MatrixReact);

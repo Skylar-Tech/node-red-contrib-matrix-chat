@@ -24,6 +24,7 @@ Build something cool with these nodes? Feel free to submit a pull request to sha
 - [Respond to "rooms <user_id>" with user's rooms (list server's rooms if <user_id> is left blank)](#respond-to-rooms-user_id-with-users-rooms-list-servers-rooms-if-user_id-is-left-blank)
 - [Respond to "whois <user_id>" with information about the user's session](#respond-to-whois-user_id-with-information-about-the-users-session)
 - [Respond to "room_users" with current room's users](#respond-to-room_users-with-current-rooms-users)
+- [Sending typing events to a room](#sending-typing-events-to-a-room)
 - [Download & store all received files/images](#download--store-all-received-filesimages)
 - [Kick/Ban user from room](#kickban-user-from-room)
 - [Deactivate user](#deactivate-user)
@@ -219,6 +220,15 @@ Download received files/images. If the file is encrypted it will decrypt it for 
 Note: You may need to edit the storage directory for this to work. Default action is to create a `downloads` folder in the Node-RED directory and places files in that but there is a good chance your Node-RED instance doesn't have access to write to this directory.
 
 ![store-received-files.png](store-received-files.png)
+
+
+### Sending typing events to a room
+
+[View JSON](send-typing-events.json)
+
+You can tell a room that Node-RED is writing a message and also cancel the writing event. This can be useful for making bots feel more interactive (show typing while requesting API endpoint for example).
+
+![store-received-files.png](send-typing-events.png)
 
 
 ### Kick/Ban user from room
