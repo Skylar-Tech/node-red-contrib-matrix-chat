@@ -42,7 +42,7 @@ module.exports = function(RED) {
                 return;
             }
 
-            if (!node.acceptOwnEvents && ( !event.getSender() || event.getSender() === node.userId ) ) {
+            if (!node.acceptOwnEvents && ( !event.getSender() || event.getSender().toLowerCase() === node.server.matrixClient.getUserId().toLowerCase())  ) {
                 node.log("Ignoring" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getId() + " for reason: own event");
                 return;
             }
