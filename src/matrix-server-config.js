@@ -111,6 +111,61 @@ module.exports = function(RED) {
         } else if(!this.url) {
             node.error("Matrix connection failed: missing server URL in configuration.", {});
         } else {
+            /**
+             * Ensures secret storage and cross signing are ready for use. Does not
+             * support initial setup of secret storage. If the backup passphrase is not
+             * set, this is a no-op, else it is cleared once the operation is complete.
+             *
+             * @returns {Promise<void>}
+             */
+            async function bootstrapSSSS() {
+                if (!node.matrixClient) {
+                    // client startup will do bootstrapping
+                    return;
+                }
+                const password = "testphrase";
+                if (!password) {
+                    // We do not support setting up secret storage, so we need a passphrase
+                    // to bootstrap.
+                    return;
+                }
+                const backupInfo = await node.matrixClient.getKeyBackupVersion();
+                await node.matrixClient.getCrypto().bootstrapSecretStorage({
+                    setupNewKeyBackup: false,
+                    async getKeyBackupPassphrase() {
+                        const key = await node.matrixClient.keyBackupKeyFromPassword(
+                            password,
+                            backupInfo
+                        );
+                        return key;
+                    },
+                });
+                await node.matrixClient.getCrypto().bootstrapCrossSigning({
+                    authUploadDeviceSigningKeys(makeRequest) {
+                        console.log("authUploadDeviceSigningKeys");
+                        makeRequest({
+                            "type": "m.login.password",
+                            "identifier": {
+                                "type": "m.id.user",
+                                "user": node.matrixClient.getUserId()
+                            },
+                            "password": "examplepass",
+                            "session": node.matrixClient.getSessionId()
+                        });
+                        return Promise.resolve();
+                    },
+                });
+                await node.matrixClient.checkOwnCrossSigningTrust();
+                if (backupInfo) {
+                    await node.matrixClient.restoreKeyBackupWithSecretStorage(backupInfo);
+                }
+                // Clear passphrase once bootstrap was successful
+                // this.imAccount.setString("backupPassphrase", "");
+                // this.imAccount.save();
+                // this._encryptionError = "";
+                // await this.updateEncryptionStatus();
+            }
+
             node.setConnected = async function(connected, cb) {
                 if (node.connected !== connected) {
                     node.connected = connected;
@@ -122,21 +177,12 @@ module.exports = function(RED) {
                         node.log("Matrix server connection ready.");
                         node.emit("connected");
                         if(!initialSetup) {
-                            if(node.e2ee && !await node.matrixClient.isCrossSigningReady()) {
+                            console.log("INITIAL SETUP", await node.matrixClient.getCrypto().getCrossSigningStatus());
+                            if(node.e2ee && !await node.matrixClient.getCrypto().isCrossSigningReady()) {
                                 // bootstrap cross-signing
-                                await node.matrixClient.bootstrapCrossSigning({
-                                    // maybe we can skip this?
-                                    authUploadDeviceSigningKeys: async (func) => {
-                                        await func({});
-                                    }
-                                    // authUploadDeviceSigningKeys: async (makeRequest) => {
-                                    //     return await makeRequest({
-                                    //         type: 'm.login.token',
-                                    //         token: node.credentials.accessToken,
-                                    //     });
-                                    // }
-                                });
-                                await node.matrixClient.checkOwnCrossSigningTrust();
+                                await bootstrapSSSS();
+                                let crossSigningStatus = node.matrixClient.getCrypto().getCrossSigningStatus();
+                                console.log("crossSigningStatus", crossSigningStatus);
                             }
 
                             // store Device ID internally
@@ -213,6 +259,11 @@ module.exports = function(RED) {
                 request,
                 verificationMethods: ["m.sas.v1"],
                 cryptoCallbacks: { getCrossSigningKey, saveCrossSigningKeys },
+            });
+
+            node.matrixClient.on("crypto.keyBackupStatus", function() {
+                console.log("crypto.keyBackupStatus");
+                bootstrapSSSS();
             });
 
             node.debug(`hasLazyLoadMembersEnabled=${node.matrixClient.hasLazyLoadMembersEnabled()}`);
@@ -457,6 +508,8 @@ module.exports = function(RED) {
                     if(node.e2ee){
                         node.log("Initializing crypto...");
                         await node.matrixClient.initCrypto();
+                        node.log("Bootstrapping SSSS...");
+                        await bootstrapSSSS();
                         node.matrixClient.getCrypto().globalBlacklistUnverifiedDevices = false; // prevent errors from unverified devices
                     }
                     node.log("Connecting to Matrix server...");

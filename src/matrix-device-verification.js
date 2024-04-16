@@ -47,7 +47,7 @@ module.exports = function(RED) {
                         node.error("msg.userId is required for start verification mode");
                     }
 
-                    node.server.matrixClient.requestVerification(msg.userId, msg.devices || null)
+                    node.server.matrixClient.requestDeviceVerification(msg.userId, msg.devices || undefined)
                         .then(function(e) {
                             node.log("Successfully requested verification", e);
                             let verifyRequestId = msg.userId + ':' + e.channel.deviceId;
@@ -84,7 +84,7 @@ module.exports = function(RED) {
                  * @param {Function} data.cancel a function to call if the key verification is
                  *     rejected.
                  */
-                node.server.matrixClient.on(CryptoEvent.VerificationRequest, async function(data){
+                node.server.matrixClient.on(CryptoEvent.VerificationRequestReceived, async function(data){
                     if(data.phase === Phase.Cancelled || data.phase === Phase.Done) {
                         return;
                     }
@@ -118,13 +118,34 @@ module.exports = function(RED) {
 
                     var data = verificationRequests.get(msg.verifyRequestId);
                     if(msg.cancel) {
-                        await data._verifier.cancel();
+                        await data.verifier.cancel();
                         verificationRequests.delete(msg.verifyRequestId);
                     } else {
                         try {
                             data.on('change', async function() {
+                                // VerificationPhase {
+                                //     /** Initial state: no event yet exchanged */
+                                //     Unsent = 1,
+                                //
+                                //         /** An `m.key.verification.request` event has been sent or received */
+                                //         Requested = 2,
+                                //
+                                //         /** An `m.key.verification.ready` event has been sent or received, indicating the verification request is accepted. */
+                                //         Ready = 3,
+                                //
+                                //         /** An `m.key.verification.start` event has been sent or received, choosing a verification method */
+                                //         Started = 4,
+                                //
+                                //         /** An `m.key.verification.cancel` event has been sent or received at any time before the `done` event, cancelling the verification request */
+                                //         Cancelled = 5,
+                                //
+                                //         /** An `m.key.verification.done` event has been **sent**, completing the verification request. */
+                                //         Done = 6,
+                                // }
+                                console.log("[Verification Start] VERIFIER EVENT CHANGE", this.phase);
                                 var that = this;
                                 if(this.phase === Phase.Started) {
+                                    console.log("[Verification Start] VERIFIER EVENT PHASE STARTED");
                                     let verifierCancel = function(){
                                         let verifyRequestId = that.targetDevice.userId + ':' + that.targetDevice.deviceId;
                                         if(verificationRequests.has(verifyRequestId)) {
@@ -132,51 +153,66 @@ module.exports = function(RED) {
                                         }
                                     };
 
-                                    data._verifier.on('cancel', function(e){
+                                    data.verifier.on('cancel', function(e){
                                         node.warn("Device verification cancelled " + e);
-                                        console.log(e.value);
+                                        console.log(JSON.stringify(e.value));
                                         verifierCancel();
                                     });
+                                    const sasEventPromise = new Promise(resolve =>
+                                        data.verifier.once("show_sas", resolve)
+                                    );
+                                    console.log("[Verification Start] Starting verification");
+                                    data.verifier.verify()
+                                        .then(function() {
+                                            console.log("[Verification Start] verify() success");
+                                        }).catch(function(e) {
+                                            console.log("[Verification Start] verify() error", e);
+                                            msg.error = e;
+                                            node.send([null, msg]);
+                                        });
+                                    console.log("[Verification Start] WAITING FOR SHOW SAS EVENT");
+                                    const sasEvent = await sasEventPromise;
 
-                                    let show_sas = function(e) {
-                                        // e = {
-                                        //     sas: {
-                                        //         decimal: [ 8641, 3153, 2357 ],
-                                        //         emoji: [
-                                        //             [Array], [Array],
-                                        //             [Array], [Array],
-                                        //             [Array], [Array],
-                                        //             [Array]
-                                        //         ]
-                                        //     },
-                                        //     confirm: [AsyncFunction: confirm],
-                                        //     cancel: [Function: cancel],
-                                        //     mismatch: [Function: mismatch]
-                                        // }
-                                        msg.payload = e.sas;
-                                        msg.emojis = e.sas.emoji.map(function(emoji, i) {
-                                            return emoji[0];
-                                        });
-                                        msg.emojis_text = e.sas.emoji.map(function(emoji, i) {
-                                            return emoji[1];
-                                        });
-                                        node.send(msg);
-                                    };
-                                    data._verifier.on('show_sas', show_sas);
-                                    data._verifier.verify()
-                                        .then(function(e){
-                                            data._verifier.off('show_sas', show_sas);
-                                            data._verifier.done();
-                                        }, function(e) {
-                                            verifierCancel();
-                                            node.warn(e);
-                                            // @todo return over second output
-                                        });
+                                    console.log("SHOW SAS", sasEvent);
+                                    // e = {
+                                    //     sas: {
+                                    //         decimal: [ 8641, 3153, 2357 ],
+                                    //         emoji: [
+                                    //             [Array], [Array],
+                                    //             [Array], [Array],
+                                    //             [Array], [Array],
+                                    //             [Array]
+                                    //         ]
+                                    //     },
+                                    //     confirm: [AsyncFunction: confirm],
+                                    //     cancel: [Function: cancel],
+                                    //     mismatch: [Function: mismatch]
+                                    // }
+                                    msg.payload = sasEvent.sas;
+                                    msg.emojis = sasEvent.sas.emoji.map(function(emoji, i) {
+                                        return emoji[0];
+                                    });
+                                    msg.emojis_text = sasEvent.sas.emoji.map(function(emoji, i) {
+                                        return emoji[1];
+                                    });
+                                    node.send(msg);
+
+                                    // sasEvent.mismatch();
                                 }
                             });
 
-                            data.emit("change");
-                            await data.accept();
+                            console.log("[Verification Start] Starting verification");
+                            try {
+                                console.log("[Verification Start] Accepting..");
+                                await data.accept();
+                                console.log(`[Verification] beginKeyVerification (methods=${data.methods[0]}, targetDevice=${data.targetDevice})`);
+                                await data.beginKeyVerification(
+                                    data.methods[0],
+                                    data.targetDevice
+                                );
+                            } catch(e) {
+                                console.log("[Verification Start] VERIFICATION ERROR", e);
+                            }
                         } catch(e) {
                             console.log("ERROR", e);
                         }
@@ -211,15 +247,15 @@ module.exports = function(RED) {
                     }
 
                     var data = verificationRequests.get(msg.verifyRequestId);
-                    if(data._verifier && data._verifier.sasEvent) {
-                        data._verifier.sasEvent.confirm()
-                            .then(function(e){
-                                node.send([msg, null]);
-                            })
-                            .catch(function(e) {
-                                msg.error = e;
-                                node.send([null, msg]);
-                            });
+                    if(data.verifier && data.verifier.sasEvent) {
+                        try {
+                            await data.verifier.sasEvent.confirm();
+                            node.send([msg, null]);
+                        } catch(e) {
+
+                            msg.error = e;
+                            node.send([null, msg]);
+                        }
                     } else {
                         node.error("Verification must be started");
                     }
