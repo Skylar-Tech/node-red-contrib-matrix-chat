@@ -191,7 +191,7 @@ module.exports = function(RED) {
                     node.send([msg, null]);
                 })
                 .catch(function(e){
-                    node.warn("Error sending message " + e);
+                    node.error("Error sending message: " + e, {});
                     msg.error = e;
                     node.send([null, msg]);
                 });
