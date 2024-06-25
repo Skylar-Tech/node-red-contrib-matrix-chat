@@ -1,6 +1,6 @@
 <script type="text/javascript">
     RED.nodes.registerType('matrix-send-file',{
-        category: 'matrix',
+        category: 'matrix (deprecated)',
         color: '#00b7ca',
         icon: "matrix.png",
         outputLabels: ["success", "error"],
@@ -20,6 +20,26 @@
 </script>
 
 <script type="text/html" data-template-name="matrix-send-file">
+    <style>
+        .matrix-chat-alert {
+            color: #b94a48;
+            background-color: #f2dede;
+            border-color: #eed3d7;
+            margin: 30px 0;
+            padding: 8px 35px 8px 14px;
+        }
+
+        .matrix-chat-alert a, .matrix-chat-alert a:active, .matrix-chat-alert a:hover {
+            color: #b94a48;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+    </style>
+    <div class="matrix-chat-alert">
+        <strong>Deprecation Warning!</strong> This node will be removed in a future release. We have consolidated the Send File & Send Image nodes into a single Upload File node (with more options). Read <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/issues/102" target="_blank">here</a> for more info.<br>
+        <br>
+        Replace this node with a File Upload node attached to a Send Message node to accomplish the same behavior.
+    </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
