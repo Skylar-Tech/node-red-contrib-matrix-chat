@@ -489,7 +489,10 @@ module.exports = function(RED) {
 
             matrixClient.login(
                 'm.login.password', {
-                    user: userId,
+                    identifier: {
+                        type: 'm.id.user',
+                        user: userId,
+                    },
                     password: password,
                     initial_device_display_name: displayName
                 })
