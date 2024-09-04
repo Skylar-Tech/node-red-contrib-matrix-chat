@@ -1,0 +1,114 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-typing', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs: 1,
+        outputs: 2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            roomType: { value: "msg" },
+            roomValue: { value: "topic" },
+            typingType: { value: "bool" },
+            typingValue: { value: "true" },
+            timeoutMsType: { value: "num" },
+            timeoutMsValue: { value: 20000 },
+        },
+        label: function() {
+            return this.name || "Typing";
+        },
+        oneditprepare: function() {
+            $("#node-input-room").typedInput({
+                type: this.roomType,
+                types:['msg','flow','global','str'],
+            })
+                .typedInput('value', this.roomValue)
+                .typedInput('type', this.roomType);
+
+            $("#node-input-typing").typedInput({
+                types:['msg','flow','global','bool'],
+            })
+                .typedInput('value', this.typingValue)
+                .typedInput('type', this.typingType);
+
+            $("#node-input-timeoutMs").typedInput({
+                types:['msg','flow','global','num'],
+            })
+                .typedInput('value', this.timeoutMsValue)
+                .typedInput('type', this.timeoutMsType);
+        },
+        oneditsave: function() {
+            this.roomType = $("#node-input-room").typedInput('type');
+            this.roomValue = $("#node-input-room").typedInput('value');
+            this.typingType = $("#node-input-typing").typedInput('type');
+            this.typingValue = $("#node-input-typing").typedInput('value');
+            this.timeoutMsType = $("#node-input-timeoutMs").typedInput('type');
+            this.timeoutMsValue = $("#node-input-timeoutMs").typedInput('value');
+        },
+        paletteLabel: 'Typing'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-typing">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-room"><i class="fa fa-comments"></i> Room</label>
+        <input type="text" id="node-input-room">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-typing"><i class="fa fa-commenting-o"></i> Is Typing</label>
+        <input type="text" id="node-input-typing">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-timeoutMs"><i class="fa fa-clock-o"></i> Timeout Milliseconds</label>
+        <input type="text" id="node-input-timeoutMs">
+    </div>
+
+    <div class="form-row form-tips">
+        Timeout Milliseconds is how many milliseconds the server should show the user typing for. Ignored if setting typing to false.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-typing">
+    <h3>Details</h3>
+    <p>
+        Sends typing event to a room
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>dynamic
+            <span class="property-type">any</span>
+        </dt>
+        <dd> The inputs are configurable on the node.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dd>Returns from first output on success</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+
+</script>

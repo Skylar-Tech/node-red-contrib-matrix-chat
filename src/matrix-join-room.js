@@ -11,6 +11,7 @@ module.exports = function(RED) {
             node.warn("No configuration node");
             return;
         }
+        node.server.register(node);
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -24,17 +25,18 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.error("No matrix server selected");
+                node.error("No matrix server selected", msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             if(!msg.topic) {
-                node.error("Room must be specified in msg.topic");
+                node.error("Room must be specified in msg.topic", msg);
                 return;
             }
 
@@ -46,10 +48,14 @@ module.exports = function(RED) {
                     node.send([msg, null]);
                 })
                 .catch(function(e){
-                    node.error("Error trying to join room " + msg.topic + ":" + e);
+                    node.error("Error trying to join room " + msg.topic + ":" + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-join-room", MatrixJoinRoom);

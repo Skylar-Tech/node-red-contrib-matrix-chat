@@ -11,9 +11,10 @@ module.exports = function(RED) {
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
         if (!node.server) {
-            node.error("No configuration node");
+            node.error("No configuration node", {});
             return;
         }
+        node.server.register(node);
 
         node.server.on("disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
@@ -25,29 +26,35 @@ module.exports = function(RED) {
 
         node.on('input', function(msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.error("No matrix server selected");
+                node.error("No matrix server selected", msg);
                 return;
             }
 
             if(!msg.topic) {
-                node.error('No room provided in msg.topic');
+                node.error('No room provided in msg.topic', msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             try {
                 node.log("Leaving room " + msg.topic);
                 node.server.matrixClient.leave(msg.topic);
+                node.server.matrixClient.store.removeRoom(msg.topic);
                 node.send([msg, null]);
             } catch(e) {
-                node.error("Failed to leave room " + msg.topic + ": " + e);
+                node.error("Failed to leave room " + msg.topic + ": " + e, msg);
                 msg.payload = e;
                 node.send([null, msg]);
             }
+        });
+        
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-leave-room", MatrixLeaveRoom);

@@ -1,3 +1,5 @@
+const {RelationType, TimelineWindow} = require("matrix-js-sdk");
+
 global.Olm = require('olm');
 const fs = require("fs-extra");
 const sdk = require("matrix-js-sdk");
@@ -44,6 +46,7 @@ module.exports = function(RED) {
             this.credentials = {};
         }
 
+        this.users = {};
         this.connected = null;
         this.name = n.name;
         this.userId = this.credentials.userId;
@@ -52,9 +55,17 @@ module.exports = function(RED) {
         this.url = this.credentials.url;
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.e2ee = n.enableE2ee || false;
-
         this.globalAccess = n.global;
         this.initializedAt = new Date();
+        node.initialSyncLimit = 25;
+
+        // Keep track of all consumers of this node to be able to catch errors
+        node.register = function(consumerNode) {
+            node.users[consumerNode.id] = consumerNode;
+        };
+        node.deregister = function(consumerNode) {
+            delete node.users[consumerNode.id];
+        };
         
         if(!this.userId) {
             node.log("Matrix connection failed: missing user ID in configuration.");
@@ -68,9 +79,9 @@ module.exports = function(RED) {
         let retryStartTimeout = null;
 
         if(!this.credentials.accessToken) {
-            node.error("Matrix connection failed: missing access token in configuration.");
+            node.error("Matrix connection failed: missing access token in configuration.", {});
         } else if(!this.url) {
-            node.error("Matrix connection failed: missing server URL in configuration.");
+            node.error("Matrix connection failed: missing server URL in configuration.", {});
         } else {
             node.setConnected = async function(connected, cb) {
                 if (node.connected !== connected) {
@@ -88,7 +99,7 @@ module.exports = function(RED) {
                                 device_id = this.matrixClient.getDeviceId();
 
                             if(!device_id && node.enableE2ee) {
-                                node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
+                                node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.", {})
                             } else {
                                 if(!stored_device_id || stored_device_id !== device_id) {
                                     node.log(`Saving Device ID (old:${stored_device_id} new:${device_id})`);
@@ -107,13 +118,13 @@ module.exports = function(RED) {
                                                     }).then(
                                                         function(response) {},
                                                         function(error) {
-                                                            node.error("Failed to set device label: " + error);
+                                                            node.error("Failed to set device label: " + error, {});
                                                         }
                                                     );
                                                 }
                                             },
                                             function(error) {
-                                                node.error("Failed to fetch device: " + error);
+                                                node.error("Failed to fetch device: " + error, {});
                                             }
                                         );
                                 }
@@ -147,6 +158,8 @@ module.exports = function(RED) {
                 // verificationMethods: ["m.sas.v1"]
             });
 
+            node.debug(`hasLazyLoadMembersEnabled=${node.matrixClient.hasLazyLoadMembersEnabled()}`);
+
             // set globally if configured to do so
             if(this.globalAccess) {
                 this.context().global.set('matrixClient["'+this.userId+'"]', node.matrixClient);
@@ -165,6 +178,13 @@ module.exports = function(RED) {
 
             node.on('close', function(done) {
                 stopClient();
+                if(node.globalAccess) {
+                    try {
+                        node.context().global.set('matrixClient["'+node.userId+'"]', undefined);
+                    } catch(e){
+                        node.error(e.message, {});
+                    }
+                }
                 done();
             });
 
@@ -174,22 +194,22 @@ module.exports = function(RED) {
 
             node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
                 if (toStartOfTimeline) {
+                    node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: paginated result");
                     return; // ignore paginated results
                 }
-                if (!event.getSender() || event.getSender() === node.userId) {
-                    return; // ignore our own messages
-                }
                 if (!data || !data.liveEvent) {
+                    node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: old message");
                     return; // ignore old message (we only want live events)
                 }
                 if(node.initializedAt > event.getDate()) {
+                    node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: old message before init");
                     return; // skip events that occurred before our client initialized
                 }
 
                 try {
                     await node.matrixClient.decryptEventIfNeeded(event);
                 } catch (error) {
-                    node.error(error);
+                    node.error(error, {});
                     return;
                 }
 
@@ -209,19 +229,29 @@ module.exports = function(RED) {
                 };
 
                 let msg = {
-                    encrypted : event.isEncrypted(),
-                    redacted  : event.isRedacted(),
-                    content   : event.getContent(),
-                    type      : (event.getContent()['msgtype'] || event.getType()) || null,
-                    payload   : (event.getContent()['body'] || event.getContent()) || null,
-                    isDM      : isDmRoom(room),
-                    userId    : event.getSender(),
-                    topic     : event.getRoomId(),
-                    eventId   : event.getId(),
-                    event     : event
+                    encrypted    : event.isEncrypted(),
+                    redacted     : event.isRedacted(),
+                    content      : event.getContent(),
+                    type         : (event.getContent()['msgtype'] || event.getType()) || null,
+                    payload      : (event.getContent()['body'] || event.getContent()) || null,
+                    isDM         : isDmRoom(room),
+                    isThread     : event.getContent()?.['m.relates_to']?.rel_type === RelationType.Thread,
+                    mentions     : event.getContent()["m.mentions"] || null,
+                    userId       : event.getSender(),
+                    user         : node.matrixClient.getUser(event.getSender()),
+                    topic        : event.getRoomId(),
+                    eventId      : event.getId(),
+                    event        : event,
                 };
 
-                node.log("Received" + (msg.encrypted ? ' encrypted' : '') +" timeline event [" + msg.type + "]: (" + room.name + ") " + event.getSender() + " :: " + msg.content.body + (toStartOfTimeline ? ' [PAGINATED]' : ''));
+                // remove keys from user property that start with an underscore
+                Object.keys(msg.user).forEach(function (key) {
+                    if (/^_/.test(key)) {
+                        delete msg.user[key];
+                    }
+                });
+
+                node.log(`Received ${msg.encrypted ? 'encrypted ' : ''}timeline event [${msg.type}]: (${room.name}) ${event.getSender()} :: ${msg.content.body} ${toStartOfTimeline ? ' [PAGINATED]' : ''}`);
                 node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
             });
 
@@ -260,7 +290,6 @@ module.exports = function(RED) {
 
                 if (member.membership === "invite" && member.userId === node.userId) {
                     node.log("Got invite to join room " + member.roomId);
-                    console.log(event);
                     if(node.autoAcceptRoomInvites) {
                         node.matrixClient.joinRoom(member.roomId).then(function() {
                             node.log("Automatically accepted invitation to join room " + member.roomId);
@@ -292,7 +321,7 @@ module.exports = function(RED) {
                 } else if(prevState === null && state === "ERROR") {
                     // Occurs when the initial sync failed first time.
                     node.setConnected(false, function(){
-                        node.error("Failed to connect to Matrix server");
+                        node.error("Failed to connect to Matrix server", {});
                     });
                 } else if(prevState === "ERROR" && state === "PREPARED") {
                     // Occurs when the initial sync succeeds
@@ -309,18 +338,18 @@ module.exports = function(RED) {
                 } else if(prevState === "SYNCING" && state === "RECONNECTING") {
                     // Occurs when the live update fails.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "RECONNECTING" && state === "RECONNECTING") {
                     // Can occur if the update calls continue to fail,
                     // but the keepalive calls (to /versions) succeed.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "RECONNECTING" && state === "ERROR") {
                     // Occurs when the keepalive call also fails
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "ERROR" && state === "SYNCING") {
                     // Occurs when the client has performed a
@@ -332,7 +361,7 @@ module.exports = function(RED) {
                     // Occurs when the client has failed to
                     // keepalive for a second time or more.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 } else if(prevState === "SYNCING" && state === "SYNCING") {
                     // Occurs when the client has performed a live update.
@@ -344,7 +373,7 @@ module.exports = function(RED) {
                     // Occurs once the client has stopped syncing or
                     // trying to sync after stopClient has been called.
                     node.setConnected(false, function(){
-                        node.error("Connection to Matrix server lost");
+                        node.error("Connection to Matrix server lost", {});
                     });
                 }
             });
@@ -362,7 +391,7 @@ module.exports = function(RED) {
                 //     httpStatus: 401
                 // }
 
-                node.error("Authentication failure: " + errorObj);
+                node.error("Authentication failure: " + errorObj, {});
                 stopClient();
             });
 
@@ -371,14 +400,14 @@ module.exports = function(RED) {
                     if(node.e2ee){
                         node.log("Initializing crypto...");
                         await node.matrixClient.initCrypto();
-                        node.matrixClient.setGlobalErrorOnUnknownDevices(false);
+                        node.matrixClient.getCrypto().globalBlacklistUnverifiedDevices = false; // prevent errors from unverified devices
                     }
                     node.log("Connecting to Matrix server...");
                     await node.matrixClient.startClient({
-                        initialSyncLimit: 8
+                        initialSyncLimit: node.initialSyncLimit
                     });
                 } catch(error) {
-                    node.error(error);
+                    node.error(error, {});
                 }
             }
 
@@ -399,7 +428,7 @@ module.exports = function(RED) {
                     .then(
                         function(data) {
                             if((typeof data['device_id'] === undefined || !data['device_id']) && !node.deviceId && !getStoredDeviceId(localStorage)) {
-                                node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.");
+                                node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.", {});
                             }
                             if('device_id' in data && data['device_id'] && !node.deviceId) {
                                 // if we have no device_id configured lets use the one
@@ -409,7 +438,7 @@ module.exports = function(RED) {
 
                             // make sure our userId matches the access token's
                             if(data['user_id'].toLowerCase() !== node.userId.toLowerCase()) {
-                                node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`);
+                                node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`, {});
                                 return;
                             }
                             run().catch((error) => node.error(error));
@@ -418,7 +447,7 @@ module.exports = function(RED) {
                             // if the error isn't authentication related retry in a little bit
                             if(err.code !== "M_UNKNOWN_TOKEN") {
                                 retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
-                                node.error("Auth check failed: " + err);
+                                node.error("Auth check failed: " + err, {});
                             }
                         }
                     )
@@ -449,13 +478,21 @@ module.exports = function(RED) {
             const matrixClient = sdk.createClient({
                 baseUrl: baseUrl,
                 deviceId: deviceId,
+                timelineSupport: true,
                 localTimeoutMs: '30000',
                 request
             });
 
+            new TimelineWindow()
+
+            matrixClient.timelineSupport = true;
+
             matrixClient.login(
                 'm.login.password', {
-                    user: userId,
+                    identifier: {
+                        type: 'm.id.user',
+                        user: userId,
+                    },
                     password: password,
                     initial_device_display_name: displayName
                 })
@@ -494,7 +531,7 @@ module.exports = function(RED) {
                         fs.copySync(oldStorageDir, dir);
                     }
                 } catch (err) {
-                    node.error(err);
+                    node.error(err, {});
                 }
             });
 

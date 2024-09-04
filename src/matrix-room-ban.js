@@ -13,6 +13,7 @@ module.exports = function(RED) {
             node.warn("No configuration node");
             return;
         }
+        node.server.register(node);
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -26,23 +27,24 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.error("No matrix server selected");
+                node.error("No matrix server selected", msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.error("Room must be specified in msg.topic or in configuration");
+                node.error("Room must be specified in msg.topic or in configuration", msg);
                 return;
             }
 
             if(!msg.userId) {
-                node.error("msg.userId was not set.");
+                node.error("msg.userId was not set.", msg);
                 return;
             }
 
@@ -53,10 +55,14 @@ module.exports = function(RED) {
                     node.send([msg, null]);
                 })
                 .catch(function(e){
-                    node.error("Error trying to ban " + msg.userId + " from " + msg.topic);
+                    node.error("Error trying to ban " + msg.userId + " from " + msg.topic, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-room-ban", MatrixBan);

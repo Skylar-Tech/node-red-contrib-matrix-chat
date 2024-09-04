@@ -12,6 +12,8 @@ module.exports = function(RED) {
             return;
         }
 
+        node.server.register(node);
+
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
         node.server.on("disconnected", function(){
@@ -29,8 +31,9 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             let queryParams = {
@@ -61,6 +64,10 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-synapse-users", MatrixSynapseUsers);

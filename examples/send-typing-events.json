@@ -1,0 +1,127 @@
+[
+  {
+    "id": "541dbfc3f04220cf",
+    "type": "matrix-typing",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "server": null,
+    "roomType": "msg",
+    "roomValue": "topic",
+    "typingType": "msg",
+    "typingValue": "typing",
+    "timeoutMsType": "num",
+    "timeoutMsValue": "20000",
+    "x": 1090,
+    "y": 220,
+    "wires": [
+      [
+        "febf8236f3683963"
+      ],
+      [
+        "9db9819ebb6343c8"
+      ]
+    ]
+  },
+  {
+    "id": "d7c3714c657bfe4f",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "name": "Start Typing",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "typing",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!mohVKgDFYUubJQHcuX:skylar.tech",
+    "x": 910,
+    "y": 200,
+    "wires": [
+      [
+        "541dbfc3f04220cf"
+      ]
+    ]
+  },
+  {
+    "id": "783121ff1a6bd833",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "name": "Stop Typing",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "typing",
+        "v": "false",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!mohVKgDFYUubJQHcuX:skylar.tech",
+    "x": 910,
+    "y": 240,
+    "wires": [
+      [
+        "541dbfc3f04220cf"
+      ]
+    ]
+  },
+  {
+    "id": "9db9819ebb6343c8",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "Failure msg",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1270,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "febf8236f3683963",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "Success msg",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1270,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "01e8c4c6303af390",
+    "type": "comment",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send typing events to a room",
+    "info": "",
+    "x": 940,
+    "y": 160,
+    "wires": []
+  }
+]

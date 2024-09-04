@@ -8,9 +8,10 @@ module.exports = function(RED) {
         this.server = RED.nodes.getNode(n.server);
 
         if(!this.server) {
-            node.error('Server must be configured on the node.');
+            node.error('Server must be configured on the node.', {});
             return;
         }
+        node.server.register(node);
 
         this.encodeUri = function(pathTemplate, variables) {
             for (const key in variables) {
@@ -41,8 +42,9 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             if(!msg.payload) {
@@ -63,6 +65,10 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-create-room", MatrixCreateRoom);

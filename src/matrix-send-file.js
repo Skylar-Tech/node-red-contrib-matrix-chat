@@ -13,6 +13,7 @@ module.exports = function(RED) {
             node.warn("No configuration node");
             return;
         }
+        node.server.register(node);
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -31,8 +32,9 @@ module.exports = function(RED) {
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed");
+                node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
+                return;
             }
 
             msg.topic = node.roomId || msg.topic;
@@ -57,7 +59,7 @@ module.exports = function(RED) {
             }
 
             if(!msg.payload) {
-                node.error('msg.payload is required');
+                node.error('msg.payload is required', msg);
                 return;
             }
 
@@ -93,6 +95,10 @@ module.exports = function(RED) {
                     msg.error = e;
                     node.send([null, msg]);
                 });
+        });
+
+        node.on("close", function() {
+            node.server.deregister(node);
         });
     }
     RED.nodes.registerType("matrix-send-file", MatrixSendFile);
