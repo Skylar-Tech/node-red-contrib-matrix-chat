@@ -265,3 +265,6 @@ If you say "force_join @test:example.com !320j90mf0394f:example.com" the bot wil
 Note: This requires the bot to be a server admin. This also only works for rooms on the same server.
 
 ![room-kick-ban.png](force-join-room.png)
+
+### Paginate room history
+
