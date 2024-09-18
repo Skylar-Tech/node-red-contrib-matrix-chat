@@ -1,0 +1,173 @@
+[
+  {
+    "id": "1317b79375a65579",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Paginate the entire history of a given room",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "e8fc071b3f81fdee",
+      "33937ba1e74ed92d",
+      "4aadbf1c37d2ac8b",
+      "e4025b7df45f3d91",
+      "973dd418b00172c8",
+      "3edbea9403d7c347"
+    ],
+    "x": 754,
+    "y": 1339,
+    "w": 932,
+    "h": 182
+  },
+  {
+    "id": "e8fc071b3f81fdee",
+    "type": "matrix-paginate-room",
+    "z": "8fd89a0b44c61e76",
+    "g": "1317b79375a65579",
+    "name": "Paginate Room",
+    "server": null,
+    "roomType": "msg",
+    "roomValue": "topic",
+    "paginateKeyType": "msg",
+    "paginateKeyValue": "paginateKey",
+    "paginateBackwardsType": "msg",
+    "paginateBackwardsValue": "paginateBackwards",
+    "pageSizeType": "msg",
+    "pageSizeValue": "pageSize",
+    "x": 1280,
+    "y": 1480,
+    "wires": [
+      [
+        "973dd418b00172c8"
+      ],
+      [
+        "4aadbf1c37d2ac8b"
+      ]
+    ]
+  },
+  {
+    "id": "33937ba1e74ed92d",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "1317b79375a65579",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1560,
+    "y": 1380,
+    "wires": []
+  },
+  {
+    "id": "4aadbf1c37d2ac8b",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "1317b79375a65579",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1530,
+    "y": 1480,
+    "wires": []
+  },
+  {
+    "id": "e4025b7df45f3d91",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "1317b79375a65579",
+    "name": "",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "paginateKey",
+        "v": "",
+        "vt": "date"
+      },
+      {
+        "p": "paginateBackwards",
+        "v": "true",
+        "vt": "bool"
+      },
+      {
+        "p": "pageSize",
+        "v": "25",
+        "vt": "num"
+      },
+      {
+        "p": "timeout",
+        "v": "1000",
+        "vt": "num"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:skylar.tech",
+    "x": 900,
+    "y": 1480,
+    "wires": [
+      [
+        "e8fc071b3f81fdee"
+      ]
+    ]
+  },
+  {
+    "id": "973dd418b00172c8",
+    "type": "function",
+    "z": "8fd89a0b44c61e76",
+    "g": "1317b79375a65579",
+    "name": "Loop -  return each chunk",
+    "func": "node.status({\n    fill: \"green\",\n    text: `${msg.start} - ${msg.end} ${msg.payload ? '' : 'DONE'}`\n});\n\nif(msg.payload.length) {\n    // we have more records so output to both\n    return [msg, msg];\n}\n\n// no more records so only send to output 1\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1290,
+    "y": 1400,
+    "wires": [
+      [
+        "33937ba1e74ed92d"
+      ],
+      [
+        "3edbea9403d7c347"
+      ]
+    ]
+  },
+  {
+    "id": "3edbea9403d7c347",
+    "type": "delay",
+    "z": "8fd89a0b44c61e76",
+    "g": "1317b79375a65579",
+    "name": "msg.delay",
+    "pauseType": "delayv",
+    "timeout": "0",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 1550,
+    "y": 1420,
+    "wires": [
+      [
+        "e8fc071b3f81fdee"
+      ]
+    ]
+  }
+]

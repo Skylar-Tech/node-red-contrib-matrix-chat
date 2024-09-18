@@ -1,0 +1,99 @@
+[
+  {
+    "id": "a8bd7a89b91a93c4",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Mark all received events as read",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "f9e49ebbc4bda431",
+      "c58fce26efb45b27",
+      "c8feb91421fcbbb3",
+      "e6d52159a6cfe0c0"
+    ],
+    "x": 754,
+    "y": 1579,
+    "w": 632,
+    "h": 122
+  },
+  {
+    "id": "f9e49ebbc4bda431",
+    "type": "matrix-mark-read",
+    "z": "8fd89a0b44c61e76",
+    "g": "a8bd7a89b91a93c4",
+    "name": "",
+    "server": null,
+    "roomType": "msg",
+    "roomValue": "topic",
+    "eventIdType": "msg",
+    "eventIdValue": "eventId",
+    "x": 1070,
+    "y": 1640,
+    "wires": [
+      [
+        "c8feb91421fcbbb3"
+      ],
+      [
+        "e6d52159a6cfe0c0"
+      ]
+    ]
+  },
+  {
+    "id": "c58fce26efb45b27",
+    "type": "matrix-receive",
+    "z": "8fd89a0b44c61e76",
+    "g": "a8bd7a89b91a93c4",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "acceptOwnEvents": false,
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptAudio": true,
+    "acceptImages": true,
+    "acceptVideos": true,
+    "acceptLocations": true,
+    "x": 860,
+    "y": 1640,
+    "wires": [
+      [
+        "f9e49ebbc4bda431"
+      ]
+    ]
+  },
+  {
+    "id": "c8feb91421fcbbb3",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "a8bd7a89b91a93c4",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1260,
+    "y": 1620,
+    "wires": []
+  },
+  {
+    "id": "e6d52159a6cfe0c0",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "a8bd7a89b91a93c4",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1250,
+    "y": 1660,
+    "wires": []
+  }
+]

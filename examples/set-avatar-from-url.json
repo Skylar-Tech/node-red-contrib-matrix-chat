@@ -1,0 +1,122 @@
+[
+  {
+    "id": "4cac7bbe81dd3a54",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Set new avatar image from remote image URL",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "91f08bf02decd653",
+      "44a586ebac1fb619",
+      "d3bd4a0d4e1520a3",
+      "e9e591def93615c5"
+    ],
+    "x": 754,
+    "y": 2419,
+    "w": 712,
+    "h": 82
+  },
+  {
+    "id": "91f08bf02decd653",
+    "type": "http request",
+    "z": "8fd89a0b44c61e76",
+    "g": "4cac7bbe81dd3a54",
+    "name": "",
+    "method": "GET",
+    "ret": "bin",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1010,
+    "y": 2460,
+    "wires": [
+      [
+        "e9e591def93615c5"
+      ]
+    ]
+  },
+  {
+    "id": "44a586ebac1fb619",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "4cac7bbe81dd3a54",
+    "name": "",
+    "props": [
+      {
+        "p": "url",
+        "v": "https://nodered.org/about/resources/media/node-red-icon.png",
+        "vt": "str"
+      },
+      {
+        "p": "filename",
+        "v": "avatar.jpg",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 850,
+    "y": 2460,
+    "wires": [
+      [
+        "91f08bf02decd653"
+      ]
+    ]
+  },
+  {
+    "id": "d3bd4a0d4e1520a3",
+    "type": "matrix-user-settings",
+    "z": "8fd89a0b44c61e76",
+    "g": "4cac7bbe81dd3a54",
+    "name": "",
+    "server": null,
+    "roomId": null,
+    "rules": [
+      {
+        "t": "set",
+        "p": "avatar_url",
+        "to": "payload.url",
+        "tot": "msg"
+      }
+    ],
+    "x": 1360,
+    "y": 2460,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "e9e591def93615c5",
+    "type": "matrix-upload-file",
+    "z": "8fd89a0b44c61e76",
+    "g": "4cac7bbe81dd3a54",
+    "name": "",
+    "server": null,
+    "inputType": "msg",
+    "inputValue": "payload",
+    "fileNameType": "msg",
+    "fileNameValue": "filename",
+    "contentType": "",
+    "generateThumbnails": true,
+    "x": 1190,
+    "y": 2460,
+    "wires": [
+      [
+        "d3bd4a0d4e1520a3"
+      ],
+      []
+    ]
+  }
+]
