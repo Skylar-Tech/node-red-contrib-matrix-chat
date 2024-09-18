@@ -56,7 +56,17 @@ module.exports = function(RED) {
                 let roomId = getToValue(msg, node.roomType, node.roomValue),
                     eventId = getToValue(msg, node.eventIdType, node.eventIdValue);
 
-                msg.payload = await node.server.matrixClient.setRoomReadMarkers(roomId, eventId);
+                const room = node.server.matrixClient.getRoom(roomId);
+                if (!room) {
+                    throw new Error(`Room ${roomId} not found.`);
+                }
+
+                const event = room.findEventById(eventId);
+                if (!event) {
+                    throw new Error(`Event ${eventId} not found in room ${roomId}.`);
+                }
+
+                await node.server.matrixClient.sendReceipt(event, "m.read")
                 node.send([msg, null]);
             } catch(e) {
                 msg.error = `Room pagination error: ${e}`;
