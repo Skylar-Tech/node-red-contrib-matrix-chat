@@ -1,0 +1,142 @@
+[
+  {
+    "id": "f4a0c2a9d7eed027",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Send an uploaded file to a room",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "8d475ab136d1ee7e",
+      "2524f5a9a7ea2444",
+      "9a149a36d6ab6470",
+      "9da1ed1dc33930bb",
+      "f93782c346d0e6ef"
+    ],
+    "x": 754,
+    "y": 2719,
+    "w": 992,
+    "h": 82
+  },
+  {
+    "id": "8d475ab136d1ee7e",
+    "type": "matrix-upload-file",
+    "z": "8fd89a0b44c61e76",
+    "g": "f4a0c2a9d7eed027",
+    "name": "",
+    "server": null,
+    "inputType": "msg",
+    "inputValue": "payload",
+    "fileNameType": "msg",
+    "fileNameValue": "filename",
+    "contentType": "",
+    "generateThumbnails": true,
+    "x": 1270,
+    "y": 2760,
+    "wires": [
+      [
+        "2524f5a9a7ea2444"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "2524f5a9a7ea2444",
+    "type": "matrix-send-message",
+    "z": "8fd89a0b44c61e76",
+    "g": "f4a0c2a9d7eed027",
+    "name": "",
+    "server": null,
+    "roomId": "",
+    "message": "",
+    "messageType": "m.text",
+    "messageFormat": "",
+    "replaceMessage": false,
+    "threadReplyType": "msg",
+    "threadReplyValue": "isThread",
+    "x": 1440,
+    "y": 2760,
+    "wires": [
+      [
+        "f93782c346d0e6ef"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "9a149a36d6ab6470",
+    "type": "http request",
+    "z": "8fd89a0b44c61e76",
+    "g": "f4a0c2a9d7eed027",
+    "name": "",
+    "method": "GET",
+    "ret": "bin",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1110,
+    "y": 2760,
+    "wires": [
+      [
+        "8d475ab136d1ee7e"
+      ]
+    ]
+  },
+  {
+    "id": "9da1ed1dc33930bb",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "f4a0c2a9d7eed027",
+    "name": "",
+    "props": [
+      {
+        "p": "url",
+        "v": "https://nodered.org/about/resources/media/node-red-icon.png",
+        "vt": "str"
+      },
+      {
+        "p": "filename",
+        "v": "avatar.jpg",
+        "vt": "str"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:skylar.tech",
+    "x": 900,
+    "y": 2760,
+    "wires": [
+      [
+        "9a149a36d6ab6470"
+      ]
+    ]
+  },
+  {
+    "id": "f93782c346d0e6ef",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "f4a0c2a9d7eed027",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1620,
+    "y": 2760,
+    "wires": []
+  }
+]

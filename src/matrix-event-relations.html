@@ -1,0 +1,230 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-fetch-relations', {
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["Related Events", "Error"],
+        inputs: 1,
+        outputs: 2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            roomType: { value: "msg" },
+            roomValue: { value: "topic" },
+            eventIdType: { value: "msg" },
+            eventIdValue: { value: "eventId" },
+            relationTypeType: { value: "json" },
+            relationTypeValue: { value: "null" },
+            eventTypeType: { value: "json" },
+            eventTypeValue: { value: "null" },
+            directionType: { value: "str" },
+            directionValue: { value: "b" },
+            limitType: { value: "json" },
+            limitValue: { value: "null" },
+            recurseType: { value: "bool" },
+            recurseValue: { value: "false" },
+            fromType: { value: "msg" },
+            fromValue: { value: "payload.next_batch" },
+            toType: { value: "json" },
+            toValue: { value: "null" },
+        },
+        label: function () {
+            return this.name || "Fetch Event Relations";
+        },
+        paletteLabel: 'Fetch Event Relations',
+        oneditprepare: function () {
+            $("#node-input-room").typedInput({
+                type: this.roomType,
+                types: ['msg', 'flow', 'global', 'str'],
+            })
+                .typedInput('value', this.roomValue)
+                .typedInput('type', this.roomType);
+
+            $("#node-input-eventId").typedInput({
+                types: ['msg', 'flow', 'global', 'str'],
+            })
+                .typedInput('value', this.eventIdValue)
+                .typedInput('type', this.eventIdType);
+
+            $("#node-input-relationType").typedInput({
+                types: ['msg', 'flow', 'global', 'str', 'json'],
+            })
+                .typedInput('value', this.relationTypeValue)
+                .typedInput('type', this.relationTypeType);
+
+            $("#node-input-eventType").typedInput({
+                types: ['msg', 'flow', 'global', 'str', 'json'],
+            })
+                .typedInput('value', this.eventTypeValue)
+                .typedInput('type', this.eventTypeType);
+
+            $("#node-input-direction").typedInput({
+                types: ['msg', 'flow', 'global', 'str'],
+            })
+                .typedInput('value', this.directionValue)
+                .typedInput('type', this.directionType);
+
+            $("#node-input-limit").typedInput({
+                types: ['msg', 'flow', 'global', 'num', 'json'],
+            })
+                .typedInput('value', this.limitValue)
+                .typedInput('type', this.limitType);
+
+            $("#node-input-recurse").typedInput({
+                types: ['msg', 'flow', 'global', 'bool', 'json'],
+            })
+                .typedInput('value', this.recurseValue)
+                .typedInput('type', this.recurseType);
+
+            $("#node-input-from").typedInput({
+                types: ['msg', 'flow', 'global', 'str', 'json'],
+            })
+                .typedInput('value', this.fromValue)
+                .typedInput('type', this.fromType);
+
+            $("#node-input-to").typedInput({
+                types: ['msg', 'flow', 'global', 'str', 'json'],
+            })
+                .typedInput('value', this.toValue)
+                .typedInput('type', this.toType);
+        },
+        oneditsave: function () {
+            this.roomType = $("#node-input-room").typedInput('type');
+            this.roomValue = $("#node-input-room").typedInput('value');
+            this.eventIdType = $("#node-input-eventId").typedInput('type');
+            this.eventIdValue = $("#node-input-eventId").typedInput('value');
+            this.relationTypeType = $("#node-input-relationType").typedInput('type');
+            this.relationTypeValue = $("#node-input-relationType").typedInput('value');
+            this.eventTypeType = $("#node-input-eventType").typedInput('type');
+            this.eventTypeValue = $("#node-input-eventType").typedInput('value');
+            this.directionType = $("#node-input-direction").typedInput('type');
+            this.directionValue = $("#node-input-direction").typedInput('value');
+            this.limitType = $("#node-input-limit").typedInput('type');
+            this.limitValue = $("#node-input-limit").typedInput('value');
+            this.recurseType = $("#node-input-recurse").typedInput('type');
+            this.recurseValue = $("#node-input-recurse").typedInput('value');
+            this.fromType = $("#node-input-from").typedInput('type');
+            this.fromValue = $("#node-input-from").typedInput('value');
+            this.toType = $("#node-input-to").typedInput('type');
+            this.toValue = $("#node-input-to").typedInput('value');
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-fetch-relations">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server"></i> Matrix Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-room"><i class="fa fa-comments"></i> Room</label>
+        <input type="text" id="node-input-room">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-eventId"><i class="fa fa-key"></i> Event ID</label>
+        <input type="text" id="node-input-eventId">
+        <div class="form-tips" style="margin-top: 10px;">The event ID for which relations are being fetched.</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-relationType"><i class="fa fa-link"></i> Relation Type</label>
+        <input type="text" id="node-input-relationType">
+        <div class="form-tips" style="margin-top: 10px;">The type of relations (e.g., m.in_reply_to, m.replace, m.annotation, m.thread, m.reference) to be fetched for the event. You can read more in the <a href="https://spec.matrix.org/v1.11/client-server-api/#relationship-types" target="_blank">Matrix specification</a>.</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-eventType"><i class="fa fa-file"></i> Event Type</label>
+        <input type="text" id="node-input-eventType">
+        <div class="form-tips" style="margin-top: 10px;">The type of event (e.g., m.reaction, m.annotation) to be retrieved.</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-direction"><i class="fa fa-arrow-left"></i> Direction</label>
+        <input type="text" id="node-input-direction">
+        <div class="form-tips" style="margin-top: 10px;">Set the direction of pagination. Can be "b" for backwards or "f" for forwards. Defaults to "b".</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-limit"><i class="fa fa-arrow-left"></i> Limit</label>
+        <input type="text" id="node-input-limit">
+        <div class="form-tips" style="margin-top: 10px;">The maximum number of results to return in a single chunk. Recommended to leave as null to use the server default.</div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-recurse"><i class="fa fa-arrow-left"></i> Recurse</label>
+        <input type="text" id="node-input-recurse">
+        <div class="form-tips" style="margin-top: 10px;">
+            Whether to additionally include events which only relate indirectly to the given event, i.e. events related to the given event via two or more direct relationships.
+            <br><br>
+            If set to false, only events which have a direct relation with the given event will be included.
+            <br><br>
+            If set to true, events which have an indirect relation with the given event will be included additionally up to a certain depth level. Homeservers SHOULD traverse at least 3 levels of relationships. Implementations MAY perform more but MUST be careful to not infinitely recurse.
+            <br><br>
+            The default value is false.
+            <br><br>
+            Added in v1.10
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-from"><i class="fa fa-arrow-left"></i> From</label>
+        <input type="text" id="node-input-from">
+        <div class="form-tips" style="margin-top: 10px;">
+            The pagination token to start returning results from. If not supplied, results start at the most recent topological event known to the server.
+            <br><br>
+            Can be a next_batch or prev_batch token from a previous call, or a returned start token from /messages, or a next_batch token from /sync.
+            <br><br>
+            Defaults to msg.payload.next_batch to easily fetch the next batch in a recursive loop.
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-to"><i class="fa fa-arrow-left"></i> To</label>
+        <input type="text" id="node-input-to">
+        <div class="form-tips" style="margin-top: 10px;">
+            The pagination token to stop returning results at. If not supplied, results continue up to limit or until there are no more events.
+            <br><br>
+            Like from, this can be a previous token from a prior call to this endpoint or from /messages or /sync.
+        </div>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-fetch-relations">
+    <p>
+        The Matrix Fetch Relations node allows you to retrieve event relations for a specific event within a Matrix room.
+    </p>
+
+    <h3>Inputs</h3>
+    <ul>
+        <li><strong>msg</strong> (<em>default</em>): Triggers the fetching of relations based on the provided parameters.</li>
+    </ul>
+
+    <h3>Outputs</h3>
+    <ul>
+        <li>
+            <strong>Output 1 (Related Events)</strong>: Returns an array of events with their relations.
+            Each event contains details such as:
+            <ul>
+                <li><code>msg.payload.chunk</code> - Array of related events.</li>
+                <li><code>msg.payload.prev_batch</code> - The previous batch token for pagination.</li>
+                <li><code>msg.payload.next_batch</code> - The next batch token for pagination.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Output 2 (Error)</strong>: If an error occurs during the fetch process, the error message is sent to this output.
+        </li>
+    </ul>
+
+    <h3>Dynamic Properties</h3>
+    <p>Properties such as <strong>Room ID</strong>, <strong>Event ID</strong>, <strong>Relation Type</strong>, and <strong>Event Type</strong> can be dynamically set using message, flow, or global context variables.</p>
+
+    <h3>Usage</h3>
+    <p>To fetch event relations, trigger this node with a <code>msg</code> input. The node will fetch the relations for the given event ID and return the related events.</p>
+</script>

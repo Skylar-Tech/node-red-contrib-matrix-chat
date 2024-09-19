@@ -40,14 +40,6 @@ module.exports = function(RED) {
                 return;
             }
 
-            msg.topic = node.roomId || msg.topic;
-            if(!msg.topic) {
-                msg.error = "Room must be specified in msg.topic or in configuration";
-                node.error(msg.error, msg);
-                node.send([null, msg]);
-                return;
-            }
-
             let getterErrors = {},
                 setterErrors = {};
 

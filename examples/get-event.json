@@ -1,0 +1,103 @@
+[
+  {
+    "id": "13e21fb561dd6367",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Get event by eventId and roomId",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "79aa7974c32c41e7",
+      "f895181928491647",
+      "687ab5804c6ab05c",
+      "c731a6923324de48"
+    ],
+    "x": 814,
+    "y": 759,
+    "w": 692,
+    "h": 122
+  },
+  {
+    "id": "79aa7974c32c41e7",
+    "type": "matrix-get-event",
+    "z": "8fd89a0b44c61e76",
+    "g": "13e21fb561dd6367",
+    "name": "",
+    "server": null,
+    "roomIdType": "msg",
+    "roomIdValue": "topic",
+    "eventIdType": "msg",
+    "eventIdValue": "eventId",
+    "x": 1200,
+    "y": 820,
+    "wires": [
+      [
+        "f895181928491647"
+      ],
+      [
+        "687ab5804c6ab05c"
+      ]
+    ]
+  },
+  {
+    "id": "f895181928491647",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "13e21fb561dd6367",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1380,
+    "y": 800,
+    "wires": []
+  },
+  {
+    "id": "687ab5804c6ab05c",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "13e21fb561dd6367",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1370,
+    "y": 840,
+    "wires": []
+  },
+  {
+    "id": "c731a6923324de48",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "13e21fb561dd6367",
+    "name": "",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "eventId",
+        "v": "$example",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:skylar.tech",
+    "x": 960,
+    "y": 820,
+    "wires": [
+      [
+        "79aa7974c32c41e7"
+      ]
+    ]
+  }
+]

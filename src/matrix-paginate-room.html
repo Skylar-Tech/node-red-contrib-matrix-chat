@@ -1,9 +1,9 @@
 <script type="text/javascript">
-    RED.nodes.registerType('matrix-paginate-room',{
+    RED.nodes.registerType('matrix-paginate-room', {
         category: 'matrix',
         color: '#00b7ca',
         icon: "matrix.png",
-        outputLabels: ["message"],
+        outputLabels: ["Paginated Data", "Error"],
         inputs: 1,
         outputs: 2,
         defaults: {
@@ -18,37 +18,37 @@
             pageSizeType: { value: "num" },
             pageSizeValue: { value: "25" }
         },
-        label: function() {
+        label: function () {
             return this.name || "Paginate Room";
         },
         paletteLabel: 'Paginate Room',
-        oneditprepare: function() {
+        oneditprepare: function () {
             $("#node-input-room").typedInput({
                 type: this.roomType,
-                types:['msg','flow','global','str'],
+                types: ['msg', 'flow', 'global', 'str'],
             })
                 .typedInput('value', this.roomValue)
                 .typedInput('type', this.roomType);
 
             $("#node-input-paginateBackwards").typedInput({
-                types:['msg','flow','global','bool'],
+                types: ['msg', 'flow', 'global', 'bool'],
             })
                 .typedInput('value', this.paginateBackwardsValue)
                 .typedInput('type', this.paginateBackwardsType);
 
             $("#node-input-paginateKey").typedInput({
-                types:['msg','flow','global'],
+                types: ['msg', 'flow', 'global'],
             })
                 .typedInput('value', this.paginateKeyValue)
                 .typedInput('type', this.paginateKeyType);
 
             $("#node-input-pageSize").typedInput({
-                types:['msg','flow','global','num'],
+                types: ['msg', 'flow', 'global', 'num'],
             })
                 .typedInput('value', this.pageSizeValue)
                 .typedInput('type', this.pageSizeType);
         },
-        oneditsave: function() {
+        oneditsave: function () {
             this.roomType = $("#node-input-room").typedInput('type');
             this.roomValue = $("#node-input-room").typedInput('value');
             this.paginateBackwardsType = $("#node-input-paginateBackwards").typedInput('type');
@@ -78,207 +78,56 @@
     </div>
 
     <div class="form-row">
-        <label for="node-input-paginateKey"><i class="fa fa-comments"></i> Pagination Key</label>
+        <label for="node-input-paginateKey"><i class="fa fa-key"></i> Pagination Key</label>
         <input type="text" id="node-input-paginateKey">
+        <div class="form-tips" style="margin-top: 10px;">A unique key to identify the current pagination session. If not provided, a new key will be generated for each session.</div>
     </div>
 
     <div class="form-row">
-        <label for="node-input-paginateBackwards"><i class="fa fa-commenting-o"></i> Paginate Backwards</label>
+        <label for="node-input-paginateBackwards"><i class="fa fa-arrow-left"></i> Paginate Backwards</label>
         <input type="text" id="node-input-paginateBackwards">
+        <div class="form-tips" style="margin-top: 10px;">Set to true to paginate backwards (older events). Set to false to paginate forwards (newer events).</div>
     </div>
 
     <div class="form-row">
-        <label for="node-input-pageSize"><i class="fa fa-commenting-o"></i> Page Size</label>
+        <label for="node-input-pageSize"><i class="fa fa-list"></i> Page Size</label>
         <input type="text" id="node-input-pageSize">
+        <div class="form-tips" style="margin-top: 10px;">Set the number of events to retrieve per pagination call. It's recommended to keep this value at or below 25 to match the current initial synchronization limit. Adjust this based on your server’s load and capacity to avoid throttling or performance issues.</div>
     </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-paginate-room">
-    <p>Receive events from Matrix.</p>
+    <p>
+        The Matrix Paginate Room node allows you to retrieve historical or future events from a Matrix room, moving forwards or backwards through the event timeline.
+    </p>
+
+    <h3>Inputs</h3>
+    <ul>
+        <li><strong>msg</strong> (<em>default</em>): Triggers the pagination action based on the provided room and parameters.</li>
+    </ul>
 
     <h3>Outputs</h3>
-    <ul class="node-ports">
-        <li>Always Returned
-            <dl class="message-properties">
-                <dt>msg.type <span class="property-type">string</span></dt>
-                <dd>
-                    the message type. For example this will be either m.text, m.reaction, m.file, m.image, etc
-                </dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.isDM <span class="property-type">bool</span></dt>
-                <dd> returns true if message is from a direct message room.</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.encrypted <span class="property-type">bool</span></dt>
-                <dd> returns true if message was encrypted (e2ee).</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.redacted <span class="property-type">bool</span></dt>
-                <dd> returns true if the message was redacted (such as deleted by the user).</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>the body from the message's content.</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.userId <span class="property-type">string</span></dt>
-                <dd>the User ID of the message sender. Example: @john:matrix.org</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.topic <span class="property-type">string</span></dt>
-                <dd>the ID of the room. Example: !OGEhHVWSdvArJzumhm:matrix.org</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.event <span class="property-type">object</span></dt>
-                <dd>the event object returned by the Matrix server</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.eventId <span class="property-type">object</span></dt>
-                <dd>The event ID, e.g. $143350589368169JsLZx:localhost</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.content <span class="property-type">object</span></dt>
-                <dd>the message's content object</dd>
-            </dl>
+    <ul>
+        <li>
+            <strong>Output 1 (Paginated Data)</strong>: Returns an array of events if more messages are available. Each event contains details such as:
+            <ul>
+                <li><code>msg.encrypted</code> (boolean) - Indicates if the message was encrypted (end-to-end encryption).</li>
+                <li><code>msg.redacted</code> (boolean) - Indicates if the message was redacted (deleted or hidden).</li>
+                <li><code>msg.payload</code> (string) - The message body or content.</li>
+                <li><code>msg.userId</code> (string) - The user ID of the message sender.</li>
+                <li><code>msg.topic</code> (string) - The room ID of the message's origin.</li>
+                <li><code>msg.eventId</code> (string) - The event ID.</li>
+                <li><code>msg.type</code> (string) - The type of message (e.g., <code>m.text</code>, <code>m.image</code>, <code>m.reaction</code>, etc.).</li>
+            </ul>
         </li>
-
-        <li><code>msg.type</code> == '<strong>m.text</strong>'
-            <div class="form-tips" style="margin-bottom: 12px;">
-                Doesn't return anything extra
-            </div>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.reaction</strong>'
-            <dl class="message-properties">
-                <dt>msg.referenceEventId <span class="property-type">string</span></dt>
-                <dd>the message that the reaction relates to</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>the key of the reaction's content</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.emote</strong>'
-            <div class="form-tips" style="margin-bottom: 12px;">
-                Doesn't return anything extra
-            </div>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.sticker</strong>'
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>URL to the sticker image</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>Matrix URL to the sticker image</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
-                <dd>URL to the thumbnail of the sticker</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
-                <dd>Matrix URL to the thumbnail of the sticker</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.file</strong>'
-            <dl class="message-properties">
-                <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the file's parsed filename</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>the file's URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>the file's Matrix URL</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.audio</strong>'
-            <dl class="message-properties">
-                <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the image's parsed filename</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mimetype <span class="property-type">string</span></dt>
-                <dd>audio file mimetype (ex: audio/ogg)</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>the file's URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>the file's Matrix URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.duration <span class="property-type">integer</span></dt>
-                <dd>duration of audio file in milliseconds</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.waveform <span class="property-type">array[int]</span></dt>
-                <dd>waveform of the audio clip</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.image</strong>'
-            <dl class="message-properties">
-                <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the image's parsed filename</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>the image's URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>the image's Matrix URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
-                <dd>the image's thumbnail URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
-                <dd>the image's thumbnail Matrix URL</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.location</strong>'
-            <dl class="message-properties">
-                <dt>msg.geo_uri <span class="property-type">string</span></dt>
-                <dd>URI format of the geolocation</dd>
-            </dl>
+        <li>
+            <strong>Output 2 (Error)</strong>: If an error occurs during pagination, the error message is sent to this output.
         </li>
     </ul>
+
+    <h3>Dynamic Properties</h3>
+    <p>Some inputs like <strong>Room</strong>, <strong>Pagination Key</strong>, and <strong>Page Size</strong> can be dynamically set using message, flow, or global context variables.</p>
+
+    <h3>Usage</h3>
+    <p>To paginate through a room's timeline, trigger this node with a <code>msg</code> input. The first run will start the timeline, and a unique pagination key will be generated. Future calls can use this key to continue from where you left off. Use the "Paginate Backwards" option to move through older events or set it to false to move forwards through newer events.</p>
 </script>

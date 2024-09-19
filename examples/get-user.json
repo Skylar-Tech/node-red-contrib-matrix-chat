@@ -1,0 +1,99 @@
+[
+  {
+    "id": "fdbc1eb4cc492b04",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Fetch user info by userId",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "8869afc68deeede0",
+      "e29636a733134aef",
+      "15c5caf17e83263c",
+      "52a65daa26891471"
+    ],
+    "x": 754,
+    "y": 1939,
+    "w": 552,
+    "h": 122
+  },
+  {
+    "id": "8869afc68deeede0",
+    "type": "matrix-get-user",
+    "z": "8fd89a0b44c61e76",
+    "g": "fdbc1eb4cc492b04",
+    "name": "",
+    "server": null,
+    "userType": "msg",
+    "userValue": "userId",
+    "propertyType": "msg",
+    "propertyValue": "user",
+    "x": 1000,
+    "y": 2000,
+    "wires": [
+      [
+        "15c5caf17e83263c"
+      ],
+      [
+        "52a65daa26891471"
+      ]
+    ]
+  },
+  {
+    "id": "e29636a733134aef",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "fdbc1eb4cc492b04",
+    "name": "",
+    "props": [
+      {
+        "p": "userId",
+        "v": "@skylord123:skylar.tech",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 850,
+    "y": 2000,
+    "wires": [
+      [
+        "8869afc68deeede0"
+      ]
+    ]
+  },
+  {
+    "id": "15c5caf17e83263c",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "fdbc1eb4cc492b04",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1180,
+    "y": 1980,
+    "wires": []
+  },
+  {
+    "id": "52a65daa26891471",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "fdbc1eb4cc492b04",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1170,
+    "y": 2020,
+    "wires": []
+  }
+]

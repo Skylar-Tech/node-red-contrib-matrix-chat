@@ -1,0 +1,103 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-get-event',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs: 1,
+        outputs: 2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            roomIdType: { value: "msg" },
+            roomIdValue: { value: "topic" },
+            eventIdType: { value: "msg" },
+            eventIdValue: { value: "eventId" }
+        },
+        label: function() {
+            return this.name || "Get Event";
+        },
+        oneditprepare: function() {
+            $("#node-input-roomId").typedInput({
+                type: this.roomIdType,
+                types:['msg','flow','global','str'],
+            }).typedInput('value', this.roomIdValue);
+
+            $("#node-input-eventId").typedInput({
+                type: this.eventIdType,
+                types:['msg','flow','global','str'],
+            }).typedInput('value', this.eventIdValue);
+        },
+        oneditsave: function() {
+            this.roomIdType = $("#node-input-roomId").typedInput('type');
+            this.roomIdValue = $("#node-input-roomId").typedInput('value');
+            this.eventIdType = $("#node-input-eventId").typedInput('type');
+            this.eventIdValue = $("#node-input-eventId").typedInput('value');
+        },
+        paletteLabel: 'Get Event'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-get-event">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-file"></i> Room ID</label>
+        <input type="text" id="node-input-roomId">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-eventId"><i class="fa fa-file"></i> Event ID</label>
+        <input type="text" id="node-input-eventId">
+    </div>
+
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-roomId").on("keyup", function() {
+                if($(this).val() && !$(this).val().startsWith("!")) {
+                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
+                } else {
+                    $("#node-input-roomId-error").hide();
+                }
+            }).trigger('keyup');
+        });
+</script>
+</script>
+
+<script type="text/html" data-help-name="matrix-get-event">
+    <h3>Details</h3>
+    <p>Get an event from a Matrix room using the Room ID and Event ID. Returns the event object as the payload.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.payload.roomId <span class="property-type">string</span></dt>
+        <dd>The Room ID from which the event will be fetched.</dd>
+
+        <dt>msg.payload.eventId <span class="property-type">string</span></dt>
+        <dd>The Event ID of the message to fetch.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>The fetched event object.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>Error details.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

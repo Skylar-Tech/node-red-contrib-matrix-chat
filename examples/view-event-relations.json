@@ -1,0 +1,141 @@
+[
+  {
+    "id": "ab09dd64e9c48bba",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Pages through matrix event relations, delivering results one page at a time",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "ed98bce4958c4203",
+      "501758e233cc42d9",
+      "edb9af1a22e2e17f",
+      "4734e9ee26fe0812",
+      "fc27f2058f9c934b"
+    ],
+    "x": 754,
+    "y": 1139,
+    "w": 892,
+    "h": 142
+  },
+  {
+    "id": "ed98bce4958c4203",
+    "type": "matrix-fetch-relations",
+    "z": "8fd89a0b44c61e76",
+    "g": "ab09dd64e9c48bba",
+    "name": "",
+    "server": null,
+    "roomType": "msg",
+    "roomValue": "topic",
+    "eventIdType": "msg",
+    "eventIdValue": "eventId",
+    "relationTypeType": "json",
+    "relationTypeValue": "null",
+    "eventTypeType": "json",
+    "eventTypeValue": "null",
+    "directionType": "str",
+    "directionValue": "b",
+    "limitType": "json",
+    "limitValue": "null",
+    "recurseType": "bool",
+    "recurseValue": "false",
+    "fromType": "msg",
+    "fromValue": "payload.next_batch",
+    "toType": "json",
+    "toValue": "null",
+    "x": 1280,
+    "y": 1240,
+    "wires": [
+      [
+        "edb9af1a22e2e17f"
+      ],
+      [
+        "fc27f2058f9c934b"
+      ]
+    ]
+  },
+  {
+    "id": "501758e233cc42d9",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "ab09dd64e9c48bba",
+    "name": "",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "eventId",
+        "v": "$example",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:skylar.tech",
+    "x": 900,
+    "y": 1240,
+    "wires": [
+      [
+        "ed98bce4958c4203"
+      ]
+    ]
+  },
+  {
+    "id": "edb9af1a22e2e17f",
+    "type": "function",
+    "z": "8fd89a0b44c61e76",
+    "g": "ab09dd64e9c48bba",
+    "name": "Loop -  return each chunk",
+    "func": "if(msg.payload.next_batch) {\n    // we have more records so output to both\n    return [msg, msg];\n}\n\n// no more records so only send to output 1\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1290,
+    "y": 1180,
+    "wires": [
+      [
+        "4734e9ee26fe0812"
+      ],
+      [
+        "ed98bce4958c4203"
+      ]
+    ]
+  },
+  {
+    "id": "4734e9ee26fe0812",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "ab09dd64e9c48bba",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1520,
+    "y": 1180,
+    "wires": []
+  },
+  {
+    "id": "fc27f2058f9c934b",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "ab09dd64e9c48bba",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1510,
+    "y": 1240,
+    "wires": []
+  }
+]
