@@ -22,59 +22,47 @@ To try out any of the examples:
 
 ## Index
 
+**Click the ▶ example to ▼ expand**
+
 ### User Management
 
-- [Get or set current user display name](#get-or-set-current-user-display-name)
-- [Set user avatar using URL](#set-user-avatar-using-url)
-- [Fetch user info by userId](#fetch-user-info-by-userid)
-- [Create User with Shared Secret Registration](#create-user-with-shared-secret-registration)
-- [Create/Edit Synapse User](#createedit-synapse-user)
-- [Deactivate User](#deactivate-user)
-- [Force User to Join Room](#force-user-to-join-room)
+<details>
+<summary>Get or set current user display name</summary>
 
-### Message Handling
+[View JSON](get-set-displayname.json)
 
-- [Respond to "ping" with "pong"](#respond-to-ping-with-pong)
-- [Respond to "html" with an HTML message](#respond-to-html-with-an-html-message)
-- [Respond to "image" with an uploaded image](#respond-to-image-with-an-uploaded-image)
-- [Respond to "file" with an uploaded file](#respond-to-file-with-an-uploaded-file)
-- [Respond to "react" with a reaction](#respond-to-react-with-a-reaction)
-- [Remove Messages Containing "delete"](#remove-messages-containing-delete)
+This flow lets you get or set the displayname for the current user.
 
-### Event Handling
+![get-set-displayname.png](get-set-displayname.png)
 
-- [Sending Typing Events to a Room](#sending-typing-events-to-a-room)
-- [Mark all received events as read](#mark-all-received-events-as-read)
-- [Fetch event by eventId and roomId](#fetch-event-by-eventid-and-roomid)
-- [Paginate the entire history of a given room](#paginate-the-entire-history-of-a-given-room)
-- [Paginate related events to a given eventId](#paginate-related-events-to-a-given-eventid)
+</details>
 
-### Room Management
+<details>
+<summary>Set user avatar using URL</summary>
 
-- [Set room name and topic](#set-room-name-and-topic)
-- [Accept Room Invites from Specific User](#accept-room-invites-from-specific-user)
-- [Leave Room When Someone Says "bye"](#leave-room-when-someone-says-bye)
-- [Respond to "newroom" by Creating a New Room and Inviting User](#respond-to-newroom-by-creating-a-new-room-and-inviting-user)
-- [Respond to "joinroom \<room_id_or_alias\>" by Joining Mentioned Room](#respond-to-joinroom-room_id_or_alias-by-joining-mentioned-room)
-- [Kick/Ban User from Room](#kickban-user-from-room)
+[View JSON](set-avatar-from-url.json)
 
-### User Information
+Inject a URL to an image and Node-RED will fetch the contents, upload to matrix, then set the user avatar to the new mxc_url.
 
-- [Respond to "users" with Full List of Server Users](#respond-to-users-with-full-list-of-server-users)
-- [Respond to "whois \<user_id\>" with Information about the User's Session](#respond-to-whois-user_id-with-information-about-the-users-session)
-- [Respond to "rooms \<user_id\>" with User's Rooms](#respond-to-rooms-user_id-with-users-rooms)
-- [Respond to "room_users" with Current Room's Users](#respond-to-room_users-with-current-rooms-users)
+This is a good example of how to use the upload file node.
 
-### Advanced Features
+![set-avatar-from-url.png](set-avatar-from-url.png)
 
-- [Use Function Node to Run Any Command](#use-function-node-to-run-any-command)
-- [Download & Store All Received Files/Images](#download--store-all-received-filesimages)
+</details>
 
----
+<details>
+<summary>Fetch user info by userId</summary>
 
-## User Management
+[View JSON](get-user.json)
 
-### Create User with Shared Secret Registration
+Note this only works for users that the bot shares a room with. It will attempt to fetch the user from local storage first and if not found will query the server for the data.
+
+![get-user.png](get-user.png)
+
+</details>
+
+<details>
+<summary>Create User with Shared Secret Registration</summary>
 
 [View JSON](shared-secret-registration.json)
 
@@ -89,9 +77,10 @@ Use this flow to create users on servers with closed registration. You can also 
 
 ![Shared Secret Registration](shared-secret-registration.png)
 
----
+</details>
 
-### Create/Edit Synapse User
+<details>
+<summary>Create/Edit Synapse User</summary>
 
 [View JSON](add-user-with-admin-user.json)
 
@@ -99,9 +88,10 @@ Allows an administrator to create or modify a user account with a specified `msg
 
 ![Create/Edit Synapse User](add-user-with-admin-user.png)
 
----
+</details>
 
-### Deactivate User
+<details>
+<summary>Deactivate User</summary>
 
 [View JSON](deactivate-user.json)
 
@@ -114,9 +104,10 @@ If you send "deactivate_user @test:example.com", the bot will deactivate the `@t
 
 ![Deactivate User](deactivate-user.png)
 
----
+</details>
 
-### Force User to Join Room
+<details>
+<summary>Force User to Join Room</summary>
 
 [View JSON](force-join-room.json)
 
@@ -129,11 +120,25 @@ If you send "force_join @test:example.com !320j90mf0394f:example.com", the bot w
 
 ![Force User to Join Room](force-join-room.png)
 
----
+</details>
 
-## Message Handling
+### Message Handling
 
-### Respond to "ping" with "pong"
+<details>
+<summary>Upload file and send to room</summary>
+
+[View JSON](send-image-to-room.json)
+
+This flow will download an image from a given URL and upload it to the matrix server then send it to a room.
+
+This isn't just for images and supports any sort of file format. Videos, images, and audio files will have metadata detected automatically and appended to the message (duration, dimensions, thumbnail, etc)
+
+![img.png](send-image-to-room.png)
+
+</details>
+
+<details>
+<summary>Respond to "ping" with "pong"</summary>
 
 [View JSON](respond-ping-pong.json)
 
@@ -141,9 +146,10 @@ Use this flow to respond to anyone who says "ping" with "pong" in the same room.
 
 ![Respond to "ping" with "pong"](respond-ping-pong.png)
 
----
+</details>
 
-### Respond to "html" with an HTML Message
+<details>
+<summary>Respond to "html" with an HTML Message</summary>
 
 [View JSON](respond-to-html-with-html.json)
 
@@ -151,39 +157,10 @@ Use this flow to respond to anyone who says "html" with an example HTML message.
 
 ![Respond to "html" with HTML Message](respond-to-html-with-html.png)
 
----
+</details>
 
-### Respond to "image" with an Uploaded Image
-
-[View JSON](respond-image-with-image.json)
-
-You will need an image on the machine running Node-RED. In this example, `example.png` exists inside the Node-RED directory.
-
-**Instructions:**
-
-1. Place the image file (`example.png`) in the appropriate directory.
-2. Import the flow and deploy it.
-
-![Respond to "image" with Uploaded Image](respond-image-with-image.png)
-
----
-
-### Respond to "file" with an Uploaded File
-
-[View JSON](respond-file-with-file.json)
-
-You will need a file on the machine running Node-RED. In this example, `sample.pdf` exists inside the Node-RED directory.
-
-**Instructions:**
-
-1. Place the file (`sample.pdf`) in the appropriate directory.
-2. Import the flow and deploy it.
-
-![Respond to "file" with Uploaded File](respond-file-with-file.png)
-
----
-
-### Respond to "react" with a Reaction
+<details>
+<summary>Respond to "react" with a Reaction</summary>
 
 [View JSON](respond-react-with-reaction.json)
 
@@ -191,9 +168,10 @@ Gives a 👍 reaction when someone says "react".
 
 ![Respond to "react" with Reaction](respond-react-with-reaction.png)
 
----
+</details>
 
-### Remove Messages Containing "delete"
+<details>
+<summary>Remove Messages Containing "delete"</summary>
 
 [View JSON](delete-event.json)
 
@@ -203,11 +181,99 @@ Any messages containing "delete" will be removed by the client.
 
 ![Remove Messages Containing "delete"](delete-event.png)
 
----
+</details>
 
-## Room Management
+### Event Handling
 
-### Accept Room Invites from Specific User
+<details>
+<summary>Sending Typing Events to a Room</summary>
+
+[View JSON](send-typing-events.json)
+
+You can indicate to a room that the bot is typing and also cancel the typing event. This can be useful for making bots feel more interactive (e.g., show typing while requesting an API endpoint).
+
+![Sending Typing Events](send-typing-events.png)
+
+</details>
+
+<details>
+<summary>Mark all received events as read</summary>
+
+[View JSON](mark-all-read.json)
+
+With this flow anytime an event is received by the bot it will mark it as read.
+
+![mark-all-read.png](mark-all-read.png)
+
+</details>
+
+<details>
+<summary>Fetch event by eventId and roomId</summary>
+
+[View JSON](get-event.json)
+
+Fetch an event from Matrix by eventId and roomId
+
+**Instructions:**
+
+- Change the inject node to contain a proper eventId and roomId (topic)
+- Inject the payload and you should see the result contain the event data
+
+![get-event.png](get-event.png)
+
+</details>
+
+<details>
+<summary>Paginate the entire history of a given room</summary>
+
+[View JSON](paginate-room-history.json)
+
+This flow iterates the entire history of a room (outputting for every page we hit).
+
+There is a configurable delay (currently set at 1000ms) in this flow. This is recommended, so you are not bogging down the server.
+
+![paginate-room-history.png](paginate-room-history.png)
+
+</details>
+
+<details>
+<summary>Paginate related events to a given eventId</summary>
+
+[View JSON](fetch-event-relations.json)
+
+Paginate through the related events to a given eventId. Related events being reactions, thread messages, message modifications, message removals, etc. This outputs once per iterated page.
+
+If you would rather have it output one massive list at the end of pagination use this flow:
+[View Aggregated Flow JSON](fetch-event-relations-aggregated.json)
+
+**Instructions:**
+
+- Change the inject node to contain a proper eventId and roomId (topic)
+- Inject the payload and you should see the result contain a list of related events for the given eventId
+
+![fetch-event-relations.png](fetch-event-relations.png)
+
+</details>
+
+### Room Management
+
+<details>
+<summary>Set room name and topic</summary>
+
+[View JSON](set-room-name-and-topic.json)
+
+Changes the specified room's name and topic to the injected values.
+
+There are a bunch of different settings you can change, this is just an example for these two fields to show how it's done.
+
+This node can also be used to read these values.
+
+![set-room-name-and-topic.png](set-room-name-and-topic.png)
+
+</details>
+
+<details>
+<summary>Accept Room Invites from Specific User</summary>
 
 [View JSON](accept-room-invites.json)
 
@@ -215,9 +281,10 @@ Automatically accept room invites from a specific user.
 
 ![Accept Room Invites from Specific User](accept-room-invites.png)
 
----
+</details>
 
-### Leave Room When Someone Says "bye"
+<details>
+<summary>Leave Room When Someone Says "bye"</summary>
 
 [View JSON](leave-room-bye.json)
 
@@ -225,9 +292,10 @@ Leaves the room when someone says "bye".
 
 ![Leave Room When Someone Says "bye"](leave-room-bye.png)
 
----
+</details>
 
-### Respond to "newroom" by Creating a New Room and Inviting User
+<details>
+<summary>Respond to "newroom" by Creating a New Room and Inviting User</summary>
 
 [View JSON](respond-newroom-invite.json)
 
@@ -235,19 +303,21 @@ When someone sends "newroom", a new room will be created, and the user who sent 
 
 ![Respond to "newroom" by Creating New Room](respond-newroom-invite.png)
 
----
+</details>
 
-### Respond to "joinroom \<room_id_or_alias\>" by Joining Mentioned Room
+<details>
+<summary>Respond to "joinroom &lt;room_id_or_alias&gt;" by Joining Mentioned Room</summary>
 
 [View JSON](respond-joinroom.json)
 
-When someone sends "joinroom \<room_id_or_alias\>", the bot will join the mentioned room.
+When someone sends "joinroom &lt;room_id_or_alias&gt;", the bot will join the mentioned room.
 
 ![Respond to "joinroom" by Joining Room](respond-joinroom.png)
 
----
+</details>
 
-### Kick/Ban User from Room
+<details>
+<summary>Kick/Ban User from Room</summary>
 
 [View JSON](room-kick-ban.json)
 
@@ -258,11 +328,12 @@ When someone sends "joinroom \<room_id_or_alias\>", the bot will join the mentio
 
 ![Kick/Ban User from Room](room-kick-ban.png)
 
----
+</details>
 
-## User Information
+### User Information
 
-### Respond to "users" with Full List of Server Users
+<details>
+<summary>Respond to "users" with Full List of Server Users</summary>
 
 [View JSON](respond-users-list.json)
 
@@ -275,9 +346,10 @@ When someone sends the text "users", they receive an HTML message containing all
 
 ![Respond to "users" with User List](respond-users-list.png)
 
----
+</details>
 
-### Respond to "whois \<user_id\>" with Information about the User's Session
+<details>
+<summary>Respond to "whois &lt;user_id&gt;" with Information about the User's Session</summary>
 
 [View JSON](respond-whois.json)
 
@@ -290,13 +362,14 @@ Lists out the user's session info, including IP address, last seen time, and use
 
 ![Respond to "whois" with User Session Info](respond-whois.png)
 
----
+</details>
 
-### Respond to "rooms \<user_id\>" with User's Rooms
+<details>
+<summary>Respond to "rooms &lt;user_id&gt;" with User's Rooms</summary>
 
 [View JSON](respond-rooms.json)
 
-Responds to "rooms \<user_id\>" with that user's rooms. If the message is just "rooms", it responds with a list of all rooms the server is participating in.
+Responds to "rooms &lt;user_id&gt;" with that user's rooms. If the message is just "rooms", it responds with a list of all rooms the server is participating in.
 
 **Notes:**
 
@@ -306,9 +379,10 @@ Responds to "rooms \<user_id\>" with that user's rooms. If the message is just "
 
 ![Respond to "rooms" with Room List](respond-rooms.png)
 
----
+</details>
 
-### Respond to "room_users" with Current Room's Users
+<details>
+<summary>Respond to "room_users" with Current Room's Users</summary>
 
 [View JSON](respond-room-users.json)
 
@@ -318,11 +392,12 @@ Lists the users participating in the current room.
 
 ![Respond to "room_users" with User List](respond-room-users.png)
 
----
+</details>
 
-## Advanced Features
+### Advanced Features
 
-### Use Function Node to Run Any Command
+<details>
+<summary>Use Function Node to Run Any Command</summary>
 
 [View JSON](custom-redact-function-node.json)
 
@@ -337,19 +412,10 @@ To view the available functions, check out the [`client.ts` file from `matrix-js
 
 ![Use Function Node to Run Commands](custom-redact-function-node.png)
 
----
+</details>
 
-### Sending Typing Events to a Room
-
-[View JSON](send-typing-events.json)
-
-You can indicate to a room that the bot is typing and also cancel the typing event. This can be useful for making bots feel more interactive (e.g., show typing while requesting an API endpoint).
-
-![Sending Typing Events](send-typing-events.png)
-
----
-
-### Download & Store All Received Files/Images
+<details>
+<summary>Download & Store All Received Files/Images</summary>
 
 [View JSON](store-received-files.json)
 
@@ -363,109 +429,38 @@ Downloads received files/images. If the file is encrypted, it will decrypt it fo
 
 ![Download & Store Received Files](store-received-files.png)
 
----
+</details>
 
-### Fetch event by eventId and roomId
+### Deprecated
 
-[View JSON](get-event.json)
+<details>
+<summary>Respond to "image" with an uploaded image</summary>
 
-Fetch an event from Matrix by eventId and roomId
+[View JSON](respond-image-with-image.json)
 
-**Instructions:**
-
-- Change the inject node to contain a proper eventId and roomId (topic)
-- Inject the payload and you should see the result contain the event data
-
-![get-event.png](get-event.png)
-
----
-
-### Paginate related events to a given eventId
-
-[View JSON](fetch-event-relations.json)
-
-Paginate through the related events to a given eventId. Related events being reactions, thread messages, message modifications, message removals, etc. This outputs once per iterated page.
-
-If you would rather have it output one massive list at the end of pagination use this flow:
-[View Aggregated Flow JSON](fetch-event-relations-aggregated.json)
-
+You will need an image on the machine running Node-RED. In this example, `example.png` exists inside the Node-RED directory.
 
 **Instructions:**
 
-- Change the inject node to contain a proper eventId and roomId (topic)
-- Inject the payload and you should see the result contain a list of related events for the given eventId
+1. Place the image file (`example.png`) in the appropriate directory.
+2. Import the flow and deploy it.
 
-![fetch-event-relations.png](fetch-event-relations.png)
+![Respond to "image" with Uploaded Image](respond-image-with-image.png)
 
----
+</details>
 
-### Mark all received events as read
+<details>
+<summary>Respond to "file" with an uploaded file</summary>
 
-[View JSON](mark-all-read.json)
+[View JSON](respond-file-with-file.json)
 
-With this flow anytime an event is received by the bot it will mark it as read.
+You will need a file on the machine running Node-RED. In this example, `sample.pdf` exists inside the Node-RED directory.
 
-![mark-all-read.png](mark-all-read.png)
+**Instructions:**
 
----
+1. Place the file (`sample.pdf`) in the appropriate directory.
+2. Import the flow and deploy it.
 
-### Paginate the entire history of a given room
+![Respond to "file" with Uploaded File](respond-file-with-file.png)
 
-[View JSON](paginate-room-history.json)
-
-This flow iterates the entire history of a room (outputting for every page we hit).
-
-![paginate-room-history.png](paginate-room-history.png)
-
----
-
-### Fetch user info by userId
-
-[View JSON](get-user.json)
-
-Note this only works for users that the bot shares a room with. It will attempt to fetch the user from local storage first and if not found will query the server for the data.
-
-![get-user.png](get-user.png)
-
----
-
-### Get or set current user display name
-
-[View JSON](get-set-displayname.json)
-
-This flow lets you get or set the displayname for the current user.
-
-![get-set-displayname.png](get-set-displayname.png)
-
----
-
-### Set user avatar using URL
-
-[View JSON](set-avatar-from-url.json)
-
-Inject a URL to an image and Node-RED will fetch the contents, upload to matrix, then set the user avatar to the new mxc_url.
-
-This is a good example of how to use the upload file node.
-
-![set-avatar-from-url.png](set-avatar-from-url.png)
-
----
-
-### Set room name and topic
-
-[View JSON](set-room-name-and-topic.json)
-
-Changes the specified room's name and topic to the injected values.
-
-There are a bunch of different settings you can change, this is just an example for these two fields to show how it's done.
-
-This node can also be used to read these values.
-
-![set-room-name-and-topic.png](set-room-name-and-topic.png)
-
----
-
-
-
-
-
+</details>
