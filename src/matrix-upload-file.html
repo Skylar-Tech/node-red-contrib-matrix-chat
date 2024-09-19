@@ -105,56 +105,66 @@
 
 <script type="text/html" data-help-name="matrix-upload-file">
     <h3>Details</h3>
-    <p>Upload a file to the matrix homeserver. Returns a payload that can then be chained to a Send Message node to post the file to a room, or you can use the mxc_url to update a user or room avatar.</p>
+    <p>Upload a file to the Matrix homeserver. Returns a payload that can then be chained to a Send Message node to post the file to a room, or you can use the mxc_url to update a user or room avatar. The node supports uploading files, auto-detecting their types, and generating optional thumbnails for images and videos. Encrypted uploads are also supported.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>msg.payload
             <span class="property-type">string | Buffer</span>
         </dt>
-        <dd> If this is not a buffer it assumes it is a path to the file. </dd>
+        <dd> A path to the file (string) or a file buffer (Buffer) to upload. If a buffer is provided, you must specify the filename for accurate type detection.</dd>
 
-        <dt>msg.topic
+        <dt>msg.filename
             <span class="property-type">string</span>
         </dt>
-        <dd> Room ID to send file to. Ignored if configured on the node, otherwise required.</dd>
+        <dd> The name of the file to upload. If not provided, the filename is auto-detected from the path, but this may lead to inaccuracies in file type detection.</dd>
 
-        <dt class="optional">msg.filename
+        <dt>msg.body
             <span class="property-type">string | null</span>
         </dt>
-        <dd> name of the file to upload. You REALLY should pass this if you want the file type to be detected correctly. If no filename is provided it will be auto-detected but note that this is not perfect (for example: .doc word files are detected incorrectly as application/x-cfb) and only works with binary files.</dd>
-
-        <dt class="optional">msg.body
-            <span class="property-type">string | null</span>
-        </dt>
-        <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty it will just display as "Attachment".</dd>
+        <dd> The display name for the file when rendered in the chat. If left empty, the default display name is "Attachment".</dd>
 
         <dt class="optional">msg.contentType
             <span class="property-type">string | null</span>
         </dt>
-        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. If set this forces the mime type. If you do not provide this it will try to be auto-detected.</dd>
+        <dd> Optional MIME Type of the file. If not provided, the type will be auto-detected based on the filename or buffer. If the detection fails, it will default to "text/plain".</dd>
 
-        <dt class="optional">msg.content
-            <span class="property-type">object | null</span>
+        <dt class="optional">msg.encrypted
+            <span class="property-type">boolean</span>
         </dt>
-        <dd> craft your own msg.content to send to the server. If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
+        <dd> Set to true if the file should be uploaded with encryption. The node handles encryption automatically if this is enabled.</dd>
+
+        <dt class="optional">msg.generateThumbnails
+            <span class="property-type">boolean</span>
+        </dt>
+        <dd> Set to true to generate thumbnails for image or video uploads. Thumbnails are generated automatically for supported types.</dd>
     </dl>
 
     <h3>Outputs</h3>
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>An object containing details of the uploaded file, including the URL (mxc URI), the MIME type, size, and any generated thumbnail information.</dd>
+
                 <dt>msg.eventId <span class="property-type">string</span></dt>
-                <dd>the eventId from the posted message.</dd>
+                <dd>The eventId of the uploaded file message.</dd>
             </dl>
         </li>
         <li>Error
             <dl class="message-properties">
                 <dt>msg.error <span class="property-type">string</span></dt>
-                <dd>the error that occurred.</dd>
+                <dd>A description of the error that occurred during the upload.</dd>
             </dl>
         </li>
     </ol>
+
+    <h3>Additional Notes</h3>
+    <ul>
+        <li>The node supports generating thumbnails for images and video files if configured. For videos, the thumbnail is generated from the first frame.</li>
+        <li>Encrypted uploads require no additional configuration beyond setting msg.encrypted to true. The node handles encryption and returns the necessary decryption information.</li>
+        <li>The file type is auto-detected based on the filename or the content buffer. You can override this by setting the msg.contentType manually.</li>
+    </ul>
 
     <h3>References</h3>
     <ul>

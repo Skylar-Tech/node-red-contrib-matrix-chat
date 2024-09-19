@@ -1,0 +1,141 @@
+[
+  {
+    "id": "10a897739618e1f3",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Aggregates paginated matrix event relations and outputs the full set after reaching the last page",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "83d9261d8fef6c29",
+      "c2e00e38bbeea60a",
+      "8c1df4f49b913bf8",
+      "4be02d632d13cebf",
+      "09fc3b3f18df27af"
+    ],
+    "x": 774,
+    "y": 939,
+    "w": 772,
+    "h": 142
+  },
+  {
+    "id": "83d9261d8fef6c29",
+    "type": "matrix-fetch-relations",
+    "z": "8fd89a0b44c61e76",
+    "g": "10a897739618e1f3",
+    "name": "",
+    "server": null,
+    "roomType": "msg",
+    "roomValue": "topic",
+    "eventIdType": "msg",
+    "eventIdValue": "eventId",
+    "relationTypeType": "json",
+    "relationTypeValue": "null",
+    "eventTypeType": "json",
+    "eventTypeValue": "null",
+    "directionType": "str",
+    "directionValue": "b",
+    "limitType": "json",
+    "limitValue": "null",
+    "recurseType": "bool",
+    "recurseValue": "false",
+    "fromType": "msg",
+    "fromValue": "payload.next_batch",
+    "toType": "json",
+    "toValue": "null",
+    "x": 1180,
+    "y": 1040,
+    "wires": [
+      [
+        "c2e00e38bbeea60a"
+      ],
+      [
+        "4be02d632d13cebf"
+      ]
+    ]
+  },
+  {
+    "id": "c2e00e38bbeea60a",
+    "type": "function",
+    "z": "8fd89a0b44c61e76",
+    "g": "10a897739618e1f3",
+    "name": "Loop - output on finish",
+    "func": "// you will want to use a unique flow_key \n// if you duplicate this node multiple times\nlet flow_key = \"relations_\" + msg.topic;\nlet relations = flow.get(flow_key) || [];\n\n// add our chunk to the flow variable\nrelations.push(...msg.payload.chunk);\n\nif(msg.payload.next_batch) {\n    // loop around for more records\n    flow.set(flow_key, relations);\n    return [null, msg];\n}\n\n// if msg.payload.next_batch is unset we have reached the end\nflow.set(flow_key, undefined);\nmsg.payload = relations;\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1180,
+    "y": 980,
+    "wires": [
+      [
+        "8c1df4f49b913bf8"
+      ],
+      [
+        "83d9261d8fef6c29"
+      ]
+    ]
+  },
+  {
+    "id": "8c1df4f49b913bf8",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "10a897739618e1f3",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1420,
+    "y": 980,
+    "wires": []
+  },
+  {
+    "id": "4be02d632d13cebf",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "10a897739618e1f3",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1410,
+    "y": 1040,
+    "wires": []
+  },
+  {
+    "id": "09fc3b3f18df27af",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "10a897739618e1f3",
+    "name": "",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "eventId",
+        "v": "$example",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:skylar.tech",
+    "x": 920,
+    "y": 1040,
+    "wires": [
+      [
+        "83d9261d8fef6c29"
+      ]
+    ]
+  }
+]

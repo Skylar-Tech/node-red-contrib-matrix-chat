@@ -101,7 +101,8 @@ module.exports = function(RED) {
                     moreMessages = true;
                 if(!timelineWindow) {
                     let timelineSet = room.getUnfilteredTimelineSet();
-                    node.debug(JSON.stringify(timelineSet.getFilter()));
+                    // node.debug(JSON.stringify(timelineSet.getFilter()));
+
                     // MatrixClient's option initialSyncLimit gets set to the filter we are using
                     // so override that value with our pageSize
                     timelineWindow = new TimelineWindow(node.server.matrixClient, timelineSet);
@@ -135,7 +136,7 @@ module.exports = function(RED) {
                             // user         : node.matrixClient.getUser(event.getSender()),
                             topic        : event.getRoomId(),
                             eventId      : event.getId(),
-                            event        : event,
+                            event        : event.getEffectiveEvent(),
                         };
                     });
                 }

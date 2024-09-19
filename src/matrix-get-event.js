@@ -1,14 +1,13 @@
-const {TimelineWindow, RelationType, Filter} = require("matrix-js-sdk");
-const crypto = require('crypto');
 module.exports = function(RED) {
-    function MatrixReceiveMessage(n) {
+    function MatrixGetEvent(n) {
         RED.nodes.createNode(this, n);
 
         let node = this;
+
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
-        this.roomType = n.roomType;
-        this.roomValue = n.roomValue;
+        this.roomIdType = n.roomIdType;
+        this.roomIdValue = n.roomIdValue;
         this.eventIdType = n.eventIdType;
         this.eventIdValue = n.eventIdValue;
 
@@ -28,9 +27,16 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.on("input", async function (msg) {
+        node.on('input', async function(msg) {
             if (! node.server || ! node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
+                return;
+            }
+
+            if (!node.server.isConnected()) {
+                node.error("Matrix server connection is currently closed", msg);
+                node.send([null, msg]);
                 return;
             }
 
@@ -53,24 +59,22 @@ module.exports = function(RED) {
             }
 
             try {
-                let roomId = getToValue(msg, node.roomType, node.roomValue),
+                let roomId = getToValue(msg, node.roomIdType, node.roomIdValue),
                     eventId = getToValue(msg, node.eventIdType, node.eventIdValue);
 
-                const room = node.server.matrixClient.getRoom(roomId);
-                if (!room) {
-                    throw new Error(`Room ${roomId} not found.`);
+                if(!roomId) {
+                    node.error('Missing roomId', msg);
+                    return;
+                } else if(!eventId) {
+                    node.error('Missing eventId', msg);
+                    return;
                 }
 
-                const event = room.findEventById(eventId);
-                if (!event) {
-                    throw new Error(`Event ${eventId} not found in room ${roomId}.`);
-                }
-
-                await node.server.matrixClient.sendReceipt(event, "m.read")
+                msg.payload = await node.server.matrixClient.fetchRoomEvent(roomId, eventId);
                 node.send([msg, null]);
             } catch(e) {
-                msg.error = `Room pagination error: ${e}`;
-                node.error(msg.error, msg);
+                node.error("Failed to get event " + msg.topic + ": " + e, msg);
+                msg.payload = e;
                 node.send([null, msg]);
             }
         });
@@ -79,5 +83,5 @@ module.exports = function(RED) {
             node.server.deregister(node);
         });
     }
-    RED.nodes.registerType("matrix-mark-read", MatrixReceiveMessage);
+    RED.nodes.registerType("matrix-get-event", MatrixGetEvent);
 }

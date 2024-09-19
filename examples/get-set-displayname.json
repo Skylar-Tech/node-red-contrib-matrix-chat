@@ -1,0 +1,201 @@
+[
+  {
+    "id": "844cdfc6e3fc3207",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Get current display name",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "9807698e516450ec",
+      "3f700b2d3458a1e8",
+      "78ff7e5088a08ff6",
+      "0ae57f85687ba6b3"
+    ],
+    "x": 754,
+    "y": 2119,
+    "w": 612,
+    "h": 122
+  },
+  {
+    "id": "9807698e516450ec",
+    "type": "matrix-user-settings",
+    "z": "8fd89a0b44c61e76",
+    "g": "844cdfc6e3fc3207",
+    "name": "",
+    "server": null,
+    "roomId": null,
+    "rules": [
+      {
+        "t": "get",
+        "p": "display_name",
+        "to": "payload",
+        "tot": "msg",
+        "ls": true
+      }
+    ],
+    "x": 1020,
+    "y": 2180,
+    "wires": [
+      [
+        "78ff7e5088a08ff6"
+      ],
+      [
+        "0ae57f85687ba6b3"
+      ]
+    ]
+  },
+  {
+    "id": "3f700b2d3458a1e8",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "844cdfc6e3fc3207",
+    "name": "",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 850,
+    "y": 2180,
+    "wires": [
+      [
+        "9807698e516450ec"
+      ]
+    ]
+  },
+  {
+    "id": "78ff7e5088a08ff6",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "844cdfc6e3fc3207",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1240,
+    "y": 2160,
+    "wires": []
+  },
+  {
+    "id": "0ae57f85687ba6b3",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "844cdfc6e3fc3207",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1230,
+    "y": 2200,
+    "wires": []
+  },
+  {
+    "id": "289fac90afc8bfa6",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Set current display name",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "8f166980f4bfe6a4",
+      "c31399d30d9ea44f",
+      "c7984555f4ad668e",
+      "634935af5451baf9"
+    ],
+    "x": 754,
+    "y": 2259,
+    "w": 612,
+    "h": 122
+  },
+  {
+    "id": "8f166980f4bfe6a4",
+    "type": "matrix-user-settings",
+    "z": "8fd89a0b44c61e76",
+    "g": "289fac90afc8bfa6",
+    "name": "",
+    "server": null,
+    "roomId": null,
+    "rules": [
+      {
+        "t": "set",
+        "p": "display_name",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "x": 1020,
+    "y": 2320,
+    "wires": [
+      [
+        "c7984555f4ad668e"
+      ],
+      [
+        "634935af5451baf9"
+      ]
+    ]
+  },
+  {
+    "id": "c31399d30d9ea44f",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "289fac90afc8bfa6",
+    "name": "",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "New Name",
+    "payloadType": "str",
+    "x": 860,
+    "y": 2320,
+    "wires": [
+      [
+        "8f166980f4bfe6a4"
+      ]
+    ]
+  },
+  {
+    "id": "c7984555f4ad668e",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "289fac90afc8bfa6",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1240,
+    "y": 2300,
+    "wires": []
+  },
+  {
+    "id": "634935af5451baf9",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "289fac90afc8bfa6",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1230,
+    "y": 2340,
+    "wires": []
+  }
+]

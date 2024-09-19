@@ -64,191 +64,35 @@
 </script>
 
 <script type="text/html" data-help-name="matrix-mark-read">
-    <p>Mark an event in a room as read.</p>
+    <p>This node marks an event in a Matrix room as read.</p>
 
-    <h3>Outputs</h3>
-    <ul class="node-ports">
-        <li>Always Returned
+    <h3>Inputs</h3>
+    <ul class="message-properties">
+        <li>The input message (<code>msg</code>) should contain the following values, which can be configured to read from different properties:
             <dl class="message-properties">
-                <dt>msg.type <span class="property-type">string</span></dt>
-                <dd>
-                    the message type. For example this will be either m.text, m.reaction, m.file, m.image, etc
-                </dd>
-            </dl>
+                <dt>Room ID</dt>
+                <dd>The ID of the room where the event resides. By default, this is read from <code>msg.topic</code>, but it can be configured to read from any property via a typed input.</dd>
 
-            <dl class="message-properties">
-                <dt>msg.isDM <span class="property-type">bool</span></dt>
-                <dd> returns true if message is from a direct message room.</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.encrypted <span class="property-type">bool</span></dt>
-                <dd> returns true if message was encrypted (e2ee).</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.redacted <span class="property-type">bool</span></dt>
-                <dd> returns true if the message was redacted (such as deleted by the user).</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>the body from the message's content.</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.userId <span class="property-type">string</span></dt>
-                <dd>the User ID of the message sender. Example: @john:matrix.org</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.topic <span class="property-type">string</span></dt>
-                <dd>the ID of the room. Example: !OGEhHVWSdvArJzumhm:matrix.org</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.event <span class="property-type">object</span></dt>
-                <dd>the event object returned by the Matrix server</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.eventId <span class="property-type">object</span></dt>
-                <dd>The event ID, e.g. $143350589368169JsLZx:localhost</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.content <span class="property-type">object</span></dt>
-                <dd>the message's content object</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.text</strong>'
-            <div class="form-tips" style="margin-bottom: 12px;">
-                Doesn't return anything extra
-            </div>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.reaction</strong>'
-            <dl class="message-properties">
-                <dt>msg.referenceEventId <span class="property-type">string</span></dt>
-                <dd>the message that the reaction relates to</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>the key of the reaction's content</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.emote</strong>'
-            <div class="form-tips" style="margin-bottom: 12px;">
-                Doesn't return anything extra
-            </div>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.sticker</strong>'
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>URL to the sticker image</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>Matrix URL to the sticker image</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
-                <dd>URL to the thumbnail of the sticker</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
-                <dd>Matrix URL to the thumbnail of the sticker</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.file</strong>'
-            <dl class="message-properties">
-                <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the file's parsed filename</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>the file's URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>the file's Matrix URL</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.audio</strong>'
-            <dl class="message-properties">
-                <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the image's parsed filename</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mimetype <span class="property-type">string</span></dt>
-                <dd>audio file mimetype (ex: audio/ogg)</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>the file's URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>the file's Matrix URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.duration <span class="property-type">integer</span></dt>
-                <dd>duration of audio file in milliseconds</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.waveform <span class="property-type">array[int]</span></dt>
-                <dd>waveform of the audio clip</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.image</strong>'
-            <dl class="message-properties">
-                <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the image's parsed filename</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.url <span class="property-type">string</span></dt>
-                <dd>the image's URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.mxc_url <span class="property-type">string</span></dt>
-                <dd>the image's Matrix URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_url <span class="property-type">string</span></dt>
-                <dd>the image's thumbnail URL</dd>
-            </dl>
-
-            <dl class="message-properties">
-                <dt>msg.thumbnail_mxc_url <span class="property-type">string</span></dt>
-                <dd>the image's thumbnail Matrix URL</dd>
-            </dl>
-        </li>
-
-        <li><code>msg.type</code> == '<strong>m.location</strong>'
-            <dl class="message-properties">
-                <dt>msg.geo_uri <span class="property-type">string</span></dt>
-                <dd>URI format of the geolocation</dd>
+                <dt>Event ID</dt>
+                <dd>The event ID you want to mark as read. By default, this is read from <code>msg.eventId</code>, but it can be configured to read from any property via a typed input.</dd>
             </dl>
         </li>
     </ul>
+
+    <h3>Outputs</h3>
+    <ul class="node-ports">
+        <li>Output 1 (Success):
+            <ul>
+                <li>Triggered when the event is successfully marked as read.</li>
+            </ul>
+        </li>
+        <li>Output 2 (Failure):
+            <ul>
+                <li>Triggered when there is an error marking the event as read. An error message will be included in <code>msg.error</code>.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>Usage</h3>
+    <p>This node dynamically reads the room ID and event ID from the message or other properties using typed inputs, allowing you to configure where the values are sourced from. It retrieves the corresponding event and sends a "read" receipt to the Matrix server to mark the event as read. If successful, it will trigger the first output. If an error occurs (e.g., the event or room is not found), the second output is triggered with the error message.</p>
 </script>

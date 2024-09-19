@@ -50,7 +50,9 @@
       "matrix-synapse-deactivate-user": "src/matrix-synapse-deactivate-user.js",
       "matrix-synapse-join-room": "src/matrix-synapse-join-room.js",
       "matrix-whois-user": "src/matrix-whois-user.js",
-      "matrix-paginate-room": "src/matrix-paginate-room.js"
+      "matrix-paginate-room": "src/matrix-paginate-room.js",
+      "matrix-get-event": "src/matrix-get-event.js",
+      "matrix-event-relations": "src/matrix-event-relations.js"
     }
   },
   "engines": {

@@ -89,6 +89,9 @@
         <label for="node-input-threadReply"><i class="fa fa-commenting-o"></i> Thread Reply</label>
         <input type="text" id="node-input-threadReply">
     </div>
+    <div class="form-row form-tips">
+        If true and <code>msg.content.['m.relates_to'].event_id</code> or <code>msg.eventId</code> (parsed in that order) is provided the message will be a thread reply to the original event.
+    </div>
 
     <div class="form-row">
         <label for="node-input-messageFormat">
