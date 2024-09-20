@@ -2,7 +2,7 @@ global.Olm = require('olm');
 const fs = require("fs-extra");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
-const request = require("request");
+globalThis.crypto = require('crypto');
 require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
 
 if (!globalThis.fetch) {
@@ -21,16 +21,16 @@ module.exports = function(RED) {
     const loggerPromise = import('matrix-js-sdk/lib/logger.js');
 
     // disable logging if set to "off"
-    let loggingSettings = RED.settings.get('logging');
-    if(
-        typeof loggingSettings.console !== 'undefined' &&
-        typeof loggingSettings.console.level !== 'undefined' &&
-        ['info','debug','trace'].indexOf(loggingSettings.console.level.toLowerCase()) >= 0
-    ) {
-        loggerPromise.then(({ logger }) => {
-            logger.disableAll();
-        });
-    }
+    // let loggingSettings = RED.settings.get('logging');
+    // if(
+    //     typeof loggingSettings.console !== 'undefined' &&
+    //     typeof loggingSettings.console.level !== 'undefined' &&
+    //     ['info','debug','trace'].indexOf(loggingSettings.console.level.toLowerCase()) >= 0
+    // ) {
+    //     loggerPromise.then(({ logger }) => {
+    //         logger.disableAll();
+    //     });
+    // }
 
     function MatrixFolderNameFromUserId(name) {
         return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
@@ -161,8 +161,7 @@ module.exports = function(RED) {
                         localStorage: localStorage,
                     }),
                     userId: this.userId,
-                    deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
-                    request
+                    deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
                     // verificationMethods: ["m.sas.v1"]
                 });
 
@@ -373,8 +372,13 @@ module.exports = function(RED) {
                 async function run() {
                     try {
                         if(node.e2ee){
-                            node.log("Initializing crypto...");
-                            await node.matrixClient.initCrypto();
+                            node.matrixClient.on("crypto.legacyCryptoStoreMigrationProgress", function(progress, total){
+                                node.log(`Migrating from legacy crypto to rust crypto. ${progress}/${total}`);
+                            });
+                            await node.matrixClient.initRustCrypto({
+                                useIndexedDB: false
+                            });
+                            console.log(`CRYPTO VERSION: ${node.matrixClient.getCrypto()?.getVersion()}`);
                             node.matrixClient.getCrypto().globalBlacklistUnverifiedDevices = false; // prevent errors from unverified devices
                         }
                         node.log("Connecting to Matrix server...");
@@ -382,6 +386,7 @@ module.exports = function(RED) {
                             initialSyncLimit: node.initialSyncLimit
                         });
                     } catch(error) {
+                        node.error(error);
                         node.error(error, {});
                     }
                 }
