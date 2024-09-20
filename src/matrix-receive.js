@@ -1,4 +1,3 @@
-const {RelationType} = require("matrix-js-sdk");
 module.exports = function(RED) {
     function MatrixReceiveMessage(n) {
         RED.nodes.createNode(this, n);

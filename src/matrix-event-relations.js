@@ -1,5 +1,3 @@
-const {RelationType, EventType, Direction} = require("matrix-js-sdk");
-
 module.exports = function(RED) {
     function MatrixFetchRelations(n) {
         RED.nodes.createNode(this, n);
@@ -43,6 +41,8 @@ module.exports = function(RED) {
         });
 
         node.on("input", async function(msg) {
+            const {Direction} = await import("matrix-js-sdk");
+
             if (!node.server || !node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
                 return;

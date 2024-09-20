@@ -1,5 +1,3 @@
-const {RelationType} = require("matrix-js-sdk");
-
 module.exports = function(RED) {
     function MatrixSendImage(n) {
         RED.nodes.createNode(this, n);
@@ -68,7 +66,8 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.on("input", function (msg) {
+        node.on("input", async function (msg) {
+            const {RelationType} = await import("matrix-js-sdk");
             function getToValue(msg, type, property) {
                 let value = property;
                 if (type === "msg") {

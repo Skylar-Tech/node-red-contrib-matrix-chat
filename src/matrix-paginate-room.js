@@ -1,5 +1,3 @@
-const {TimelineWindow, RelationType, Filter} = require("matrix-js-sdk");
-const crypto = require('crypto');
 module.exports = function(RED) {
     function MatrixReceiveMessage(n) {
         RED.nodes.createNode(this, n);
@@ -34,6 +32,9 @@ module.exports = function(RED) {
         });
 
         node.on("input", async function (msg) {
+            const {TimelineWindow, RelationType, Filter} = await import("matrix-js-sdk");
+            const crypto = await import('crypto');
+
             if (! node.server || ! node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
                 return;

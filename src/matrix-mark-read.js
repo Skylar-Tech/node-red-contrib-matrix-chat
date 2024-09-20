@@ -1,5 +1,3 @@
-const {TimelineWindow, RelationType, Filter} = require("matrix-js-sdk");
-const crypto = require('crypto');
 module.exports = function(RED) {
     function MatrixReceiveMessage(n) {
         RED.nodes.createNode(this, n);
