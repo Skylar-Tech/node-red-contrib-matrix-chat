@@ -52,7 +52,8 @@
       "matrix-whois-user": "src/matrix-whois-user.js",
       "matrix-paginate-room": "src/matrix-paginate-room.js",
       "matrix-get-event": "src/matrix-get-event.js",
-      "matrix-event-relations": "src/matrix-event-relations.js"
+      "matrix-event-relations": "src/matrix-event-relations.js",
+      "matrix-device-verification": "src/matrix-device-verification.js"
     }
   },
   "engines": {
