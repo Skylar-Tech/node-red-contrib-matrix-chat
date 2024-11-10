@@ -56,6 +56,7 @@ module.exports = function(RED) {
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.e2ee = n.enableE2ee || false;
         this.globalAccess = n.global;
+        this.allowUnknownDevices = n.allowUnknownDevices || false;
         this.initializedAt = new Date();
         node.initialSyncLimit = 25;
 
@@ -401,6 +402,7 @@ module.exports = function(RED) {
                         node.log("Initializing crypto...");
                         await node.matrixClient.initCrypto();
                         node.matrixClient.getCrypto().globalBlacklistUnverifiedDevices = false; // prevent errors from unverified devices
+                        node.matrixClient.getCrypto().globalErrorOnUnknownDevices  = !node.allowUnknownDevices;
                     }
                     node.log("Connecting to Matrix server...");
                     await node.matrixClient.startClient({
