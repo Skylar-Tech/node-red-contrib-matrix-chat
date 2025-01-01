@@ -13,6 +13,7 @@
             acceptOwnEvents: {"value": false},
             acceptText: {"value": true},
             acceptEmotes: {"value": true},
+            acceptNotices: {"value": true},
             acceptStickers: {"value": true},
             acceptReactions: {"value": true},
             acceptFiles: {"value": true},
@@ -64,6 +65,16 @@
         />
         <label for="node-input-acceptText" style="width: auto">
             Accept text <code style="text-transform: none;">m.text</code>
+        </label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input
+                type="checkbox"
+                id="node-input-acceptNotices"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-input-acceptNotices" style="width: auto">
+            Accept notices <code style="text-transform: none;">m.notice</code>
         </label>
     </div>
     <div class="form-row" style="margin-bottom:0;">
