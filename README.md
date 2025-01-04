@@ -59,7 +59,9 @@ Interested in helping? Contributions to finalize E2EE support are welcome!
 
 This module includes a node to register users using the Synapse secret registration endpoint. It returns both an `access_token` and a `device_id`, perfect for setting up the bot.
 
-[See how to register a user here](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme).
+[Guide on registering a user via the web browser](https://skylar.tech/matrix-chat-bot-module-for-node-red/)
+
+[Guide on registering using shared secret registration](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme) (for server owners)
 
 ### Other Packages
 
