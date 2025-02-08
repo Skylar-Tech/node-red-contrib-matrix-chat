@@ -19,14 +19,18 @@
         },
         oneditprepare: function() {
             $("#node-input-roomId").typedInput({
-                type: this.roomIdType,
-                types:['msg','flow','global','str'],
-            }).typedInput('value', this.roomIdValue);
+                types: ['msg','flow','global','str'],
+                typeField: "#node-input-roomId"
+            });
+            $("#node-input-roomId").typedInput("type", this.roomIdType || "msg");
+            $("#node-input-roomId").typedInput("value", this.roomIdValue || "topic");
 
             $("#node-input-eventId").typedInput({
-                type: this.eventIdType,
-                types:['msg','flow','global','str'],
-            }).typedInput('value', this.eventIdValue);
+                types: ['msg','flow','global','str'],
+                typeField: "#node-input-eventId"
+            });
+            $("#node-input-eventId").typedInput("type", this.eventIdType || "msg");
+            $("#node-input-eventId").typedInput("value", this.eventIdValue || "eventId");
         },
         oneditsave: function() {
             this.roomIdType = $("#node-input-roomId").typedInput('type');
@@ -58,18 +62,6 @@
         <label for="node-input-eventId"><i class="fa fa-file"></i> Event ID</label>
         <input type="text" id="node-input-eventId">
     </div>
-
-    <script type="text/javascript">
-        $(function(){
-            $("#node-input-roomId").on("keyup", function() {
-                if($(this).val() && !$(this).val().startsWith("!")) {
-                    $("#node-input-roomId-error").html(`Room IDs start with exclamation point "!"<br />Example: !OGEhHVWSdvArJzumhm:matrix.org`).show();
-                } else {
-                    $("#node-input-roomId-error").hide();
-                }
-            }).trigger('keyup');
-        });
-</script>
 </script>
 
 <script type="text/html" data-help-name="matrix-get-event">
