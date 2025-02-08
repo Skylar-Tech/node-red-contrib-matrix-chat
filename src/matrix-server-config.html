@@ -36,7 +36,8 @@
             name: { value: null },
             autoAcceptRoomInvites: { value: true },
             enableE2ee: { type: "checkbox", value: true },
-            global: { type: "checkbox", value: true }
+            global: { type: "checkbox", value: true },
+            allowUnknownDevices: { type: "checkbox", value: false }
         },
         icon: "matrix.png",
         label: function() {
@@ -128,6 +129,20 @@
         <div class="form-tips" style="margin-bottom: 12px;">
             If global access is enabled you can access the client directly within a Function node. This way you can do <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command" target="_blank">whatever you want</a> with the client. Example:<br>
             <code style="white-space: normal;">let client = global.get("matrixClient['@bot:example.com']");</code>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-config-input-allowUnknownDevices"
+                style="width: auto; margin-left: 125px; vertical-align: top"
+        />
+        <label for="node-config-input-allowUnknownDevices" style="width: auto">
+            Allow unverified devices in rooms
+        </label>
+        <div class="form-tips" style="margin-bottom: 12px;">
+            Allow sending messages to a room with unknown devices which have not been verified.
         </div>
     </div>
     <script type="text/javascript">
