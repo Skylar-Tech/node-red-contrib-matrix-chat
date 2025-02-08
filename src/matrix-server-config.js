@@ -7,7 +7,6 @@ const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
 const { LocalStorageCryptoStore } = require('matrix-js-sdk/lib/crypto/store/localStorage-crypto-store');
 const {RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent, MemoryStore} = require("matrix-js-sdk");
-const request = require("request");
 require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
 if (!globalThis.fetch) {
     // polyfill fetch if we don't have it
@@ -56,6 +55,7 @@ module.exports = function(RED) {
         this.autoAcceptRoomInvites = n.autoAcceptRoomInvites;
         this.e2ee = n.enableE2ee || false;
         this.globalAccess = n.global;
+        this.allowUnknownDevices = n.allowUnknownDevices || false;
         this.initializedAt = new Date();
         node.initialSyncLimit = 25;
 
@@ -153,8 +153,7 @@ module.exports = function(RED) {
                     localStorage: localStorage,
                 }),
                 userId: this.userId,
-                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined,
-                request
+                deviceId: (this.deviceId || getStoredDeviceId(localStorage)) || undefined
                 // verificationMethods: ["m.sas.v1"]
             });
 
@@ -401,6 +400,7 @@ module.exports = function(RED) {
                         node.log("Initializing crypto...");
                         await node.matrixClient.initCrypto();
                         node.matrixClient.getCrypto().globalBlacklistUnverifiedDevices = false; // prevent errors from unverified devices
+                        node.matrixClient.getCrypto().globalErrorOnUnknownDevices  = !node.allowUnknownDevices;
                     }
                     node.log("Connecting to Matrix server...");
                     await node.matrixClient.startClient({
@@ -479,8 +479,7 @@ module.exports = function(RED) {
                 baseUrl: baseUrl,
                 deviceId: deviceId,
                 timelineSupport: true,
-                localTimeoutMs: '30000',
-                request
+                localTimeoutMs: '30000'
             });
 
             new TimelineWindow()

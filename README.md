@@ -1,75 +1,76 @@
 # node-red-contrib-matrix-chat
 [Matrix](https://matrix.org/) chat server client for [Node-RED](https://nodered.org/)
 
-***Currently we are in beta. We ask that you open any issues you have on our repository to help us reach a stable well tested version. Things may change & break before our first release so check changelog before updating.***
+***Currently in beta. Please report any issues in our repository to help us reach a stable, well-tested release. Breaking changes may occur before our first stable release, so be sure to check the changelog before updating.***
 
-If you need help with this feel free to join our public matrix room at [#node-red-contrib-matrix-chat:skylar.tech](https://app.element.io/#/room/#node-red-contrib-matrix-chat:skylar.tech)
+Join our public Matrix room for help: [#node-red-contrib-matrix-chat:skylar.tech](https://app.element.io/#/room/#node-red-contrib-matrix-chat:skylar.tech)
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/B0B51BM7C)
 
 ### Features
 
-The following is supported from this package:
+Supported functionality in this package includes:
 
-- End-to-end encryption
-  - [Currently a WIP](#end-to-end-encryption-notes)
-  - Can also use [pantalaimon](https://github.com/matrix-org/pantalaimon) as an alternative solution to E2EE (if you need multiple sessions synced up with keys)
-- Receive events from a room (messages, reactions, images, audio, locations, and files) whether encrypted or not
-- Fetch and modify room state events (for changing room settings)
-- Paginate room history
-- Send Images/Files (sending files to e2ee room doesn't currently encrypt them yet)
-- Edit messages
-- Send typing events (Bot is typing ...)
-- Delete events (messages, reactions, etc)
-- Decrypt files in e2ee rooms
-- Send HTML/Plain Text Message/Notice
-- React to messages
-- Register user's on closed registration Synapse servers using `registration_shared_secret` (Admin Only)
-- List out users on a Synapse server (Admin Only)
-- Get WhoIs info for a Synapse user (Admin Only)
-- Add/Edit Synapse users using the v2 API (requires a pre-existing admin account)
-- Deactivate users on Synapse servers (Admin Only)
-- Get a user list from a room
-- Kick user from room
-- Ban user from room
-- Join, Create, Invite, and Leave rooms
-- Synapse admin API to force add user to room (requires bot to be in same room already)
+- **End-to-end encryption (E2EE)**
+  - [Work in progress](#end-to-end-encryption-notes)
+  - Alternative: Use [Pantalaimon](https://github.com/matrix-org/pantalaimon) for E2EE key synchronization across sessions
+- **Receive events** from rooms: Messages, reactions, images, audio, locations, files, encrypted or unencrypted
+- **Fetch/modify room state**: Update room settings
+- **Paginate room history**
+- **Send files** (encryption support for files coming soon)
+- **Send/edit messages** (supports plain text and HTML formats)
+- **Send typing notifications**
+- **Delete events** (messages, reactions, etc.)
+- **Decrypt files** in E2EE rooms
+- **React to messages**
+- **Admin tools**:
+  - Register users on closed Synapse servers (`registration_shared_secret`)
+  - Manage users, including listing, adding, editing, deactivating (Synapse API)
+  - Force-add users to rooms
+- **Room management**: Invite, kick, ban, join, create, and leave rooms
 
-
-Therefore, you can easily build a bot, chat relay, or administrate your Matrix server from within [Node-RED](https://nodered.org/).
+These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).
 
 ### Installing
 
-You can either install from within Node-RED by searching for `node-red-contrib-matrix-chat` or run this from within your Node-RED directory:
+Install through Node-RED's UI by searching for `node-red-contrib-matrix-chat`, or use the following command inside your Node-RED directory:
+
 ```bash
 npm install node-red-contrib-matrix-chat
 ```
 
 ### Usage
-We have examples! [Check them out](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme)
 
-#### Extra functionality
-You are not limited by just the nodes we have created. If you turn on global access when setting up your Matrix Client you can access the client directly from any function node to write your own logic.
+Explore our [examples](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme) to see the module in action.
 
-View an example [here](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command)
+#### Extending functionality
+
+You're not limited to just the nodes we've created. Enable global access in your Matrix Client to directly interact with the client from function nodes and create custom logic.
+
+[View an example here](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#use-function-node-to-run-any-command).
 
 ### End-to-End Encryption Notes
-Currently, this module has no way of getting encryption keys from other devices on the same account. Therefore it is recommended you use the bot exclusively with Node-RED after it's creation. Failure to do so will lead to your bot being unable to receive messages from e2ee rooms it joined from another client. Shared secret registration makes this super easy since it returns a token and device ID.
 
-This module stores a folder in your Node-RED directory called `matrix-client-storage` and is it vital that you periodically back this up if you are using e2ee. This is where the client stores all the keys necessary to decrypt messages and if lost you will lose access to e2e rooms. If you move your client to another NR install make sure to migrate this folder as well (and do not let both the old and new client run at same time).
+- This module doesn't handle encryption key synchronization between devices. It’s recommended to use the bot exclusively in Node-RED to prevent issues with E2EE messages.
+- **Storage:** Keys for E2EE are saved in a folder called `matrix-client-storage` within your Node-RED directory. Back up this folder regularly! If lost, you won’t be able to decrypt messages from E2EE rooms.
+- To move your bot to a different installation, migrate this folder and ensure the old and new clients don't run simultaneously.
 
-Want to contribute? Any help on getting the last pieces of e2ee figured out would be greatly appreciated :)
+Interested in helping? Contributions to finalize E2EE support are welcome!
 
-### Generate user
-You will need a user to use this module. Luckily this module comes with a node that allows you to register users to a homeserver using the secret registration endpoint. This is perfect because it returns an `access_token` as well as a `device_id` which is exactly what we need.
+### Registering a User
 
-[Click here](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme) to see how to generate a user using secret registration
+This module includes a node to register users using the Synapse secret registration endpoint. It returns both an `access_token` and a `device_id`, perfect for setting up the bot.
 
+[Guide on registering a user via the web browser](https://skylar.tech/matrix-chat-bot-module-for-node-red/)
 
+[Guide on registering using shared secret registration](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#readme) (for server owners)
 
 ### Other Packages
 
-- [node-red-contrib-gamedig](https://www.npmjs.com/package/node-red-contrib-gamedig) - Query game servers from Node-RED!
+- [node-red-contrib-gamedig](https://www.npmjs.com/package/node-red-contrib-gamedig) - Query game servers from Node-RED.
 
 ### Contributing
-All contributions are welcome! If you do add a feature please do a pull request so that everyone benefits :)
 
-Sharing is caring!
+We welcome all contributions! Please submit a pull request if you add a feature so the whole community can benefit.
+
+**Sharing is caring!**

@@ -127,7 +127,7 @@ module.exports = function(RED) {
                 }
 
                 if(msgFormat === 'msg.format') {
-                    if(!msg.format) {
+                    if(!Object.hasOwn(msg, 'format')) {
                         node.error("Message format is set to be passed in via msg.format but was not defined", msg);
                         return;
                     }

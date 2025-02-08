@@ -1,0 +1,120 @@
+[
+  {
+    "id": "2e2bb3f8521150c0",
+    "type": "group",
+    "z": "8fd89a0b44c61e76",
+    "name": "Set room name and topic",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "610648ad6bd73072",
+      "aca9be4e86e111f3",
+      "7f5e16c4f6c7885f",
+      "915ce202570af51a"
+    ],
+    "x": 674,
+    "y": 2539,
+    "w": 732,
+    "h": 122
+  },
+  {
+    "id": "610648ad6bd73072",
+    "type": "matrix-room-state-events",
+    "z": "8fd89a0b44c61e76",
+    "g": "2e2bb3f8521150c0",
+    "name": "",
+    "server": null,
+    "roomType": "msg",
+    "roomValue": "topic",
+    "rules": [
+      {
+        "t": "set",
+        "p": "m.room.name",
+        "to": "roomName",
+        "tot": "msg"
+      },
+      {
+        "t": "set",
+        "p": "m.room.topic",
+        "to": "description",
+        "tot": "msg"
+      }
+    ],
+    "x": 1050,
+    "y": 2600,
+    "wires": [
+      [
+        "7f5e16c4f6c7885f"
+      ],
+      [
+        "915ce202570af51a"
+      ]
+    ]
+  },
+  {
+    "id": "aca9be4e86e111f3",
+    "type": "inject",
+    "z": "8fd89a0b44c61e76",
+    "g": "2e2bb3f8521150c0",
+    "name": "",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "roomName",
+        "v": "Test Room",
+        "vt": "str"
+      },
+      {
+        "p": "description",
+        "v": "This is a test room for my Node-RED bot",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:skylar.tech",
+    "x": 820,
+    "y": 2600,
+    "wires": [
+      [
+        "610648ad6bd73072"
+      ]
+    ]
+  },
+  {
+    "id": "7f5e16c4f6c7885f",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "2e2bb3f8521150c0",
+    "name": "Debug Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1280,
+    "y": 2580,
+    "wires": []
+  },
+  {
+    "id": "915ce202570af51a",
+    "type": "debug",
+    "z": "8fd89a0b44c61e76",
+    "g": "2e2bb3f8521150c0",
+    "name": "Error Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 1270,
+    "y": 2620,
+    "wires": []
+  }
+]

@@ -10,6 +10,7 @@ module.exports = function(RED) {
         this.acceptOwnEvents = n.acceptOwnEvents;
         this.acceptText = n.acceptText;
         this.acceptEmotes = n.acceptEmotes;
+        this.acceptNotices = n.acceptNotices;
         this.acceptStickers = n.acceptStickers;
         this.acceptReactions = n.acceptReactions;
         this.acceptFiles = n.acceptFiles;
@@ -67,6 +68,10 @@ module.exports = function(RED) {
             switch (msg.type) {
                 case 'm.emote':
                     if (!node.acceptEmotes) return;
+                    break;
+
+                case 'm.notice':
+                    if (!node.acceptNotices) return;
                     break;
 
                 case 'm.text':

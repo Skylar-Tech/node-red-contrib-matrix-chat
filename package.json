@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-matrix-chat",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "abort-controller": "^3.0.0",
@@ -9,12 +9,11 @@
     "got": "^12.0.2",
     "image-size": "^1.0.2",
     "isomorphic-webcrypto": "^2.3.8",
-    "matrix-js-sdk": "^28.0.0",
+    "matrix-js-sdk": "34.11.1",
     "mime": "^3.0.0",
     "node-fetch": "^3.3.0",
     "node-localstorage": "^2.2.1",
     "olm": "https://gitlab.matrix.org/matrix-org/olm/-/package_files/2572/download",
-    "request": "^2.88.2",
     "sharp": "^0.33.4",
     "tmp": "^0.2.1",
     "utf8": "^3.0.0"
@@ -50,7 +49,9 @@
       "matrix-synapse-deactivate-user": "src/matrix-synapse-deactivate-user.js",
       "matrix-synapse-join-room": "src/matrix-synapse-join-room.js",
       "matrix-whois-user": "src/matrix-whois-user.js",
-      "matrix-paginate-room": "src/matrix-paginate-room.js"
+      "matrix-paginate-room": "src/matrix-paginate-room.js",
+      "matrix-get-event": "src/matrix-get-event.js",
+      "matrix-event-relations": "src/matrix-event-relations.js"
     }
   },
   "engines": {
