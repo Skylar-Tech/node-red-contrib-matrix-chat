@@ -1,9 +1,8 @@
-const {RelationType} = require("matrix-js-sdk");
+const sdkPromise = import("matrix-js-sdk");
 
 module.exports = function(RED) {
     function MatrixSendImage(n) {
         RED.nodes.createNode(this, n);
-
         var node = this;
 
         this.name = n.name;
@@ -68,12 +67,17 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.on("input", function (msg) {
+        // Make the input handler async so we can await the dynamic import.
+        node.on("input", async function (msg) {
+            // Await the SDK import and get the RelationType constant.
+            const sdk = await sdkPromise;
+            const RelationType = sdk.RelationType;
+
             function getToValue(msg, type, property) {
                 let value = property;
                 if (type === "msg") {
                     value = RED.util.getMessageProperty(msg, property);
-                } else if ((type === 'flow') || (type === 'global')) {
+                } else if (type === 'flow' || type === 'global') {
                     try {
                         value = RED.util.evaluateNodeProperty(property, type, node, msg);
                     } catch(e2) {
@@ -115,19 +119,19 @@ module.exports = function(RED) {
             }
 
             let content = null;
-            if(typeof payload === 'object') {
+            if (typeof payload === 'object') {
                 content = payload;
             } else {
-                if(msgType === 'msg.type') {
-                    if(!msg.type) {
-                        node.error("msg.type type is set to be passed in via msg.type but was not defined", msg);
+                if (msgType === 'msg.type') {
+                    if (!msg.type) {
+                        node.error("msg.type is set to be passed in via msg.type but was not defined", msg);
                         return;
                     }
                     msgType = msg.type;
                 }
 
-                if(msgFormat === 'msg.format') {
-                    if(!Object.hasOwn(msg, 'format')) {
+                if (msgFormat === 'msg.format') {
+                    if (!Object.hasOwn(msg, 'format')) {
                         node.error("Message format is set to be passed in via msg.format but was not defined", msg);
                         return;
                     }
@@ -139,7 +143,7 @@ module.exports = function(RED) {
                     body: payload.toString()
                 };
 
-                if(msgFormat === 'html') {
+                if (msgFormat === 'html') {
                     content.format = "org.matrix.custom.html";
                     content.formatted_body =
                         (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
@@ -147,15 +151,15 @@ module.exports = function(RED) {
                             : payload.toString();
                 }
 
-                if((node.replaceMessage || msg.replace) && msg.eventId) {
+                if ((node.replaceMessage || msg.replace) && msg.eventId) {
                     content['m.new_content'] = {
                         msgtype: content.msgtype,
                         body: content.body
                     };
-                    if('format' in content) {
+                    if ('format' in content) {
                         content['m.new_content']['format'] = content['format'];
                     }
-                    if('formatted_body' in content) {
+                    if ('formatted_body' in content) {
                         content['m.new_content']['formatted_body'] = content['formatted_body'];
                     }
 
@@ -164,17 +168,19 @@ module.exports = function(RED) {
                         event_id: msg.eventId
                     };
                     content['body'] = ' * ' + content['body'];
-                } else if(threadReply) {
-                    // if incoming message is a reply to a thread we fetch the thread parent from the m.relates_to property
-                    // otherwise fallback to msg.eventId
-                    let threadParent = (msg?.content?.['m.relates_to']?.rel_type === RelationType.Thread ? msg?.content?.['m.relates_to']?.event_id : null) || msg.eventId;
-                    if(threadParent) {
+                } else if (threadReply) {
+                    // If incoming message is a reply to a thread we fetch the thread parent from m.relates_to,
+                    // otherwise fallback to msg.eventId.
+                    let threadParent = (msg?.content?.['m.relates_to']?.rel_type === RelationType.Thread
+                        ? msg?.content?.['m.relates_to']?.event_id
+                        : null) || msg.eventId;
+                    if (threadParent) {
                         content["m.relates_to"] = {
                             "rel_type": RelationType.Thread,
                             "event_id": threadParent,
                             "is_falling_back": true,
                         };
-                        if(msg.eventId !== threadParent) {
+                        if (msg.eventId !== threadParent) {
                             content["m.relates_to"]["m.in_reply_to"] = {
                                 "event_id": msg.eventId
                             };
@@ -202,4 +208,4 @@ module.exports = function(RED) {
         });
     }
     RED.nodes.registerType("matrix-send-message", MatrixSendImage);
-}
+};

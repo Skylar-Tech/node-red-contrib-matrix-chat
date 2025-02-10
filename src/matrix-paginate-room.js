@@ -1,7 +1,8 @@
-const {TimelineWindow, RelationType, Filter} = require("matrix-js-sdk");
+const sdkPromise = import("matrix-js-sdk");
 const crypto = require('crypto');
+
 module.exports = function(RED) {
-    function MatrixReceiveMessage(n) {
+    function MatrixPaginateRoom(n) {
         RED.nodes.createNode(this, n);
 
         let node = this;
@@ -34,7 +35,7 @@ module.exports = function(RED) {
         });
 
         node.on("input", async function (msg) {
-            if (! node.server || ! node.server.matrixClient) {
+            if (!node.server || !node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
                 return;
             }
@@ -43,43 +44,47 @@ module.exports = function(RED) {
                 let value = property;
                 if (type === "msg") {
                     value = RED.util.getMessageProperty(msg, property);
-                } else if ((type === 'flow') || (type === 'global')) {
+                } else if (type === 'flow' || type === 'global') {
                     try {
                         value = RED.util.evaluateNodeProperty(property, type, node, msg);
                     } catch(e2) {
                         throw new Error("Invalid value evaluation");
                     }
-                } else if(type === "bool") {
+                } else if (type === "bool") {
                     value = (property === 'true');
-                } else if(type === "num") {
+                } else if (type === "num") {
                     value = Number(property);
                 }
                 return value;
             }
 
             function setToValue(value, type, property) {
-                if(type === 'global' || type === 'flow') {
+                if (type === 'global' || type === 'flow') {
                     var contextKey = RED.util.parseContextStore(property);
                     if (/\[msg/.test(contextKey.key)) {
-                        // The key has a nest msg. reference to evaluate first
-                        contextKey.key = RED.util.normalisePropertyExpression(contextKey.key, msg, true)
+                        // The key has a nested msg. reference that must be evaluated first
+                        contextKey.key = RED.util.normalisePropertyExpression(contextKey.key, msg, true);
                     }
                     var target = node.context()[type];
-                    var callback = err => {
+                    target.set(contextKey.key, value, contextKey.store, err => {
                         if (err) {
                             node.error(err, msg);
-                            getterErrors[rule.p] = err.message;
                         }
-                    }
-                    target.set(contextKey.key, value, contextKey.store, callback);
-                } else if(type === 'msg') {
+                    });
+                } else if (type === 'msg') {
                     if (!RED.util.setMessageProperty(msg, property, value)) {
-                        node.warn(RED._("change.errors.no-override",{property:property}));
+                        node.warn(RED._("change.errors.no-override", { property: property }));
                     }
                 }
             }
 
             try {
+                // Dynamically load the SDK
+                const sdk = await sdkPromise;
+                const TimelineWindow = sdk.TimelineWindow;
+                const RelationType = sdk.RelationType;
+                // (Filter was imported originally but is not used, so we omit it.)
+
                 let roomId = getToValue(msg, node.roomType, node.roomValue),
                     paginateBackwards = getToValue(msg, node.paginateBackwardsType, node.paginateBackwardsValue),
                     pageSize = getToValue(msg, node.pageSizeType, node.pageSizeValue),
@@ -87,42 +92,37 @@ module.exports = function(RED) {
 
                 let room = node.server.matrixClient.getRoom(roomId);
 
-                if(!room) {
+                if (!room) {
                     throw new Error(`Room ${roomId} does not exist`);
                 }
-                if(pageSize > node.server.initialSyncLimit) {
+                if (pageSize > node.server.initialSyncLimit) {
                     throw new Error(`Page size=${pageSize} cannot exceed initialSyncLimit=${node.server.initialSyncLimit}`);
                 }
-                if(!pageKey) {
+                if (!pageKey) {
                     pageKey = crypto.randomUUID();
                     setToValue(pageKey, node.paginateKeyType, node.paginateKeyValue);
                 }
                 let timelineWindow = node.timelineWindows.get(pageKey),
                     moreMessages = true;
-                if(!timelineWindow) {
+                if (!timelineWindow) {
                     let timelineSet = room.getUnfilteredTimelineSet();
-                    // node.debug(JSON.stringify(timelineSet.getFilter()));
-
-                    // MatrixClient's option initialSyncLimit gets set to the filter we are using
-                    // so override that value with our pageSize
+                    // MatrixClient's option initialSyncLimit gets set to the filter we are using,
+                    // so override that value with our pageSize.
                     timelineWindow = new TimelineWindow(node.server.matrixClient, timelineSet);
                     await timelineWindow.load(msg.eventId || null, pageSize);
                     node.timelineWindows.set(pageKey, timelineWindow);
                 } else {
-                    moreMessages = await timelineWindow.paginate(paginateBackwards ? 'b' : 'f', pageSize); // b for backwards f for forwards
-                    if(moreMessages) {
+                    moreMessages = await timelineWindow.paginate(paginateBackwards ? 'b' : 'f', pageSize); // 'b' for backwards, 'f' for forwards
+                    if (moreMessages) {
                         await timelineWindow.unpaginate(pageSize, !paginateBackwards);
                     }
                 }
 
-                // MatrixEvent objects are massive so this throws an encode error for the string being too long
-                // since msg objects convert to JSON
-                // msg.payload = moreMessages ? timelineWindow.getEvents() : false;
-
+                // To avoid errors converting massive MatrixEvent objects to JSON, we omit them.
                 msg.payload = false;
                 msg.start = timelineWindow.getTimelineIndex('b')?.index;
                 msg.end = timelineWindow.getTimelineIndex('f')?.index;
-                if(moreMessages) {
+                if (moreMessages) {
                     msg.payload = timelineWindow.getEvents().map(function(event) {
                         return {
                             encrypted    : event.isEncrypted(),
@@ -152,5 +152,5 @@ module.exports = function(RED) {
             node.server.deregister(node);
         });
     }
-    RED.nodes.registerType("matrix-paginate-room", MatrixReceiveMessage);
+    RED.nodes.registerType("matrix-paginate-room", MatrixPaginateRoom);
 }
