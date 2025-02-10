@@ -1,4 +1,4 @@
-const {RelationType, EventType, Direction} = require("matrix-js-sdk");
+const sdkPromise = import("matrix-js-sdk");
 
 module.exports = function(RED) {
     function MatrixFetchRelations(n) {
@@ -49,14 +49,17 @@ module.exports = function(RED) {
             }
 
             try {
+                const sdk = await sdkPromise;
+                const Direction = sdk.Direction;
+
                 function evaluateNodePropertySafe(value, type, node, msg) {
                     try {
                         return RED.util.evaluateNodeProperty(value, type, node, msg);
                     } catch (e) {
                         if (e instanceof TypeError) {
-                            return undefined;  // Handle TypeError and return undefined
+                            return undefined;
                         }
-                        throw e;  // Re-throw other errors to prevent masking issues
+                        throw e;
                     }
                 }
 
@@ -71,16 +74,16 @@ module.exports = function(RED) {
                     to = evaluateNodePropertySafe(node.toValue, node.toType, node, msg);
 
                 let opts = { dir: direction };
-                if(limit) {
+                if (limit) {
                     opts.limit = limit;
                 }
-                if(recurse === true || recurse === false) {
+                if (recurse === true || recurse === false) {
                     opts.recurse = recurse;
                 }
-                if(from) {
+                if (from) {
                     opts.from = from;
                 }
-                if(to) {
+                if (to) {
                     opts.to = to;
                 }
 
