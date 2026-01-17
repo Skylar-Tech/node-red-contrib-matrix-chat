@@ -1,11 +1,10 @@
 global.Olm = require('olm');
 const fs = require("fs-extra");
-let RelationType, TimelineWindow, sdk, LocalStorageCryptoStore, RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent, MemoryStore;
+let RelationType, sdk, LocalStorageCryptoStore, RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent, MemoryStore;
 
 (async () => {
     const mod = await import("matrix-js-sdk");
     RelationType = mod.RelationType;
-    TimelineWindow = mod.TimelineWindow;
     // matrix-js-sdk doesn't export a default – the top-level export is the same object:
     sdk = mod;
 
@@ -502,8 +501,6 @@ module.exports = function(RED) {
                     localTimeoutMs: '30000'
                 });
 
-                new TimelineWindow();  // from our top-level variable, but to keep minimal changes,
-                                       // you can just do: (await import("matrix-js-sdk")).TimelineWindow();
 
                 matrixClient.timelineSupport = true;
 
