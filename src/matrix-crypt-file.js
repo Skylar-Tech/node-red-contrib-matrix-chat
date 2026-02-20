@@ -58,11 +58,11 @@ module.exports = function(RED) {
     RED.nodes.registerType("matrix-decrypt-file", MatrixDecryptFile);
 
     function atob(a) {
-        return new Buffer.from(a, 'base64').toString('binary');
+        return Buffer.from(a, 'base64').toString('binary');
     }
 
     function btoa(b) {
-        return new Buffer.from(b).toString('base64');
+        return Buffer.from(b).toString('base64');
     }
 
     // the following was taken & modified from https://github.com/matrix-org/browser-encrypt-attachment/blob/master/index.js
