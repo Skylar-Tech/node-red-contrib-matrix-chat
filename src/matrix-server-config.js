@@ -382,6 +382,7 @@ module.exports = function(RED) {
                         return; // already tracked
                     }
                     node.verificationRequests.set(id, request);
+                    request.__nrSeenAt = Date.now();
 
                     let verifierHooked = false;
                     const onChange = function() {
@@ -399,8 +400,13 @@ module.exports = function(RED) {
                             emitVerificationUpdate(request, false);
                             if(request.phase === VerificationPhase.Done || request.phase === VerificationPhase.Cancelled) {
                                 request.off(VerificationRequestEvent.Change, onChange);
-                                node.verificationRequests.delete(id);
-                                node.verificationSas.delete(id);
+                                // Keep the finished request briefly so the config
+                                // editor's verification list can still report the
+                                // outcome; the /matrix-chat/verification "list"
+                                // action sweeps entries older than 2 minutes.
+                                if(!request.__nrEndedAt) {
+                                    request.__nrEndedAt = Date.now();
+                                }
                             }
                         } catch(e) {
                             node.error("Verification request handler error: " + e);
@@ -925,6 +931,248 @@ module.exports = function(RED) {
                         message: 'Cross-signing and secure backup have been reset. Store the new recovery key somewhere safe - it is shown only once.',
                         recoveryKey: newKey.encodedPrivateKey,
                     });
+                }
+
+                return res.json({ result: 'error', message: 'Unknown action: ' + action });
+            } catch(error) {
+                res.json({ result: 'error', message: String(error && error.message || error) });
+            }
+        });
+
+    /**
+     * Lists and drives device verification requests for the config editor's
+     * "Verification" button (the verification list modal). Same flows.write
+     * protection as the other admin endpoints, so it is not publicly exposed.
+     *
+     * Actions (on req.body.id, the server config node):
+     *  - list    : the pending verification requests (newest 20)
+     *  - advance : accept / start SAS for one request and return its state
+     *  - confirm : confirm the SAS emoji match
+     *  - mismatch: declare the SAS emoji do not match
+     *  - cancel  : cancel the verification
+     */
+    RED.httpAdmin.post(
+        "/matrix-chat/verification",
+        RED.auth.needsPermission('flows.write'),
+        async function(req, res) {
+            try {
+                const serverNode = RED.nodes.getNode(req.body.id);
+                if(!serverNode || !serverNode.matrixClient) {
+                    return res.json({ result: 'error', message: 'Server configuration not found. Save and deploy the server configuration node first.' });
+                }
+                if(typeof serverNode.isConnected !== 'function' || !serverNode.isConnected()) {
+                    return res.json({ result: 'error', message: 'The Matrix client is not connected.' });
+                }
+                if(!serverNode.matrixClient.getCrypto()) {
+                    return res.json({ result: 'error', message: 'End-to-end encryption is not enabled on this server configuration.' });
+                }
+
+                const { VerificationPhase } = await cryptoApiPromise;
+                const PHASE_NAMES = { 1: 'unsent', 2: 'requested', 3: 'ready', 4: 'started', 5: 'cancelled', 6: 'done' };
+                const requests = serverNode.verificationRequests;
+                const sasMap = serverNode.verificationSas;
+                const action = req.body.action || 'list';
+
+                function safe(fn, fallback) {
+                    try { return fn(); } catch(e) { return fallback; }
+                }
+                function detailOf(vid, r) {
+                    const roomId = safe(function(){ return r.roomId; }, null) || null;
+                    const timeout = safe(function(){ return r.timeout; }, null);
+                    const sas = sasMap.get(vid);
+                    return {
+                        verificationId    : vid,
+                        phase             : PHASE_NAMES[safe(function(){ return r.phase; })] || 'unknown',
+                        userId            : safe(function(){ return r.otherUserId; }, null),
+                        deviceId          : safe(function(){ return r.otherDeviceId; }, null) || null,
+                        roomId            : roomId,
+                        type              : roomId ? 'room' : 'device',
+                        isSelfVerification: safe(function(){ return r.isSelfVerification; }, false),
+                        initiatedByMe     : safe(function(){ return r.initiatedByMe; }, false),
+                        ageMs             : Date.now() - (r.__nrSeenAt || Date.now()),
+                        expiresInMs       : (typeof timeout === 'number') ? timeout : null,
+                        cancellationCode  : safe(function(){ return r.cancellationCode; }, null),
+                        sas               : (sas && sas.sas) ? { emoji: sas.sas.emoji || null, decimal: sas.sas.decimal || null } : null,
+                    };
+                }
+
+                if(action === 'list') {
+                    const now = Date.now();
+                    // sweep finished verifications kept only for recent lookups
+                    for(const entry of Array.from(requests)) {
+                        if(entry[1].__nrEndedAt && (now - entry[1].__nrEndedAt) > 120000) {
+                            requests.delete(entry[0]);
+                            sasMap.delete(entry[0]);
+                        }
+                    }
+                    let items = [];
+                    for(const entry of requests) {
+                        const detail = detailOf(entry[0], entry[1]);
+                        if(detail.phase === 'done' || detail.phase === 'cancelled' || detail.phase === 'unsent') {
+                            continue;
+                        }
+                        items.push(detail);
+                    }
+                    items.sort(function(a, b) { return a.ageMs - b.ageMs; }); // newest first
+                    return res.json({
+                        result: 'ok',
+                        refreshSeconds: 5,
+                        total: items.length,
+                        hidden: Math.max(0, items.length - 20),
+                        verifications: items.slice(0, 20),
+                    });
+                }
+
+                // remaining actions operate on a single verification
+                const request = requests.get(req.body.verificationId);
+                if(!request) {
+                    return res.json({ result: 'ok', verification: { verificationId: req.body.verificationId, phase: 'gone' } });
+                }
+
+                if(action === 'advance') {
+                    try {
+                        const phase = safe(function(){ return request.phase; });
+                        if(phase === VerificationPhase.Requested
+                            && !safe(function(){ return request.initiatedByMe; }, false)
+                            && !safe(function(){ return request.accepting; }, false)) {
+                            await request.accept();
+                        } else if(phase === VerificationPhase.Ready && !safe(function(){ return request.verifier; })) {
+                            await request.startVerification("m.sas.v1");
+                        }
+                        const verifier = safe(function(){ return request.verifier; });
+                        if(verifier && !request.__nrVerifyCalled) {
+                            request.__nrVerifyCalled = true;
+                            verifier.verify().catch(function(){ /* completes/cancels elsewhere */ });
+                        }
+                    } catch(e) {
+                        serverNode.warn("Verification advance error: " + e);
+                    }
+                    return res.json({ result: 'ok', verification: detailOf(req.body.verificationId, request) });
+                }
+
+                if(action === 'confirm' || action === 'mismatch') {
+                    const sas = sasMap.get(req.body.verificationId);
+                    if(!sas) {
+                        return res.json({ result: 'error', message: 'This verification has no SAS awaiting confirmation yet.' });
+                    }
+                    if(action === 'confirm') {
+                        await sas.confirm();
+                    } else {
+                        sas.mismatch();
+                    }
+                    return res.json({ result: 'ok', verification: detailOf(req.body.verificationId, request) });
+                }
+
+                if(action === 'cancel') {
+                    await request.cancel();
+                    return res.json({ result: 'ok', verification: detailOf(req.body.verificationId, request) });
+                }
+
+                return res.json({ result: 'error', message: 'Unknown action: ' + action });
+            } catch(error) {
+                res.json({ result: 'error', message: String(error && error.message || error) });
+            }
+        });
+
+    /**
+     * Session (device) management for the config editor's "Sessions" button.
+     * Same flows.write protection as the other admin endpoints.
+     *
+     * Actions (on req.body.id, the server config node):
+     *  - list   : the account's sessions (current + others) with verification state
+     *  - rename : set a session's display name
+     *  - remove : delete a session (requires the account password)
+     *  - verify : start verifying a session; returns a verificationId to hand
+     *             off to the verification modal
+     */
+    RED.httpAdmin.post(
+        "/matrix-chat/sessions",
+        RED.auth.needsPermission('flows.write'),
+        async function(req, res) {
+            try {
+                const serverNode = RED.nodes.getNode(req.body.id);
+                if(!serverNode || !serverNode.matrixClient) {
+                    return res.json({ result: 'error', message: 'Server configuration not found. Save and deploy the server configuration node first.' });
+                }
+                if(typeof serverNode.isConnected !== 'function' || !serverNode.isConnected()) {
+                    return res.json({ result: 'error', message: 'The Matrix client is not connected.' });
+                }
+                const client = serverNode.matrixClient;
+                const crypto = client.getCrypto();
+                if(!crypto) {
+                    return res.json({ result: 'error', message: 'End-to-end encryption is not enabled on this server configuration.' });
+                }
+                const action = req.body.action || 'list';
+
+                if(action === 'list') {
+                    const currentDeviceId = client.getDeviceId();
+                    const devices = (await client.getDevices()).devices || [];
+                    const enriched = await Promise.all(devices.map(async function(d) {
+                        let verified = false;
+                        try {
+                            const status = await crypto.getDeviceVerificationStatus(serverNode.userId, d.device_id);
+                            verified = !!(status && status.isVerified());
+                        } catch(e) { /* unknown - treat as unverified */ }
+                        return {
+                            deviceId    : d.device_id,
+                            displayName : d.display_name || null,
+                            lastSeenTs  : d.last_seen_ts || null,
+                            lastSeenIp  : d.last_seen_ip || null,
+                            verified    : verified,
+                        };
+                    }));
+                    const current = enriched.find(function(d){ return d.deviceId === currentDeviceId; })
+                        || { deviceId: currentDeviceId, displayName: null, lastSeenTs: null, lastSeenIp: null, verified: false };
+                    let others = enriched.filter(function(d){ return d.deviceId !== currentDeviceId; });
+                    others.sort(function(a, b){ return (b.lastSeenTs || 0) - (a.lastSeenTs || 0); });
+                    return res.json({
+                        result: 'ok',
+                        current: current,
+                        others: others.slice(0, 50),
+                        hidden: Math.max(0, others.length - 50),
+                    });
+                }
+
+                const deviceId = req.body.deviceId;
+                if(!deviceId) {
+                    return res.json({ result: 'error', message: 'A deviceId is required.' });
+                }
+
+                if(action === 'rename') {
+                    await client.setDeviceDetails(deviceId, { display_name: req.body.displayName || '' });
+                    return res.json({ result: 'ok' });
+                }
+
+                if(action === 'remove') {
+                    const password = req.body.password;
+                    try {
+                        await client.deleteDevice(deviceId);
+                    } catch(e) {
+                        // deleting a device is user-interactive-auth protected
+                        if(e && e.httpStatus === 401 && e.data && e.data.flows) {
+                            if(!password) {
+                                return res.json({ result: 'error', message: 'The account password is required to remove a session.' });
+                            }
+                            await client.deleteDevice(deviceId, {
+                                type: 'm.login.password',
+                                identifier: { type: 'm.id.user', user: serverNode.userId },
+                                password: password,
+                                session: e.data.session,
+                            });
+                        } else {
+                            throw e;
+                        }
+                    }
+                    serverNode.log("Removed session " + deviceId);
+                    return res.json({ result: 'ok', message: 'Session removed.' });
+                }
+
+                if(action === 'verify') {
+                    const request = await crypto.requestDeviceVerification(serverNode.userId, deviceId);
+                    if(typeof serverNode.trackVerificationRequest === 'function') {
+                        serverNode.trackVerificationRequest(request);
+                    }
+                    return res.json({ result: 'ok', verificationId: request.transactionId || null });
                 }
 
                 return res.json({ result: 'error', message: 'Unknown action: ' + action });

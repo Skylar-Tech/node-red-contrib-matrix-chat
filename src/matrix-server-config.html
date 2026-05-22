@@ -204,6 +204,539 @@
                 $("#matrix-sb-overlay").data("sbStatusFn")();
             });
 
+            // --- Verification list (modal) ---
+            // Built once and reused; the node id is stored on the overlay.
+            if (!document.getElementById("matrix-vl-overlay")) {
+                $('<style>'
+                    + '.matrix-vl-overlay{position:fixed;inset:0;z-index:3000;display:none;background:rgba(0,0,0,.45);}'
+                    + '.matrix-vl-modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+                    + 'width:560px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;'
+                    + 'border-radius:6px;overflow:hidden;box-shadow:0 12px 44px rgba(0,0,0,.45);'
+                    + 'background:var(--red-ui-primary-background,#fff);color:var(--red-ui-primary-text-color,#2a2a2a);}'
+                    + '.matrix-vl-head{display:flex;justify-content:space-between;align-items:center;'
+                    + 'padding:12px 16px;font-size:15px;font-weight:bold;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border-bottom:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '.matrix-vl-x{cursor:pointer;font-size:20px;line-height:1;opacity:.55;}'
+                    + '.matrix-vl-x:hover{opacity:1;}'
+                    + '.matrix-vl-body{padding:14px 16px;overflow:auto;}'
+                    + '.matrix-vl-note{font-size:12px;color:var(--red-ui-secondary-text-color,#888);margin-bottom:10px;}'
+                    + '.matrix-vl-item{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;'
+                    + 'margin-bottom:8px;border-radius:5px;cursor:pointer;'
+                    + 'border:1px solid var(--red-ui-secondary-border-color,#ddd);'
+                    + 'background:var(--red-ui-secondary-background,#f7f7f7);}'
+                    + '.matrix-vl-item:hover{border-color:var(--red-ui-node-border,#999);}'
+                    + '.matrix-vl-item-l{flex:1;min-width:0;}'
+                    + '.matrix-vl-item-title{font-weight:bold;}'
+                    + '.matrix-vl-item-sub{font-size:12px;color:var(--red-ui-secondary-text-color,#888);'
+                    + 'margin-top:2px;word-break:break-word;}'
+                    + '.matrix-vl-item-r{text-align:right;font-size:12px;white-space:nowrap;}'
+                    + '.matrix-vl-exp{color:#d18a1b;}'
+                    + '.matrix-vl-empty,.matrix-vl-more{font-size:13px;'
+                    + 'color:var(--red-ui-secondary-text-color,#888);padding:6px 2px;}'
+                    + '.matrix-vl-d-state{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;}'
+                    + '.matrix-vl-d-state .fa{font-size:18px;}'
+                    + '.matrix-vl-sas{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;}'
+                    + '.matrix-vl-emoji{width:88px;text-align:center;padding:8px 4px;border-radius:5px;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '.matrix-vl-emoji .e{font-size:30px;line-height:1.3;}'
+                    + '.matrix-vl-emoji .n{font-size:11px;color:var(--red-ui-secondary-text-color,#888);text-transform:capitalize;}'
+                    + '.matrix-vl-result{margin-top:12px;padding:10px 12px;border-radius:4px;font-size:13px;}'
+                    + '.matrix-vl-foot{display:flex;align-items:center;gap:8px;padding:10px 16px;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border-top:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '</style>').appendTo("head");
+
+                $('<div id="matrix-vl-overlay" class="matrix-vl-overlay"><div class="matrix-vl-modal">'
+                    + '<div class="matrix-vl-head"><span><i class="fa fa-check-circle"></i> Device Verification</span>'
+                    + '<span class="matrix-vl-x" id="matrix-vl-x" title="Close">&times;</span></div>'
+                    + '<div class="matrix-vl-body">'
+                    + '<div id="matrix-vl-listview">'
+                    + '<div class="matrix-vl-note">Pending verification requests &mdash; this list refreshes every 5 seconds. Click a request to verify it.</div>'
+                    + '<div id="matrix-vl-items"></div>'
+                    + '<div id="matrix-vl-empty" class="matrix-vl-empty" style="display:none;">No pending verification requests.</div>'
+                    + '<div id="matrix-vl-more" class="matrix-vl-more" style="display:none;"></div>'
+                    + '</div>'
+                    + '<div id="matrix-vl-detailview" style="display:none;">'
+                    + '<div id="matrix-vl-d-head" class="matrix-vl-item-sub" style="margin-bottom:10px;"></div>'
+                    + '<div id="matrix-vl-d-state" class="matrix-vl-d-state"></div>'
+                    + '<div id="matrix-vl-d-sas" class="matrix-vl-sas" style="display:none;"></div>'
+                    + '<div id="matrix-vl-d-actions" style="display:none;text-align:right;">'
+                    + '<button type="button" class="red-ui-button" id="matrix-vl-d-mismatch">They don&#39;t match</button> '
+                    + '<button type="button" class="red-ui-button" id="matrix-vl-d-confirm">They match</button>'
+                    + '</div>'
+                    + '<div id="matrix-vl-d-result" class="matrix-vl-result" style="display:none;"></div>'
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="matrix-vl-foot">'
+                    + '<button type="button" class="red-ui-button" id="matrix-vl-back" style="display:none;">&larr; Back to list</button>'
+                    + '<span style="flex:1;"></span>'
+                    + '<button type="button" class="red-ui-button" id="matrix-vl-cancel" style="display:none;">Cancel verification</button>'
+                    + '<button type="button" class="red-ui-button" id="matrix-vl-close">Close</button>'
+                    + '</div></div></div>').appendTo(document.body);
+
+                var vlListTimer = null, vlTickTimer = null, vlDetailTimer = null;
+                var vlEsc = function(s) { return $("<div>").text(s == null ? "" : String(s)).html(); };
+                var vlId = function() { return $("#matrix-vl-overlay").data("matrixNodeId"); };
+                var vlCurId = function() { return $("#matrix-vl-overlay").data("vlCurrentId"); };
+                var vlCall = function(body) {
+                    return $.ajax({
+                        url: "matrix-chat/verification", type: "POST",
+                        contentType: "application/json", data: JSON.stringify(body),
+                    });
+                };
+                var vlClearTimers = function() {
+                    if(vlListTimer) { clearInterval(vlListTimer); vlListTimer = null; }
+                    if(vlTickTimer) { clearInterval(vlTickTimer); vlTickTimer = null; }
+                    if(vlDetailTimer) { clearInterval(vlDetailTimer); vlDetailTimer = null; }
+                };
+                var vlDur = function(ms) {
+                    var s = Math.max(0, Math.round(ms / 1000));
+                    if(s < 60) { return s + "s"; }
+                    var m = Math.floor(s / 60), r = s % 60;
+                    return m + "m " + (r < 10 ? "0" : "") + r + "s";
+                };
+                var vlState = function(icon, color, html) {
+                    $("#matrix-vl-d-state").html('<i class="fa ' + icon + '" style="color:' + color + ';"></i><span>' + html + '</span>');
+                };
+
+                var vlTick = function() {
+                    var now = Date.now();
+                    $("#matrix-vl-items .matrix-vl-item").each(function() {
+                        var $it = $(this);
+                        var seen = parseInt($it.attr("data-seen"), 10);
+                        var expires = $it.attr("data-expires");
+                        $it.find(".matrix-vl-age").text(isNaN(seen) ? "" : "age " + vlDur(now - seen));
+                        if(expires) {
+                            var left = parseInt(expires, 10) - now;
+                            $it.find(".matrix-vl-exp").text(left > 0 ? "expires in " + vlDur(left) : "expired");
+                        }
+                    });
+                };
+                var vlRenderList = function(data) {
+                    if(data.result !== "ok") {
+                        $("#matrix-vl-items").html('<div class="matrix-vl-empty">' + vlEsc(data.message) + '</div>');
+                        $("#matrix-vl-empty,#matrix-vl-more").hide();
+                        return;
+                    }
+                    var now = Date.now();
+                    var $items = $("#matrix-vl-items").empty();
+                    (data.verifications || []).forEach(function(v) {
+                        var typeLabel = v.type === "room" ? "Room verification" : "Device verification";
+                        var sub = "from " + vlEsc(v.userId || "unknown");
+                        if(v.type === "device" && v.deviceId) { sub += " &middot; device " + vlEsc(v.deviceId); }
+                        else if(v.type === "room" && v.roomId) { sub += " &middot; in room " + vlEsc(v.roomId); }
+                        if(v.isSelfVerification) { sub += " &middot; your own session"; }
+                        $items.append($('<div class="matrix-vl-item">')
+                            .attr("data-vid", v.verificationId)
+                            .attr("data-seen", now - (v.ageMs || 0))
+                            .attr("data-expires", (v.expiresInMs != null) ? (now + v.expiresInMs) : "")
+                            .html('<div class="matrix-vl-item-l"><div class="matrix-vl-item-title">' + vlEsc(typeLabel) + '</div>'
+                                + '<div class="matrix-vl-item-sub">' + sub + '</div></div>'
+                                + '<div class="matrix-vl-item-r"><div class="matrix-vl-age"></div>'
+                                + '<div class="matrix-vl-exp"></div></div>'));
+                    });
+                    $("#matrix-vl-empty").toggle(!(data.verifications || []).length);
+                    if(data.hidden > 0) {
+                        $("#matrix-vl-more").text(data.hidden + " older request" + (data.hidden === 1 ? "" : "s") + " hidden.").show();
+                    } else {
+                        $("#matrix-vl-more").hide();
+                    }
+                    vlTick();
+                };
+                var vlLoadList = function() {
+                    vlCall({ id: vlId(), action: "list" })
+                        .done(vlRenderList)
+                        .fail(function() { vlRenderList({ result: "error", message: "Request failed — is Node-RED still running?" }); });
+                };
+                var vlShowList = function() {
+                    vlClearTimers();
+                    $("#matrix-vl-overlay").data("vlConfirmed", false);
+                    $("#matrix-vl-detailview").hide();
+                    $("#matrix-vl-listview").show();
+                    $("#matrix-vl-back,#matrix-vl-cancel").hide();
+                    $("#matrix-vl-items").html('<div class="matrix-vl-empty">Loading…</div>');
+                    $("#matrix-vl-empty,#matrix-vl-more").hide();
+                    vlLoadList();
+                    vlListTimer = setInterval(vlLoadList, 5000);
+                    vlTickTimer = setInterval(vlTick, 1000);
+                };
+
+                var vlRenderSas = function(sas) {
+                    var $sas = $("#matrix-vl-d-sas").empty();
+                    if(sas.emoji && sas.emoji.length) {
+                        sas.emoji.forEach(function(pair) {
+                            $sas.append('<div class="matrix-vl-emoji"><div class="e">' + vlEsc(pair[0])
+                                + '</div><div class="n">' + vlEsc(pair[1]) + '</div></div>');
+                        });
+                    } else if(sas.decimal) {
+                        $sas.append('<div style="font-size:24px;font-family:monospace;">' + vlEsc(sas.decimal.join("  ")) + '</div>');
+                    }
+                };
+                var vlRenderDetail = function(v) {
+                    var typeLabel = v.type === "room" ? "Room verification" : "Device verification";
+                    var head = vlEsc(typeLabel);
+                    if(v.userId) { head += " &mdash; " + vlEsc(v.userId); }
+                    if(v.deviceId) { head += " (device " + vlEsc(v.deviceId) + ")"; }
+                    $("#matrix-vl-d-head").html(head);
+
+                    if(v.phase === "done") {
+                        vlClearTimers();
+                        vlState("fa-check-circle", "#3a9a4e", "<b>Verified.</b> This session is now verified.");
+                        $("#matrix-vl-d-sas,#matrix-vl-d-actions").hide();
+                        $("#matrix-vl-cancel").hide();
+                        return;
+                    }
+                    if(v.phase === "cancelled") {
+                        vlClearTimers();
+                        var why = v.cancellationCode ? (" (" + vlEsc(v.cancellationCode) + ")") : "";
+                        vlState("fa-times-circle", "#c9302c", "Verification was cancelled" + why + ".");
+                        $("#matrix-vl-d-sas,#matrix-vl-d-actions").hide();
+                        $("#matrix-vl-cancel").hide();
+                        return;
+                    }
+                    if(v.phase === "gone") {
+                        vlClearTimers();
+                        vlState("fa-exclamation-triangle", "#888", "This verification is no longer available.");
+                        $("#matrix-vl-d-sas,#matrix-vl-d-actions").hide();
+                        $("#matrix-vl-cancel").hide();
+                        return;
+                    }
+                    if($("#matrix-vl-overlay").data("vlConfirmed")) {
+                        $("#matrix-vl-d-sas,#matrix-vl-d-actions").hide();
+                        vlState("fa-spinner fa-spin", "#888", "Waiting for the other device to confirm…");
+                        return;
+                    }
+                    if(v.sas && (v.sas.emoji || v.sas.decimal)) {
+                        vlState("fa-key", "#d18a1b", "Compare these emoji with the other device, then choose below.");
+                        vlRenderSas(v.sas);
+                        $("#matrix-vl-d-sas,#matrix-vl-d-actions").show();
+                        return;
+                    }
+                    $("#matrix-vl-d-sas,#matrix-vl-d-actions").hide();
+                    vlState("fa-spinner fa-spin", "#888", "Waiting for the verification to start…");
+                };
+                var vlPollDetail = function() {
+                    vlCall({ id: vlId(), action: "advance", verificationId: vlCurId() })
+                        .done(function(data) {
+                            if(data.result !== "ok") {
+                                vlState("fa-exclamation-triangle", "#c9302c", vlEsc(data.message));
+                                return;
+                            }
+                            vlRenderDetail(data.verification);
+                        })
+                        .fail(function() { vlState("fa-exclamation-triangle", "#c9302c", "Request failed — is Node-RED still running?"); });
+                };
+                var vlShowDetail = function(vid) {
+                    vlClearTimers();
+                    $("#matrix-vl-overlay").data("vlCurrentId", vid).data("vlConfirmed", false);
+                    $("#matrix-vl-listview").hide();
+                    $("#matrix-vl-detailview").show();
+                    $("#matrix-vl-d-sas,#matrix-vl-d-actions,#matrix-vl-d-result").hide();
+                    $("#matrix-vl-d-head").text("");
+                    vlState("fa-spinner fa-spin", "#888", "Starting verification…");
+                    $("#matrix-vl-back,#matrix-vl-cancel").show();
+                    vlPollDetail();
+                    vlDetailTimer = setInterval(vlPollDetail, 1500);
+                };
+
+                var vlClose = function() { vlClearTimers(); $("#matrix-vl-overlay").fadeOut(120); };
+
+                $("#matrix-vl-x,#matrix-vl-close").on("click", vlClose);
+                $("#matrix-vl-overlay").on("mousedown", function(e) { if(e.target === this) { vlClose(); } });
+                $(document).on("keydown.matrixvl", function(e) {
+                    if(e.key === "Escape" && $("#matrix-vl-overlay").is(":visible")) { vlClose(); }
+                });
+                $("#matrix-vl-back").on("click", vlShowList);
+                $("#matrix-vl-items").on("click", ".matrix-vl-item", function() {
+                    vlShowDetail($(this).attr("data-vid"));
+                });
+                $("#matrix-vl-cancel").on("click", function() {
+                    vlCall({ id: vlId(), action: "cancel", verificationId: vlCurId() }).always(vlPollDetail);
+                });
+                $("#matrix-vl-d-confirm").on("click", function() {
+                    $("#matrix-vl-overlay").data("vlConfirmed", true);
+                    $("#matrix-vl-d-sas,#matrix-vl-d-actions").hide();
+                    vlState("fa-spinner fa-spin", "#888", "Confirming…");
+                    vlCall({ id: vlId(), action: "confirm", verificationId: vlCurId() })
+                        .done(function(data) {
+                            if(data.result !== "ok") {
+                                $("#matrix-vl-overlay").data("vlConfirmed", false);
+                                vlState("fa-exclamation-triangle", "#c9302c", vlEsc(data.message));
+                                $("#matrix-vl-d-actions").show();
+                            }
+                        });
+                });
+                $("#matrix-vl-d-mismatch").on("click", function() {
+                    $("#matrix-vl-d-actions").hide();
+                    vlState("fa-spinner fa-spin", "#888", "Cancelling…");
+                    vlCall({ id: vlId(), action: "mismatch", verificationId: vlCurId() }).always(vlPollDetail);
+                });
+
+                $("#matrix-vl-overlay").data("vlShowListFn", vlShowList);
+                $("#matrix-vl-overlay").data("vlShowDetailFn", vlShowDetail);
+            }
+
+            $("#matrix-verification-list-btn").on("click", function() {
+                $("#matrix-vl-overlay").data("matrixNodeId", nodeId).fadeIn(120);
+                $("#matrix-vl-overlay").data("vlShowListFn")();
+            });
+
+            // --- Sessions (modal) ---
+            // Built once and reused; the node id is stored on the overlay.
+            if (!document.getElementById("matrix-ss-overlay")) {
+                $('<style>'
+                    + '.matrix-ss-overlay{position:fixed;inset:0;z-index:3000;display:none;background:rgba(0,0,0,.45);}'
+                    + '.matrix-ss-modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+                    + 'width:560px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;'
+                    + 'border-radius:6px;overflow:hidden;box-shadow:0 12px 44px rgba(0,0,0,.45);'
+                    + 'background:var(--red-ui-primary-background,#fff);color:var(--red-ui-primary-text-color,#2a2a2a);}'
+                    + '.matrix-ss-head{display:flex;justify-content:space-between;align-items:center;'
+                    + 'padding:12px 16px;font-size:15px;font-weight:bold;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border-bottom:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '.matrix-ss-x{cursor:pointer;font-size:20px;line-height:1;opacity:.55;}'
+                    + '.matrix-ss-x:hover{opacity:1;}'
+                    + '.matrix-ss-body{padding:14px 16px;overflow:auto;}'
+                    + '.matrix-ss-h{font-weight:bold;font-size:12px;text-transform:uppercase;'
+                    + 'letter-spacing:.04em;color:var(--red-ui-secondary-text-color,#888);margin:2px 0 8px;}'
+                    + '.matrix-ss-h.spaced{margin-top:20px;}'
+                    + '.matrix-ss-item{display:flex;align-items:center;gap:10px;padding:10px 12px;'
+                    + 'margin-bottom:8px;border-radius:5px;cursor:pointer;'
+                    + 'border:1px solid var(--red-ui-secondary-border-color,#ddd);'
+                    + 'background:var(--red-ui-secondary-background,#f7f7f7);}'
+                    + '.matrix-ss-item:hover{border-color:var(--red-ui-node-border,#999);}'
+                    + '.matrix-ss-item-l{flex:1;min-width:0;}'
+                    + '.matrix-ss-item-title{font-weight:bold;word-break:break-word;}'
+                    + '.matrix-ss-item-sub{font-size:12px;color:var(--red-ui-secondary-text-color,#888);'
+                    + 'margin-top:2px;word-break:break-word;}'
+                    + '.matrix-ss-shield{font-size:20px;width:22px;text-align:center;flex-shrink:0;}'
+                    + '.matrix-ss-box{display:flex;gap:10px;align-items:flex-start;margin:10px 0;'
+                    + 'padding:10px 12px;border-radius:4px;font-size:13px;line-height:1.45;}'
+                    + '.matrix-ss-box.ok{background:#e7f4ea;border:1px solid #8fcea5;color:#1e6b33;}'
+                    + '.matrix-ss-box.err{background:#fde7e9;border:1px solid #e8a0a8;color:#8a1f2b;}'
+                    + '.matrix-ss-box .fa{font-size:18px;margin-top:1px;}'
+                    + '.matrix-ss-details div{display:flex;font-size:13px;padding:5px 0;'
+                    + 'border-bottom:1px solid var(--red-ui-secondary-border-color,#eee);}'
+                    + '.matrix-ss-details .k{width:130px;flex-shrink:0;color:var(--red-ui-secondary-text-color,#888);}'
+                    + '.matrix-ss-details .v{word-break:break-all;}'
+                    + '.matrix-ss-empty,.matrix-ss-more{font-size:13px;'
+                    + 'color:var(--red-ui-secondary-text-color,#888);padding:6px 2px;}'
+                    + '.matrix-ss-removelink{color:#c9302c;cursor:pointer;font-weight:bold;}'
+                    + '.matrix-ss-result{margin-top:12px;padding:10px 12px;border-radius:4px;font-size:13px;}'
+                    + '.matrix-ss-result.ok{background:#e7f4ea;border:1px solid #8fcea5;color:#1e6b33;}'
+                    + '.matrix-ss-result.err{background:#fde7e9;border:1px solid #e8a0a8;color:#8a1f2b;}'
+                    + '.matrix-ss-foot{display:flex;align-items:center;gap:8px;padding:10px 16px;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border-top:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '</style>').appendTo("head");
+
+                $('<div id="matrix-ss-overlay" class="matrix-ss-overlay"><div class="matrix-ss-modal">'
+                    + '<div class="matrix-ss-head"><span><i class="fa fa-desktop"></i> Sessions</span>'
+                    + '<span class="matrix-ss-x" id="matrix-ss-x" title="Close">&times;</span></div>'
+                    + '<div class="matrix-ss-body">'
+                    + '<div id="matrix-ss-listview">'
+                    + '<div class="matrix-ss-h">Current session</div>'
+                    + '<div id="matrix-ss-current"></div>'
+                    + '<div id="matrix-ss-currentmsg"></div>'
+                    + '<div class="matrix-ss-h spaced">Other sessions</div>'
+                    + '<div id="matrix-ss-others"></div>'
+                    + '<div id="matrix-ss-others-empty" class="matrix-ss-empty" style="display:none;">No other sessions.</div>'
+                    + '<div id="matrix-ss-more" class="matrix-ss-more" style="display:none;"></div>'
+                    + '</div>'
+                    + '<div id="matrix-ss-detailview" style="display:none;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">'
+                    + '<div id="matrix-ss-d-name" style="font-size:15px;font-weight:bold;word-break:break-word;"></div>'
+                    + '<button type="button" class="red-ui-button" id="matrix-ss-d-rename">Rename</button></div>'
+                    + '<div id="matrix-ss-d-status"></div>'
+                    + '<div class="matrix-ss-h spaced">Session details</div>'
+                    + '<div id="matrix-ss-d-details" class="matrix-ss-details"></div>'
+                    + '<div id="matrix-ss-d-verifywrap" style="display:none;margin-top:14px;">'
+                    + '<button type="button" class="red-ui-button" id="matrix-ss-d-verify">Verify this session</button></div>'
+                    + '<div id="matrix-ss-d-removewrap" style="display:none;margin-top:16px;">'
+                    + '<span class="matrix-ss-removelink" id="matrix-ss-d-removelink">Remove this session</span>'
+                    + '<div id="matrix-ss-d-removeconfirm" style="display:none;margin-top:8px;">'
+                    + '<div style="background:#fdf3e7;border:1px solid #f0c36d;color:#7a5b16;border-radius:4px;'
+                    + 'padding:8px 10px;font-size:13px;margin-bottom:8px;">Removing a session signs it out. '
+                    + 'Enter the account password to confirm.</div>'
+                    + '<input type="password" id="matrix-ss-d-password" placeholder="Account password" '
+                    + 'style="width:100%;box-sizing:border-box;padding:7px 9px;border-radius:4px;'
+                    + 'border:1px solid var(--red-ui-form-input-border-color,#ccc);'
+                    + 'background:var(--red-ui-form-input-background,#fff);color:var(--red-ui-primary-text-color,#2a2a2a);">'
+                    + '<div style="text-align:right;margin-top:8px;"><button type="button" class="red-ui-button" '
+                    + 'id="matrix-ss-d-removeconfirmbtn">Confirm removal</button></div>'
+                    + '</div></div>'
+                    + '<div id="matrix-ss-d-result" class="matrix-ss-result" style="display:none;"></div>'
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="matrix-ss-foot">'
+                    + '<button type="button" class="red-ui-button" id="matrix-ss-back" style="display:none;">&larr; Back</button>'
+                    + '<span style="flex:1;"></span>'
+                    + '<button type="button" class="red-ui-button" id="matrix-ss-close">Close</button>'
+                    + '</div></div></div>').appendTo(document.body);
+
+                var ssEsc = function(s) { return $("<div>").text(s == null ? "" : String(s)).html(); };
+                var ssId = function() { return $("#matrix-ss-overlay").data("matrixNodeId"); };
+                var ssCall = function(body) {
+                    return $.ajax({
+                        url: "matrix-chat/sessions", type: "POST",
+                        contentType: "application/json", data: JSON.stringify(body),
+                    });
+                };
+                var ssRelative = function(ts) {
+                    if(!ts) { return "activity unknown"; }
+                    var days = Math.floor((Date.now() - ts) / 86400000);
+                    if(days <= 0) { return "active today"; }
+                    if(days === 1) { return "active yesterday"; }
+                    if(days < 90) { return "active " + days + " days ago"; }
+                    return "inactive for 90+ days";
+                };
+                var ssFullDate = function(ts) {
+                    return ts ? new Date(ts).toLocaleString() : "unknown";
+                };
+                var ssShield = function(verified) {
+                    return '<i class="fa fa-shield matrix-ss-shield" style="color:'
+                        + (verified ? '#3a9a4e' : '#c9302c') + ';" title="'
+                        + (verified ? 'Verified' : 'Not verified') + '"></i>';
+                };
+                var ssCard = function(d, isCurrent) {
+                    var sub = (d.verified ? 'Verified' : 'Not verified')
+                        + ' · ' + ssRelative(d.lastSeenTs)
+                        + (d.lastSeenIp ? (' · ' + d.lastSeenIp) : '');
+                    return $('<div class="matrix-ss-item">')
+                        .data("device", d).data("isCurrent", isCurrent)
+                        .html(ssShield(d.verified)
+                            + '<div class="matrix-ss-item-l"><div class="matrix-ss-item-title">'
+                            + ssEsc(d.displayName || d.deviceId) + '</div>'
+                            + '<div class="matrix-ss-item-sub">' + ssEsc(sub) + '</div></div>'
+                            + '<i class="fa fa-angle-right" style="opacity:.5;"></i>');
+                };
+                var ssResult = function(ok, text) {
+                    $("#matrix-ss-d-result").removeClass("ok err").addClass(ok ? "ok" : "err").text(text).show();
+                };
+                var ssRenderList = function(data) {
+                    if(data.result !== "ok") {
+                        $("#matrix-ss-current").html('<div class="matrix-ss-empty">' + ssEsc(data.message) + '</div>');
+                        $("#matrix-ss-currentmsg,#matrix-ss-others").empty();
+                        $("#matrix-ss-others-empty,#matrix-ss-more").hide();
+                        return;
+                    }
+                    $("#matrix-ss-current").empty().append(ssCard(data.current, true));
+                    $("#matrix-ss-currentmsg").html(data.current.verified
+                        ? '<div class="matrix-ss-box ok"><i class="fa fa-shield"></i><div><b>Verified session</b><br>'
+                            + 'This session is cross-signed and ready for secure messaging.</div></div>'
+                        : '<div class="matrix-ss-box err"><i class="fa fa-shield"></i><div><b>Not verified</b><br>'
+                            + 'This session is not cross-signed. Use the Set up secure backup &amp; cross-signing '
+                            + 'button to verify it.</div></div>');
+                    var $others = $("#matrix-ss-others").empty();
+                    (data.others || []).forEach(function(d) { $others.append(ssCard(d, false)); });
+                    $("#matrix-ss-others-empty").toggle(!(data.others || []).length);
+                    if(data.hidden > 0) {
+                        $("#matrix-ss-more").text(data.hidden + " more session" + (data.hidden === 1 ? "" : "s") + " hidden.").show();
+                    } else {
+                        $("#matrix-ss-more").hide();
+                    }
+                };
+                var ssShowList = function() {
+                    $("#matrix-ss-detailview").hide();
+                    $("#matrix-ss-listview").show();
+                    $("#matrix-ss-back").hide();
+                    $("#matrix-ss-current").html('<div class="matrix-ss-empty">Loading…</div>');
+                    $("#matrix-ss-currentmsg,#matrix-ss-others").empty();
+                    $("#matrix-ss-others-empty,#matrix-ss-more").hide();
+                    ssCall({ id: ssId(), action: "list" })
+                        .done(ssRenderList)
+                        .fail(function() { ssRenderList({ result: "error", message: "Request failed — is Node-RED still running?" }); });
+                };
+                var ssDetailRow = function(k, v) {
+                    return '<div><span class="k">' + ssEsc(k) + '</span><span class="v">' + ssEsc(v) + '</span></div>';
+                };
+                var ssShowDetail = function(d, isCurrent) {
+                    $("#matrix-ss-overlay").data("ssDevice", d).data("ssIsCurrent", isCurrent);
+                    $("#matrix-ss-listview").hide();
+                    $("#matrix-ss-detailview").show();
+                    $("#matrix-ss-back").show();
+                    $("#matrix-ss-d-result,#matrix-ss-d-removeconfirm").hide();
+                    $("#matrix-ss-d-name").text(d.displayName || d.deviceId);
+                    $("#matrix-ss-d-status").html(d.verified
+                        ? '<div class="matrix-ss-box ok"><i class="fa fa-shield"></i><div><b>Verified session</b><br>'
+                            + 'This session is ready for secure messaging.</div></div>'
+                        : '<div class="matrix-ss-box err"><i class="fa fa-shield"></i><div><b>Not verified</b><br>'
+                            + (isCurrent
+                                ? 'This session is not cross-signed. Use the Set up secure backup &amp; cross-signing button to verify it.'
+                                : 'Verify this session to confirm it is trusted.')
+                            + '</div></div>');
+                    $("#matrix-ss-d-details").html(
+                        ssDetailRow("Session ID", d.deviceId)
+                        + ssDetailRow("Last activity", ssFullDate(d.lastSeenTs))
+                        + ssDetailRow("IP address", d.lastSeenIp || "unknown"));
+                    $("#matrix-ss-d-verifywrap").toggle(!isCurrent && !d.verified);
+                    $("#matrix-ss-d-removewrap").toggle(!isCurrent);
+                };
+                var ssClose = function() { $("#matrix-ss-overlay").fadeOut(120); };
+
+                $("#matrix-ss-x,#matrix-ss-close").on("click", ssClose);
+                $("#matrix-ss-overlay").on("mousedown", function(e) { if(e.target === this) { ssClose(); } });
+                $(document).on("keydown.matrixss", function(e) {
+                    if(e.key === "Escape" && $("#matrix-ss-overlay").is(":visible")) { ssClose(); }
+                });
+                $("#matrix-ss-back").on("click", ssShowList);
+                $("#matrix-ss-current,#matrix-ss-others").on("click", ".matrix-ss-item", function() {
+                    ssShowDetail($(this).data("device"), $(this).data("isCurrent"));
+                });
+                $("#matrix-ss-d-rename").on("click", function() {
+                    var d = $("#matrix-ss-overlay").data("ssDevice");
+                    var name = prompt("Session display name:", d.displayName || "");
+                    if(name === null) { return; }
+                    ssCall({ id: ssId(), action: "rename", deviceId: d.deviceId, displayName: name })
+                        .done(function(r) {
+                            if(r.result !== "ok") { ssResult(false, r.message); return; }
+                            d.displayName = name;
+                            $("#matrix-ss-d-name").text(name || d.deviceId);
+                            ssResult(true, "Session renamed.");
+                        })
+                        .fail(function() { ssResult(false, "Request failed."); });
+                });
+                $("#matrix-ss-d-verify").on("click", function() {
+                    var d = $("#matrix-ss-overlay").data("ssDevice");
+                    $("#matrix-ss-d-result").removeClass("ok err").html('<i class="fa fa-spinner fa-spin"></i> Starting verification…').show();
+                    ssCall({ id: ssId(), action: "verify", deviceId: d.deviceId })
+                        .done(function(r) {
+                            if(r.result !== "ok" || !r.verificationId) {
+                                ssResult(false, r.message || "Could not start verification.");
+                                return;
+                            }
+                            // hand off to the verification modal's detail view
+                            $("#matrix-ss-overlay").fadeOut(120);
+                            $("#matrix-vl-overlay").data("matrixNodeId", ssId()).fadeIn(120);
+                            $("#matrix-vl-overlay").data("vlShowDetailFn")(r.verificationId);
+                        })
+                        .fail(function() { ssResult(false, "Request failed."); });
+                });
+                $("#matrix-ss-d-removelink").on("click", function() {
+                    $("#matrix-ss-d-password").val("");
+                    $("#matrix-ss-d-removeconfirm").show();
+                });
+                $("#matrix-ss-d-removeconfirmbtn").on("click", function() {
+                    var d = $("#matrix-ss-overlay").data("ssDevice");
+                    $("#matrix-ss-d-result").removeClass("ok err").html('<i class="fa fa-spinner fa-spin"></i> Removing session…').show();
+                    ssCall({ id: ssId(), action: "remove", deviceId: d.deviceId, password: $("#matrix-ss-d-password").val() })
+                        .done(function(r) {
+                            if(r.result !== "ok") { ssResult(false, r.message); return; }
+                            ssShowList();
+                        })
+                        .fail(function() { ssResult(false, "Request failed."); });
+                });
+
+                $("#matrix-ss-overlay").data("ssShowListFn", ssShowList);
+            }
+
+            $("#matrix-sessions-btn").on("click", function() {
+                $("#matrix-ss-overlay").data("matrixNodeId", nodeId).fadeIn(120);
+                $("#matrix-ss-overlay").data("ssShowListFn")();
+            });
+
             // --- Login: fetch a fresh access token & device id ---
             $("#matrix-login-btn").on("click", function() {
                 function prettyPrintJson(json) {
@@ -371,6 +904,24 @@
     <div class="form-tips" style="margin-bottom: 12px;">
         Sets up cross-signing so the bot's own device shows as verified. The server
         configuration must be deployed and connected first.
+    </div>
+
+    <div class="form-row">
+        <label><i class="fa fa-check-circle"></i> Verification</label>
+        <button type="button" class="red-ui-button" id="matrix-verification-list-btn">Pending verification requests</button>
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Review and complete incoming device verification requests without building a flow.
+        The server configuration must be deployed and connected first.
+    </div>
+
+    <div class="form-row">
+        <label><i class="fa fa-desktop"></i> Sessions</label>
+        <button type="button" class="red-ui-button" id="matrix-sessions-btn">Manage sessions</button>
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        View the account's logged-in sessions, verify them, or remove ones you don't recognize.
+        The server configuration must be deployed and connected first.
     </div>
 </script>
 
