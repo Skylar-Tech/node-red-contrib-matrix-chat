@@ -227,6 +227,11 @@
                 <dt>msg.content <span class="property-type">object</span></dt>
                 <dd>the message's content object</dd>
             </dl>
+
+            <dl class="message-properties">
+                <dt>msg.headers <span class="property-type">object | null</span></dt>
+                <dd>for media events, includes auth headers (for example <code>Authorization: Bearer ...</code>) used by authed media endpoints.</dd>
+            </dl>
         </li>
 
         <li><code>msg.type</code> == '<strong>m.text</strong>'

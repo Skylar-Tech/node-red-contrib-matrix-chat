@@ -11,13 +11,13 @@ Join our public Matrix room for help: [#node-red-contrib-matrix-chat:skylar.tech
 
 Supported functionality in this package includes:
 
-- **End-to-end encryption (E2EE)**
-  - [Work in progress](#end-to-end-encryption-notes)
-  - Alternative: Use [Pantalaimon](https://github.com/matrix-org/pantalaimon) for E2EE key synchronization across sessions
+- **End-to-end encryption (E2EE)** — send and receive encrypted messages (see the [encryption notes](#end-to-end-encryption-notes))
+- **Cross-signing & secure backup** — interactive setup from the server config node so the bot's own device shows as verified
+- **Device verification** — flow-driven SAS (emoji) verification via the `matrix-verification` and `matrix-verification-action` nodes
 - **Receive events** from rooms: Messages, reactions, images, audio, locations, files, encrypted or unencrypted
 - **Fetch/modify room state**: Update room settings
 - **Paginate room history**
-- **Send files** (encryption support for files coming soon)
+- **Send files** to rooms, encrypted or unencrypted
 - **Send/edit messages** (supports plain text and HTML formats)
 - **Send typing notifications**
 - **Delete events** (messages, reactions, etc.)
@@ -32,6 +32,8 @@ Supported functionality in this package includes:
 These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).
 
 ### Installing
+
+**Requires Node.js 22 or newer** (this is a requirement of the bundled `matrix-js-sdk`).
 
 Install through Node-RED's UI by searching for `node-red-contrib-matrix-chat`, or use the following command inside your Node-RED directory:
 
@@ -51,11 +53,12 @@ You're not limited to just the nodes we've created. Enable global access in your
 
 ### End-to-End Encryption Notes
 
-- This module doesn't handle encryption key synchronization between devices. It’s recommended to use the bot exclusively in Node-RED to prevent issues with E2EE messages.
-- **Storage:** Keys for E2EE are saved in a folder called `matrix-client-storage` within your Node-RED directory. Back up this folder regularly! If lost, you won’t be able to decrypt messages from E2EE rooms.
+- E2EE uses the Rust crypto stack from `matrix-js-sdk`. The first time a bot starts after upgrading from an older version, any existing (legacy libolm) crypto state is migrated automatically.
+- **Storage:** E2EE state is saved in a folder called `matrix-client-storage` within your Node-RED directory. Each account's Rust crypto store is persisted there as `rust-crypto-store.v8` (snapshotted on shutdown and every 5 minutes). Back up this folder regularly! If lost, you won’t be able to decrypt messages from E2EE rooms.
 - To move your bot to a different installation, migrate this folder and ensure the old and new clients don't run simultaneously.
-
-Interested in helping? Contributions to finalize E2EE support are welcome!
+- It’s simplest to dedicate the account to the bot and run it only within Node-RED. The account can also be signed in elsewhere — if so, verify those sessions against the bot (see below) so they trust each other and share keys.
+- **Cross-signing & secure backup:** open the server config node and use the **Set up secure backup & cross-signing** button. It checks the account and lets you unlock an existing secure backup with its recovery key, or create a fresh one — after which the bot's own device is cross-signed and shows as verified to others.
+- **Device verification:** the `matrix-verification` node emits verification requests and phase changes, and `matrix-verification-action` accepts, starts, confirms, or cancels them — so you can build your own approval flow (e.g. emailing the SAS emoji for a human to confirm). See the [device verification example](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#device-verification).
 
 ### Registering a User
 

@@ -431,6 +431,27 @@ Downloads received files/images. If the file is encrypted, it will decrypt it fo
 
 </details>
 
+### Device Verification
+
+<details>
+<summary>Handle device verification (SAS / emoji)</summary>
+
+[View JSON](device-verification-flow.json)
+
+An end-to-end example of interactive device verification. The `matrix-verification` node emits every verification request and phase change; the flow routes by phase, automatically **accepts** incoming requests and **starts SAS**, then surfaces the SAS emoji so a human can compare it. Inject nodes let you **confirm** or **reject** the match, and there are paths to have the bot **request** verification of a specific user's device, or a user in a room.
+
+Requires end-to-end encryption to be enabled on the server config node. For the bot's own device to be trusted by others, also set up cross-signing via the **Set up secure backup & cross-signing** button on the server config node.
+
+**Instructions:**
+
+1. Import the flow and set the Matrix server config on each matrix node.
+2. Replace the `@CHANGE_ME:example.org` / `CHANGE_ME` placeholders in the "Verify a user" inject nodes if you want to use the bot-initiated paths.
+3. To verify the bot from another client, start a verification with it, watch the debug sidebar for the `sas` event, compare the emoji, then click the **Confirm SAS match** inject.
+
+![device-verification-flow.png](device-verification-flow.png)
+
+</details>
+
 ### Deprecated
 
 <details>

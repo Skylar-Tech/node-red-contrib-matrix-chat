@@ -31,17 +31,232 @@
             accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: false },
             url: { type: "text", required: true },
+            password: { type: "password", required: false },
         },
         defaults: {
             name: { value: null },
             autoAcceptRoomInvites: { value: true },
             enableE2ee: { type: "checkbox", value: true },
             global: { type: "checkbox", value: true },
-            allowUnknownDevices: { type: "checkbox", value: false }
+            allowUnknownDevices: { type: "checkbox", value: true }
         },
         icon: "matrix.png",
         label: function() {
             return this.name || undefined;
+        },
+        oneditprepare: function() {
+            const nodeId = this.id;
+
+            // --- Secure backup / cross-signing setup (modal dialog) ---
+            // The modal is built once and reused across editor sessions; the
+            // current node id is stored on the overlay so its handlers target
+            // whichever server config node is being edited.
+            if (!document.getElementById("matrix-sb-overlay")) {
+                $('<style>'
+                    + '.matrix-sb-overlay{position:fixed;inset:0;z-index:3000;display:none;background:rgba(0,0,0,.45);}'
+                    + '.matrix-sb-modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+                    + 'width:540px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;'
+                    + 'border-radius:6px;overflow:hidden;box-shadow:0 12px 44px rgba(0,0,0,.45);'
+                    + 'background:var(--red-ui-primary-background,#fff);color:var(--red-ui-primary-text-color,#2a2a2a);}'
+                    + '.matrix-sb-head{display:flex;justify-content:space-between;align-items:center;'
+                    + 'padding:12px 16px;font-size:15px;font-weight:bold;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border-bottom:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '.matrix-sb-x{cursor:pointer;font-size:20px;line-height:1;opacity:.55;}'
+                    + '.matrix-sb-x:hover{opacity:1;}'
+                    + '.matrix-sb-body{padding:16px;overflow:auto;}'
+                    + '.matrix-sb-state{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;}'
+                    + '.matrix-sb-section{margin-top:18px;}'
+                    + '.matrix-sb-section label{display:block;font-weight:bold;margin-bottom:5px;}'
+                    + '.matrix-sb-section input{width:100%;box-sizing:border-box;padding:7px 9px;border-radius:4px;'
+                    + 'border:1px solid var(--red-ui-form-input-border-color,#ccc);'
+                    + 'background:var(--red-ui-form-input-background,#fff);color:var(--red-ui-primary-text-color,#2a2a2a);}'
+                    + '.matrix-sb-hint{color:var(--red-ui-secondary-text-color,#888);font-size:12px;margin-top:5px;}'
+                    + '.matrix-sb-actions{margin-top:12px;text-align:right;}'
+                    + '.matrix-sb-warn{background:#fdf3e7;border:1px solid #f0c36d;color:#7a5b16;'
+                    + 'border-radius:4px;padding:9px 11px;font-size:13px;margin-bottom:12px;}'
+                    + '.matrix-sb-result{margin-top:18px;padding:11px 13px;border-radius:4px;font-size:13px;white-space:pre-wrap;}'
+                    + '.matrix-sb-result.ok{background:#e7f4ea;border:1px solid #8fcea5;color:#1e6b33;}'
+                    + '.matrix-sb-result.err{background:#fde7e9;border:1px solid #e8a0a8;color:#8a1f2b;}'
+                    + '.matrix-sb-key{margin-top:9px;padding:9px;border-radius:4px;font-family:monospace;'
+                    + 'font-size:13px;word-break:break-all;background:rgba(127,127,127,.16);border:1px dashed #999;}'
+                    + '.matrix-sb-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;'
+                    + 'background:var(--red-ui-secondary-background,#f3f3f3);'
+                    + 'border-top:1px solid var(--red-ui-secondary-border-color,#ddd);}'
+                    + '</style>').appendTo("head");
+
+                $('<div id="matrix-sb-overlay" class="matrix-sb-overlay"><div class="matrix-sb-modal">'
+                    + '<div class="matrix-sb-head"><span><i class="fa fa-shield"></i> Secure Backup &amp; Cross-signing</span>'
+                    + '<span class="matrix-sb-x" id="matrix-sb-x" title="Close">&times;</span></div>'
+                    + '<div class="matrix-sb-body">'
+                    + '<div class="matrix-sb-state" id="matrix-sb-state"></div>'
+                    + '<div class="matrix-sb-section" id="matrix-sb-unlock" style="display:none;">'
+                    + '<label>Recovery key or passphrase</label>'
+                    + '<input type="text" id="matrix-sb-recoverykey" placeholder="EsTx xxxx xxxx xxxx ...">'
+                    + '<div class="matrix-sb-hint">The recovery key created when secure backup / key storage was first set up on this account.</div>'
+                    + '<div class="matrix-sb-actions"><button type="button" class="red-ui-button" id="matrix-sb-unlock-btn">Unlock &amp; set up cross-signing</button></div>'
+                    + '</div>'
+                    + '<div class="matrix-sb-section" id="matrix-sb-reset" style="display:none;">'
+                    + '<div class="matrix-sb-warn">Resetting creates new cross-signing keys and a new recovery key, replacing the existing ones. Other sessions that trusted the old identity will need to be re-verified.</div>'
+                    + '<label>Account password</label>'
+                    + '<input type="password" id="matrix-sb-password" placeholder="Account password">'
+                    + '<div class="matrix-sb-actions"><button type="button" class="red-ui-button" id="matrix-sb-reset-btn">Reset cross-signing &amp; secure backup</button></div>'
+                    + '</div>'
+                    + '<div class="matrix-sb-result" id="matrix-sb-result" style="display:none;"></div>'
+                    + '</div>'
+                    + '<div class="matrix-sb-foot">'
+                    + '<button type="button" class="red-ui-button" id="matrix-sb-reset-toggle" style="display:none;">Reset instead…</button>'
+                    + '<button type="button" class="red-ui-button" id="matrix-sb-close">Close</button>'
+                    + '</div></div></div>').appendTo(document.body);
+
+                var sbEsc = function(s) { return $("<div>").text(s == null ? "" : String(s)).html(); };
+                var sbClose = function() { $("#matrix-sb-overlay").fadeOut(120); };
+                var sbId = function() { return $("#matrix-sb-overlay").data("matrixNodeId"); };
+                var sbBtns = function(disabled) { $("#matrix-sb-unlock-btn,#matrix-sb-reset-btn").prop("disabled", disabled); };
+                var sbCall = function(body) {
+                    return $.ajax({
+                        url: "matrix-chat/secure-backup", type: "POST",
+                        contentType: "application/json", data: JSON.stringify(body),
+                    });
+                };
+                var sbState = function(icon, color, html) {
+                    $("#matrix-sb-state").html('<i class="fa ' + icon + '" style="color:' + color + ';font-size:18px;"></i><span>' + html + '</span>');
+                };
+                var sbResult = function(ok, text, key) {
+                    var h = sbEsc(text);
+                    if (key) { h += '<div class="matrix-sb-key">' + sbEsc(key) + '</div>'; }
+                    $("#matrix-sb-result").removeClass("ok err").addClass(ok ? "ok" : "err").html(h).show();
+                };
+                var sbStatus = function() {
+                    $("#matrix-sb-unlock,#matrix-sb-reset,#matrix-sb-result,#matrix-sb-reset-toggle").hide();
+                    sbState("fa-spinner fa-spin", "#888", "Checking the account…");
+                    sbCall({ id: sbId(), action: "status" }).done(function(data) {
+                        if (data.result !== "ok") {
+                            sbState("fa-exclamation-triangle", "#c9302c", "Could not check the account.");
+                            sbResult(false, data.message || "Unknown error");
+                            return;
+                        }
+                        if (data.crossSigningReady) {
+                            sbState("fa-check-circle", "#3a9a4e", "<b>Cross-signing is set up.</b> The bot's device is cross-signed.");
+                            $("#matrix-sb-reset-toggle").show();
+                        } else if (data.secretStorageExists) {
+                            sbState("fa-lock", "#d18a1b", "This account has an existing secure backup. Enter its recovery key to set up cross-signing for the bot.");
+                            $("#matrix-sb-recoverykey").val("");
+                            $("#matrix-sb-unlock,#matrix-sb-reset-toggle").show();
+                        } else {
+                            sbState("fa-shield", "#888", "No secure backup exists yet. Set one up to enable cross-signing.");
+                            $("#matrix-sb-password").val("");
+                            $("#matrix-sb-reset").show();
+                        }
+                        sbBtns(false);
+                    }).fail(function() {
+                        sbState("fa-exclamation-triangle", "#c9302c", "Request failed — is Node-RED still running?");
+                    });
+                };
+
+                $("#matrix-sb-x,#matrix-sb-close").on("click", sbClose);
+                $("#matrix-sb-overlay").on("mousedown", function(e) { if (e.target === this) { sbClose(); } });
+                $(document).on("keydown.matrixsb", function(e) {
+                    if (e.key === "Escape" && $("#matrix-sb-overlay").is(":visible")) { sbClose(); }
+                });
+                $("#matrix-sb-reset-toggle").on("click", function() {
+                    $(this).hide();
+                    $("#matrix-sb-password").val("");
+                    $("#matrix-sb-reset").show();
+                });
+                $("#matrix-sb-unlock-btn").on("click", function() {
+                    sbBtns(true);
+                    sbState("fa-spinner fa-spin", "#888", "Unlocking secure backup…");
+                    sbCall({ id: sbId(), action: "unlock", recoveryKey: $("#matrix-sb-recoverykey").val() })
+                        .done(function(data) {
+                            if (data.result !== "ok") {
+                                sbState("fa-lock", "#d18a1b", "Enter the recovery key to set up cross-signing.");
+                                sbResult(false, data.message); sbBtns(false); return;
+                            }
+                            $("#matrix-sb-unlock,#matrix-sb-reset,#matrix-sb-reset-toggle").hide();
+                            sbState("fa-check-circle", "#3a9a4e", "<b>Done.</b>");
+                            sbResult(true, data.message);
+                        })
+                        .fail(function() { sbResult(false, "Request failed — is Node-RED still running?"); sbBtns(false); });
+                });
+                $("#matrix-sb-reset-btn").on("click", function() {
+                    sbBtns(true);
+                    sbState("fa-spinner fa-spin", "#888", "Resetting cross-signing & secure backup…");
+                    sbCall({ id: sbId(), action: "reset", password: $("#matrix-sb-password").val() })
+                        .done(function(data) {
+                            if (data.result !== "ok") {
+                                sbState("fa-shield", "#d18a1b", "Enter the account password to reset.");
+                                sbResult(false, data.message); sbBtns(false); return;
+                            }
+                            $("#matrix-sb-unlock,#matrix-sb-reset,#matrix-sb-reset-toggle").hide();
+                            sbState("fa-check-circle", "#3a9a4e", "<b>Reset complete.</b>");
+                            sbResult(true, data.message, data.recoveryKey);
+                        })
+                        .fail(function() { sbResult(false, "Request failed — is Node-RED still running?"); sbBtns(false); });
+                });
+
+                // expose the status loader so per-session click handlers can call it
+                $("#matrix-sb-overlay").data("sbStatusFn", sbStatus);
+            }
+
+            $("#matrix-secure-backup-btn").on("click", function() {
+                $("#matrix-sb-overlay").data("matrixNodeId", nodeId).fadeIn(120);
+                $("#matrix-sb-overlay").data("sbStatusFn")();
+            });
+
+            // --- Login: fetch a fresh access token & device id ---
+            $("#matrix-login-btn").on("click", function() {
+                function prettyPrintJson(json) {
+                    try { return typeof json === 'object' ? JSON.stringify(json, null, 2) : json; }
+                    catch (error) { return json; }
+                }
+                let userId = $("#node-config-input-userId").val(),
+                    userPassword = $("#node-config-input-password").val(),
+                    serverUrl = $("#node-config-input-url").val();
+                if (!userId) { alert("User ID is required to fetch access token."); return; }
+                if (!userPassword) { alert("Password is required to fetch access token."); return; }
+                if (!serverUrl) { alert("Server URL is required to fetch access token."); return; }
+
+                $("#matrix-login-btn, #matrix-chat-login-error, #matrix-chat-login-success").hide();
+                $("#matrix-access-token-loader").show();
+                $.ajax({
+                    type: 'POST',
+                    url: 'matrix-chat/login',
+                    dataType: 'json',
+                    data: {
+                        'userId': userId,
+                        'password': userPassword,
+                        'baseUrl': serverUrl,
+                        'displayName': $("#node-config-input-deviceLabel").val(),
+                    }
+                }).then(
+                    function(data) {
+                        if (data.result && data.result === 'ok') {
+                            $("#matrix-chat-login-error").hide();
+                            $("#matrix-chat-login-success")
+                                .html("Login Successful! Auth Token and Device ID have been set below.")
+                                .show();
+                            $("#node-config-input-accessToken").val(data.token);
+                            $("#node-config-input-deviceId").val(data.device_id);
+                        } else if (data.result && data.result === 'error') {
+                            $("#matrix-chat-login-success").hide();
+                            $("#matrix-chat-login-error")
+                                .html(data.message ? ('Failed to login: <br />' + prettyPrintJson(data.message)) : 'Failed to login')
+                                .show();
+                        }
+                        $("#matrix-login-btn").show();
+                        $("#matrix-access-token-loader").hide();
+                    },
+                    function() {
+                        $("#matrix-chat-login-success").hide();
+                        $("#matrix-chat-login-error")
+                            .html("Failed to login due to server error communicating with Node-RED")
+                            .show();
+                        $("#matrix-login-btn").show();
+                        $("#matrix-access-token-loader").hide();
+                    }
+                );
+            });
         }
     });
 </script>
@@ -72,7 +287,10 @@
         <input type="password" placeholder="" id="node-config-input-password">
     </div>
     <div class="form-tips" style="margin-bottom: 12px;">
-        Password is never saved and is only used to fetch an access token using the button below.
+        Optional. Used to fetch an access token with the button below, and &mdash; if you
+        enable cross-signing &mdash; as a fallback when the homeserver requires the account
+        password to upload signing keys. If set, it is stored (encrypted) with the node's
+        credentials. Leave blank if you only want to use an access token.
     </div>
     <pre class="form-tips" id="matrix-chat-login-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;display:none;"></pre>
     <pre class="form-tips" id="matrix-chat-login-success" style="color: #155724;background-color: #d4edda;border-color: #c3e6cb;margin-bottom: 12px;display:none;"></pre>
@@ -145,88 +363,55 @@
             Allow sending messages to a room with unknown devices which have not been verified.
         </div>
     </div>
-    <script type="text/javascript">
-        $("#matrix-login-btn").on("click", function() {
-            function prettyPrintJson(json) {
-                try{
-                    return typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
-                }
-                catch (error){
-                    return json;
-                }
-            }
 
-            let userId = $("#node-config-input-userId").val(),
-                userPassword = $("#node-config-input-password").val(),
-                serverUrl = $("#node-config-input-url").val();
-
-            if(!userId) {
-                alert("User ID is required to fetch access token.");
-                return;
-            }
-            if(!userPassword) {
-                alert("Password is required to fetch access token.");
-                return;
-            }
-            if(!serverUrl) {
-                alert("Server URL is required to fetch access token.");
-                return;
-            }
-
-            $("#matrix-login-btn, #matrix-chat-login-error, #matrix-chat-login-success").hide();
-            $("#matrix-access-token-loader").show();
-            $.ajax({
-                type: 'POST',
-                url: 'matrix-chat/login',
-                dataType: 'json',
-                data: {
-                    'userId': userId,
-                    'password': userPassword,
-                    'baseUrl': serverUrl,
-                    'displayName': $("#node-config-input-deviceLabel").val(),
-                }
-            }).then(
-                function(data) {
-                    if(data.result && data.result === 'ok') {
-                        $("#matrix-chat-login-error").hide();
-                        $("#matrix-chat-login-success")
-                            .html("Login Successful! Auth Token and Device ID have been set below.")
-                            .show();
-
-                        $("#node-config-input-accessToken").val(data.token);
-                        $("#node-config-input-deviceId").val(data.device_id);
-                    } else if(data.result && data.result === 'error') {
-                        $("#matrix-chat-login-success").hide();
-                        $("#matrix-chat-login-error")
-                            .html(data.message ? ('Failed to login: <br />' + prettyPrintJson(data.message)) : 'Failed to login')
-                            .show();
-                    }
-                    $("#matrix-login-btn").show();
-                    $("#matrix-access-token-loader").hide();
-                }, function() {
-                    $("#matrix-chat-login-success").hide();
-                    $("#matrix-chat-login-error")
-                        .html("Failed to login due to server error communicating with Node-RED")
-                        .show();
-                    $("#matrix-login-btn").show();
-                    $("#matrix-access-token-loader").hide();
-                }
-            );
-        });
-    </script>
+    <div class="form-row">
+        <label><i class="fa fa-shield"></i> Secure Backup</label>
+        <button type="button" class="red-ui-button" id="matrix-secure-backup-btn">Set up secure backup &amp; cross-signing</button>
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Sets up cross-signing so the bot's own device shows as verified. The server
+        configuration must be deployed and connected first.
+    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-server-config">
     <h3>Details</h3>
     <p>Matrix client connection configuration</p>
 
+    <h3>Server URL</h3>
+    <p>
+        The URL of your homeserver. You can enter either the homeserver URL directly
+        (e.g. <code>https://matrix.example.org</code>) or the delegating domain
+        (e.g. <code>https://example.org</code>) &mdash; in the latter case the real
+        homeserver is resolved automatically via <code>.well-known</code> discovery.
+    </p>
+
     <h3>Setting up an account</h3>
     <div>
         <p>
-            You need an account for your client to use. If you are going to be using End-to-End Encryption you should generate the bot and only use it within Node-RED otherwise if you have other clients connected on the same user it could cause problems with e2ee (key sharing is currently not supported).
+            You need an account for your client to use. For End-to-End Encryption it is simplest to dedicate the account to the bot and run it only within Node-RED. The account may also be signed in on other clients &mdash; if so, verify those sessions against the bot (see <em>Cross-signing &amp; secure backup</em> below) so they trust each other and share keys.
         </p>
         <p>If you have access to the server directly you can use Shared Secret Registration as described <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#create-user-with-shared-secret-registration" target="_blank" style="text-decoration: underline;">here</a>.</p>
         <p>If this is a server you do not administrate/have access to follow these instructions:</p>
-        <ol><li>In a private/incognito browser window, open Element.</li><li>Log in to the account you want to get the access token for, such as the bot's account. <strong>Do not setup key storage</strong>.</li><li>Click on the bot's name in the top left corner then "Settings".</li><li>(Optional) Set your bot's display name and avatar.</li><li>Click the "Help &amp; About" tab (left side of the dialog).</li><li>Scroll to the bottom and click the <code>&lt;click to reveal&gt;</code> part of <code>Access Token: &lt;click to reveal&gt;</code>.</li><li>Copy your access token to a safe place, like the bot's configuration file.</li><li><strong>Do not log out.</strong> Instead, just close the window. If you used a private browsing session, you should be able to still use Element for your own account. Logging out deletes the access token from the server, making the bot unable to use it.</li></ol>
+        <ol><li>In a private/incognito browser window, open Element.</li><li>Log in to the account you want to get the access token for, such as the bot's account.</li><li>Click on the bot's name in the top left corner then "Settings".</li><li>(Optional) Set your bot's display name and avatar.</li><li>Click the "Help &amp; About" tab (left side of the dialog).</li><li>Scroll to the bottom and click the <code>&lt;click to reveal&gt;</code> part of <code>Access Token: &lt;click to reveal&gt;</code>.</li><li>Copy your access token to a safe place, like the bot's configuration file.</li><li><strong>Do not log out.</strong> Instead, just close the window. If you used a private browsing session, you should be able to still use Element for your own account. Logging out deletes the access token from the server, making the bot unable to use it.</li></ol>
+    </div>
+
+    <h3>Cross-signing &amp; secure backup</h3>
+    <div>
+        <p>
+            Use the <strong>Set up secure backup &amp; cross-signing</strong> button to set up
+            cross-signing so the bot's own device is verified. The server configuration must be
+            deployed and connected first; the button then checks the account and, interactively:
+        </p>
+        <ul>
+            <li>if the account already has a secure backup, lets you <strong>unlock</strong> it with its recovery key (or passphrase) and set up cross-signing for the bot;</li>
+            <li>otherwise (or on request) lets you <strong>reset</strong> cross-signing and secure backup, creating a new recovery key &mdash; this needs the account password.</li>
+        </ul>
+        <p>
+            To verify other devices interactively (SAS emoji), use the <code>matrix-verification</code>
+            node to receive verification requests and <code>matrix-verification-action</code> to
+            accept, start, confirm or cancel them. This lets you build your own approval flow
+            (for example emailing the emoji for a human to confirm).
+        </p>
     </div>
 </script>

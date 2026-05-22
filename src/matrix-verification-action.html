@@ -1,0 +1,126 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-verification-action',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        inputs: 1,
+        outputs: 2,
+        outputLabels: ["success", "error"],
+        align: 'right',
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            mode: { value: "accept" }
+        },
+        label: function() {
+            const labels = {
+                request: "Request verification",
+                accept: "Accept verification",
+                start: "Start SAS verification",
+                confirm: "Confirm SAS",
+                mismatch: "Reject SAS (mismatch)",
+                cancel: "Cancel verification"
+            };
+            return this.name || labels[this.mode] || "Verification Action";
+        },
+        paletteLabel: 'Verification Action'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-verification-action">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mode"><i class="fa fa-shield"></i> Action</label>
+        <select id="node-input-mode">
+            <option value="request">Request verification</option>
+            <option value="accept">Accept verification</option>
+            <option value="start">Start SAS verification</option>
+            <option value="confirm">Confirm SAS</option>
+            <option value="mismatch">Reject SAS (mismatch)</option>
+            <option value="cancel">Cancel verification</option>
+        </select>
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        The action can also be overridden per message with <code>msg.mode</code>.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-verification-action">
+    <h3>Details</h3>
+    <p>Acts on a Matrix device verification: request, accept, start, confirm or cancel it.</p>
+
+    <p>
+        This is the action counterpart to the <code>matrix-verification</code> node. The
+        <b>Action</b> set on the node decides what it does; it can also be overridden per
+        message with <code>msg.mode</code>. Every action except <b>Request verification</b>
+        operates on an existing verification identified by <code>msg.verificationId</code>
+        (as emitted by the <code>matrix-verification</code> node).
+    </p>
+    <p>
+        A typical SAS (emoji) flow: receive a <code>requested</code> event &rarr;
+        <b>Accept</b> &rarr; <b>Start SAS</b> &rarr; receive the <code>sas</code> event with
+        the emoji &rarr; have a human confirm &rarr; <b>Confirm SAS</b>.
+    </p>
+
+    <h3>Actions</h3>
+    <dl class="message-properties">
+        <dt>Request verification</dt>
+        <dd>Starts a new verification. With <code>msg.userId</code> + <code>msg.deviceId</code> it verifies a specific device; with <code>msg.userId</code> + <code>msg.topic</code> it verifies a user in that DM room; with neither it verifies the bot's own other devices.</dd>
+
+        <dt>Accept verification</dt>
+        <dd>Accepts an incoming verification request (moves it to the <code>ready</code> phase).</dd>
+
+        <dt>Start SAS verification</dt>
+        <dd>Begins SAS (emoji) verification. The emoji/decimal are delivered through the <code>matrix-verification</code> node as a <code>sas</code> phase event.</dd>
+
+        <dt>Confirm SAS</dt>
+        <dd>Confirms that the SAS emoji/decimal match. Call this once a human has verified the emoji.</dd>
+
+        <dt>Reject SAS (mismatch)</dt>
+        <dd>Declares that the SAS does not match, cancelling the verification.</dd>
+
+        <dt>Cancel verification</dt>
+        <dd>Cancels the verification request.</dd>
+    </dl>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.mode <span class="property-type">string</span></dt>
+        <dd>optional. Overrides the node's configured Action. One of <code>request</code>, <code>accept</code>, <code>start</code>, <code>confirm</code>, <code>mismatch</code>, <code>cancel</code>.</dd>
+
+        <dt>msg.verificationId <span class="property-type">string</span></dt>
+        <dd>required for every action except <code>request</code>. The id of the verification to act on, from the <code>matrix-verification</code> node.</dd>
+
+        <dt class="optional">msg.userId <span class="property-type">string</span></dt>
+        <dd>used by <code>request</code>: the user to verify.</dd>
+
+        <dt class="optional">msg.deviceId <span class="property-type">string</span></dt>
+        <dd>used by <code>request</code>: the specific device to verify (to-device verification).</dd>
+
+        <dt class="optional">msg.topic <span class="property-type">string</span></dt>
+        <dd>used by <code>request</code>: a DM room id, to verify a user in-room.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.verificationId <span class="property-type">string</span></dt>
+                <dd>the id of the verification that was acted on (or created, for <code>request</code>).</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

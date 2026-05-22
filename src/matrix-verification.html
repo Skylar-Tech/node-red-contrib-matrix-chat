@@ -1,0 +1,199 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-verification',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        inputs: 0,
+        outputs: 1,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            phaseRequested: { value: true },
+            phaseReady: { value: true },
+            phaseStarted: { value: true },
+            phaseSas: { value: true },
+            phaseDone: { value: true },
+            phaseCancelled: { value: true },
+            initiatedBy: { value: "any" },
+            verificationType: { value: "any" },
+            selfVerification: { value: "any" },
+            userFilter: { value: "" },
+            roomFilter: { value: "" }
+        },
+        label: function() {
+            return this.name || "Verification";
+        },
+        paletteLabel: 'Verification'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-verification">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server"></i> Matrix Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+
+    <div class="form-row" style="margin-left: 100px;margin-top:10px;font-weight:bold;">
+        Phase filter
+    </div>
+    <div class="form-tips" style="margin-bottom:6px;">Emit only the ticked phases.</div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-phaseRequested" style="width:auto;margin-left:125px;vertical-align:top" />
+        <label for="node-input-phaseRequested" style="width:auto">requested</label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-phaseReady" style="width:auto;margin-left:125px;vertical-align:top" />
+        <label for="node-input-phaseReady" style="width:auto">ready</label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-phaseStarted" style="width:auto;margin-left:125px;vertical-align:top" />
+        <label for="node-input-phaseStarted" style="width:auto">started</label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-phaseSas" style="width:auto;margin-left:125px;vertical-align:top" />
+        <label for="node-input-phaseSas" style="width:auto">sas (emoji ready to confirm)</label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-phaseDone" style="width:auto;margin-left:125px;vertical-align:top" />
+        <label for="node-input-phaseDone" style="width:auto">done</label>
+    </div>
+    <div class="form-row">
+        <input type="checkbox" id="node-input-phaseCancelled" style="width:auto;margin-left:125px;vertical-align:top" />
+        <label for="node-input-phaseCancelled" style="width:auto">cancelled</label>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-initiatedBy"><i class="fa fa-filter"></i> Initiated by</label>
+        <select id="node-input-initiatedBy">
+            <option value="any">Any</option>
+            <option value="me">Me (the bot started it)</option>
+            <option value="notme">Not me (the other party)</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-verificationType"><i class="fa fa-filter"></i> Type</label>
+        <select id="node-input-verificationType">
+            <option value="any">Any</option>
+            <option value="room">Room (in-room / DM)</option>
+            <option value="device">Device (to-device)</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-selfVerification"><i class="fa fa-filter"></i> Self-verify</label>
+        <select id="node-input-selfVerification">
+            <option value="any">Any</option>
+            <option value="self">Self only (bot's own devices)</option>
+            <option value="others">Others only (other users)</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-userFilter"><i class="fa fa-user"></i> User IDs</label>
+        <input type="text" id="node-input-userFilter" placeholder="@alice:example.org, @bob:example.org">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">User ID allowlist - only emit verifications involving these users. Comma separated, or blank for any.</div>
+    <div class="form-row">
+        <label for="node-input-roomFilter"><i class="fa fa-comments"></i> Room IDs</label>
+        <input type="text" id="node-input-roomFilter" placeholder="!room:example.org, !other:example.org">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">Restrict room verifications to these rooms. Comma separated, or blank for any. Device verifications are not affected.</div>
+</script>
+
+<script type="text/html" data-help-name="matrix-verification">
+    <h3>Details</h3>
+    <p>Emits a message when a device verification request is received or changes phase.</p>
+
+    <p>
+        This node is the event source for device verification. It outputs a message every
+        time a verification request is created (either incoming, or started with the
+        <code>matrix-verification-action</code> node) and again on every phase change. Use
+        it together with <code>matrix-verification-action</code> to build your own approval
+        flow &mdash; for example, emailing the SAS emoji to a human for confirmation.
+    </p>
+    <p>
+        Each message carries a <code>msg.verificationId</code> which is the handle you pass
+        to <code>matrix-verification-action</code> to act on that verification.
+    </p>
+
+    <h3>Filters</h3>
+    <p>
+        All filters are applied on the node so you don't need <code>switch</code> nodes
+        downstream. They AND-combine, and each defaults to passing everything.
+    </p>
+    <dl class="message-properties">
+        <dt>Phase filter</dt>
+        <dd>Emits only the ticked phases (<code>requested</code>, <code>ready</code>, <code>started</code>, <code>sas</code>, <code>done</code>, <code>cancelled</code>). All ticked = emit every phase.</dd>
+
+        <dt>Initiated by</dt>
+        <dd><code>Any</code>, <code>Me</code> (only verifications the bot started), or <code>Not me</code> (only verifications started by the other party).</dd>
+
+        <dt>Type</dt>
+        <dd><code>Any</code>, <code>Room</code> (in-room / DM verifications), or <code>Device</code> (to-device verifications).</dd>
+
+        <dt>Self-verify</dt>
+        <dd><code>Any</code>, <code>Self only</code> (the other party is another of the bot's own devices), or <code>Others only</code> (a different user).</dd>
+
+        <dt>User IDs</dt>
+        <dd>Allowlist of user IDs (comma separated). When set, only verifications involving one of these users are emitted. Blank = any user.</dd>
+
+        <dt>Room IDs</dt>
+        <dd>Comma separated room IDs. When set, room verifications are restricted to these rooms. Device verifications have no room and are not affected by this filter. Blank = any room.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>msg.verificationId <span class="property-type">string</span></dt>
+        <dd>unique id of the verification. Pass this as <code>msg.verificationId</code> to the <code>matrix-verification-action</code> node.</dd>
+
+        <dt>msg.phase <span class="property-type">string</span></dt>
+        <dd>
+            current phase of the verification, one of:
+            <code>requested</code> (a request was received/sent),
+            <code>ready</code> (the request was accepted),
+            <code>started</code> (a method was chosen),
+            <code>sas</code> (SAS emoji/decimal are ready to confirm &mdash; see <code>msg.sas</code>),
+            <code>done</code> (verification completed),
+            <code>cancelled</code> (verification cancelled).
+        </dd>
+
+        <dt>msg.payload <span class="property-type">string</span></dt>
+        <dd>same value as <code>msg.phase</code>, for convenience.</dd>
+
+        <dt>msg.userId <span class="property-type">string</span></dt>
+        <dd>the user id of the other party in the verification.</dd>
+
+        <dt>msg.deviceId <span class="property-type">string | null</span></dt>
+        <dd>the other party's device id, for to-device verifications. <code>null</code> for in-room verifications.</dd>
+
+        <dt>msg.topic <span class="property-type">string | null</span></dt>
+        <dd>the room id, for in-room (DM) verifications. <code>null</code> for to-device verifications.</dd>
+
+        <dt>msg.sas <span class="property-type">object</span></dt>
+        <dd>
+            present only when <code>msg.phase</code> is <code>sas</code>. Contains
+            <code>emoji</code> (an array of <code>[emoji, name]</code> pairs) and
+            <code>decimal</code> (an array of three numbers). One or both may be
+            populated depending on what was negotiated.
+        </dd>
+
+        <dt>msg.isSelfVerification <span class="property-type">boolean</span></dt>
+        <dd><code>true</code> if the other party is another device of the bot's own account.</dd>
+
+        <dt>msg.initiatedByMe <span class="property-type">boolean</span></dt>
+        <dd><code>true</code> if this verification was started by the bot.</dd>
+
+        <dt>msg.chosenMethod <span class="property-type">string | null</span></dt>
+        <dd>the verification method that was chosen (e.g. <code>m.sas.v1</code>), once one has been picked; <code>null</code> before then.</dd>
+
+        <dt>msg.cancellationCode <span class="property-type">string | null</span></dt>
+        <dd>present when <code>msg.phase</code> is <code>cancelled</code>; the reason code (e.g. <code>m.user</code>).</dd>
+    </dl>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://spec.matrix.org/latest/client-server-api/#device-verification">Matrix spec</a> - device verification</li>
+    </ul>
+</script>

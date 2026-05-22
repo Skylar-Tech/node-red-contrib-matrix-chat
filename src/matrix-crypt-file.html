@@ -43,6 +43,16 @@
             <span class="property-type">string | null</span>
         </dt>
         <dd> the decoded mxc url.</dd>
+
+        <dt class="optional">msg.headers
+            <span class="property-type">object</span>
+        </dt>
+        <dd>optional HTTP headers. If provided, they are used when downloading media (for example authenticated media bearer tokens).</dd>
+
+        <dt class="optional">msg.access_token
+            <span class="property-type">string</span>
+        </dt>
+        <dd>optional Matrix access token. Used as a bearer token if <code>msg.headers.Authorization</code> is not present.</dd>
     </dl>
 
     <h3>Outputs</h3>

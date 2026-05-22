@@ -4,16 +4,16 @@
   "description": "Matrix chat server client for Node-RED",
   "dependencies": {
     "abort-controller": "^3.0.0",
+    "fake-indexeddb": "^6.2.5",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
     "got": "^12.0.2",
     "image-size": "^1.0.2",
     "isomorphic-webcrypto": "^2.3.8",
-    "matrix-js-sdk": "^34.13.0",
+    "matrix-js-sdk": "^41.5.0",
     "mime": "^3.0.0",
     "node-fetch": "^3.3.0",
     "node-localstorage": "^2.2.1",
-    "olm": "https://gitlab.matrix.org/matrix-org/olm/-/package_files/2572/download",
     "sharp": "^0.33.4",
     "tmp": "^0.2.1",
     "utf8": "^3.0.0"
@@ -51,11 +51,13 @@
       "matrix-whois-user": "src/matrix-whois-user.js",
       "matrix-paginate-room": "src/matrix-paginate-room.js",
       "matrix-get-event": "src/matrix-get-event.js",
-      "matrix-event-relations": "src/matrix-event-relations.js"
+      "matrix-event-relations": "src/matrix-event-relations.js",
+      "matrix-verification": "src/matrix-verification.js",
+      "matrix-verification-action": "src/matrix-verification-action.js"
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "keywords": [
     "node-red",
@@ -72,8 +74,5 @@
     "name": "Skylar Sadlier",
     "url": "https://skylar.tech"
   },
-  "license": "SEE LICENSE FILE",
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "license": "SEE LICENSE FILE"
 }

@@ -54,9 +54,10 @@ module.exports = function(RED) {
                 return;
             }
 
-            // we need the status code, so set onlydata to false for this request
+            // invite(roomId, userId, opts|reason) - the SDK no longer accepts a
+            // callback argument, so the reason is passed as the 3rd parameter.
             node.server.matrixClient
-                .invite(msg.topic, msg.userId, undefined, msg.reason || undefined)
+                .invite(msg.topic, msg.userId, msg.reason || undefined)
                 .then(function(e){
                     msg.payload = e;
                     node.send([msg, null]);

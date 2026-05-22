@@ -47,11 +47,31 @@ module.exports = function(RED) {
                 return;
             }
 
+            const setAuthHeaders = () => {
+                const accessToken = node.server.matrixClient.getAccessToken?.();
+                if (accessToken) {
+                    msg.headers = {
+                        ...(msg.headers || {}),
+                        Authorization: `Bearer ${accessToken}`,
+                    };
+                }
+            };
+
             const setUrls = (urlKey, encryptedKey) => {
                 const url = msg.encrypted ? msg.content[encryptedKey]?.url : msg.content[urlKey];
                 if (url) {
-                    msg.url = node.server.matrixClient.mxcUrlToHttp(url);
+                    const authenticatedUrl = node.server.matrixClient.mxcUrlToHttp(
+                        url,
+                        undefined,
+                        undefined,
+                        undefined,
+                        false,
+                        true,
+                        true,
+                    );
+                    msg.url = authenticatedUrl || node.server.matrixClient.mxcUrlToHttp(url);
                     msg.mxc_url = url;
+                    setAuthHeaders();
                 }
             };
 
@@ -59,8 +79,18 @@ module.exports = function(RED) {
                 const thumbnailFile = msg.content.info?.[infoKey];
                 const thumbnailUrl = thumbnailFile?.url;
                 if (thumbnailUrl) {
-                    msg.thumbnail_url = node.server.matrixClient.mxcUrlToHttp(thumbnailUrl);
+                    const authenticatedThumbnailUrl = node.server.matrixClient.mxcUrlToHttp(
+                        thumbnailUrl,
+                        undefined,
+                        undefined,
+                        undefined,
+                        false,
+                        true,
+                        true,
+                    );
+                    msg.thumbnail_url = authenticatedThumbnailUrl || node.server.matrixClient.mxcUrlToHttp(thumbnailUrl);
                     msg.thumbnail_mxc_url = thumbnailUrl;
+                    setAuthHeaders();
                 }
             };
 

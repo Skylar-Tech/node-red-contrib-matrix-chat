@@ -106,14 +106,14 @@ module.exports = function(RED) {
                 let user2 = {};
 
                 try {
-                    let profileInfo = node.server.matrixClient.getProfileInfo(userId);
-                    if(Object.keys(profileInfo).length > 0) {
+                    let profileInfo = await node.server.matrixClient.getProfileInfo(userId);
+                    if(profileInfo && Object.keys(profileInfo).length > 0) {
                         user2.displayName = profileInfo.displayname;
                         user2.avatarUrl = profileInfo.avatar_url;
                     }
 
-                    let presence = node.server.matrixClient.getPresence(userId);
-                    if(Object.keys(presence).length > 0) {
+                    let presence = await node.server.matrixClient.getPresence(userId);
+                    if(presence && Object.keys(presence).length > 0) {
                         user2.currentlyActive = presence.currently_active;
                         user2.lastActiveAgo = presence.last_active_ago;
                         user2.presenceStatusMsg = presence.presence_status_msg;

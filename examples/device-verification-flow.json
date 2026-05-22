@@ -1,0 +1,548 @@
+[
+  {
+    "id": "7158964bd67edc52",
+    "type": "group",
+    "z": "vtest",
+    "name": "Example verification flow",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "40c105c38054d6db",
+      "83f785d52a61009a",
+      "d51bab8cbf5f247c",
+      "2e543533d49b467c"
+    ],
+    "x": 88,
+    "y": 73,
+    "w": 1044,
+    "h": 754
+  },
+  {
+    "id": "40c105c38054d6db",
+    "type": "group",
+    "z": "vtest",
+    "g": "7158964bd67edc52",
+    "name": "Verification request handling",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "mv_all",
+      "dbg_events",
+      "sw_phase",
+      "act_accept",
+      "act_start",
+      "chg_savevid",
+      "dbg_sas",
+      "dbg_done",
+      "dbg_cancelled",
+      "dbg_err"
+    ],
+    "x": 114,
+    "y": 99,
+    "w": 992,
+    "h": 342
+  },
+  {
+    "id": "mv_all",
+    "type": "matrix-verification",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "All verifications",
+    "server": null,
+    "phaseRequested": true,
+    "phaseReady": true,
+    "phaseStarted": true,
+    "phaseSas": true,
+    "phaseDone": true,
+    "phaseCancelled": true,
+    "initiatedBy": "any",
+    "verificationType": "any",
+    "selfVerification": "any",
+    "userFilter": "",
+    "roomFilter": "",
+    "x": 220,
+    "y": 180,
+    "wires": [
+      [
+        "dbg_events",
+        "sw_phase"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_events",
+    "type": "debug",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "all verification events",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 500,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "sw_phase",
+    "type": "switch",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "route by phase",
+    "property": "phase",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "requested",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "ready",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "sas",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "done",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "cancelled",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "outputs": 5,
+    "x": 460,
+    "y": 220,
+    "wires": [
+      [
+        "act_accept"
+      ],
+      [
+        "act_start"
+      ],
+      [
+        "chg_savevid"
+      ],
+      [
+        "dbg_done"
+      ],
+      [
+        "dbg_cancelled"
+      ]
+    ]
+  },
+  {
+    "id": "act_accept",
+    "type": "matrix-verification-action",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "Accept",
+    "server": null,
+    "mode": "accept",
+    "x": 700,
+    "y": 180,
+    "wires": [
+      [],
+      [
+        "dbg_err"
+      ]
+    ]
+  },
+  {
+    "id": "act_start",
+    "type": "matrix-verification-action",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "Start SAS",
+    "server": null,
+    "mode": "start",
+    "x": 700,
+    "y": 230,
+    "wires": [
+      [],
+      [
+        "dbg_err"
+      ]
+    ]
+  },
+  {
+    "id": "chg_savevid",
+    "type": "change",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "save verificationId",
+    "rules": [
+      {
+        "t": "set",
+        "p": "verificationId",
+        "pt": "flow",
+        "to": "verificationId",
+        "tot": "msg"
+      }
+    ],
+    "x": 710,
+    "y": 290,
+    "wires": [
+      [
+        "dbg_sas"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_sas",
+    "type": "debug",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "SAS emoji (msg.sas)",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 960,
+    "y": 290,
+    "wires": []
+  },
+  {
+    "id": "dbg_done",
+    "type": "debug",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "verification done",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 710,
+    "y": 350,
+    "wires": []
+  },
+  {
+    "id": "dbg_cancelled",
+    "type": "debug",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "verification cancelled",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 730,
+    "y": 400,
+    "wires": []
+  },
+  {
+    "id": "dbg_err",
+    "type": "debug",
+    "z": "vtest",
+    "g": "40c105c38054d6db",
+    "name": "action errors",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 940,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "83f785d52a61009a",
+    "type": "group",
+    "z": "vtest",
+    "g": "7158964bd67edc52",
+    "name": "Confirm or reject last verification request",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "inj_confirm",
+      "chg_vid_c",
+      "act_confirm",
+      "inj_reject",
+      "chg_vid_r",
+      "act_mismatch",
+      "dbg_result"
+    ],
+    "x": 114,
+    "y": 459,
+    "w": 982,
+    "h": 142
+  },
+  {
+    "id": "inj_confirm",
+    "type": "inject",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "Confirm SAS match",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 250,
+    "y": 500,
+    "wires": [
+      [
+        "chg_vid_c"
+      ]
+    ]
+  },
+  {
+    "id": "chg_vid_c",
+    "type": "change",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "verificationId from flow",
+    "rules": [
+      {
+        "t": "set",
+        "p": "verificationId",
+        "pt": "msg",
+        "to": "verificationId",
+        "tot": "flow"
+      }
+    ],
+    "x": 500,
+    "y": 500,
+    "wires": [
+      [
+        "act_confirm"
+      ]
+    ]
+  },
+  {
+    "id": "act_confirm",
+    "type": "matrix-verification-action",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "Confirm SAS",
+    "server": null,
+    "mode": "confirm",
+    "x": 750,
+    "y": 500,
+    "wires": [
+      [
+        "dbg_result"
+      ],
+      [
+        "dbg_err"
+      ]
+    ]
+  },
+  {
+    "id": "inj_reject",
+    "type": "inject",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "Reject SAS (mismatch)",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 260,
+    "y": 560,
+    "wires": [
+      [
+        "chg_vid_r"
+      ]
+    ]
+  },
+  {
+    "id": "chg_vid_r",
+    "type": "change",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "verificationId from flow",
+    "rules": [
+      {
+        "t": "set",
+        "p": "verificationId",
+        "pt": "msg",
+        "to": "verificationId",
+        "tot": "flow"
+      }
+    ],
+    "x": 500,
+    "y": 560,
+    "wires": [
+      [
+        "act_mismatch"
+      ]
+    ]
+  },
+  {
+    "id": "act_mismatch",
+    "type": "matrix-verification-action",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "Reject (mismatch)",
+    "server": null,
+    "mode": "mismatch",
+    "x": 760,
+    "y": 560,
+    "wires": [
+      [
+        "dbg_result"
+      ],
+      [
+        "dbg_err"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_result",
+    "type": "debug",
+    "z": "vtest",
+    "g": "83f785d52a61009a",
+    "name": "action result",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 980,
+    "y": 530,
+    "wires": []
+  },
+  {
+    "id": "d51bab8cbf5f247c",
+    "type": "group",
+    "z": "vtest",
+    "g": "7158964bd67edc52",
+    "name": "Request verification with specific user & device",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "inj_request",
+      "act_request"
+    ],
+    "x": 114,
+    "y": 619,
+    "w": 512,
+    "h": 82
+  },
+  {
+    "id": "inj_request",
+    "type": "inject",
+    "z": "vtest",
+    "g": "d51bab8cbf5f247c",
+    "name": "Verify a user & device",
+    "props": [
+      {
+        "p": "userId",
+        "v": "@CHANGE_ME:example.org",
+        "vt": "str"
+      },
+      {
+        "p": "deviceId",
+        "v": "CHANGE_ME",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 260,
+    "y": 660,
+    "wires": [
+      [
+        "act_request"
+      ]
+    ]
+  },
+  {
+    "id": "act_request",
+    "type": "matrix-verification-action",
+    "z": "vtest",
+    "g": "d51bab8cbf5f247c",
+    "name": "Request verification",
+    "server": null,
+    "mode": "request",
+    "x": 510,
+    "y": 660,
+    "wires": [
+      [
+        "dbg_result"
+      ],
+      [
+        "dbg_err"
+      ]
+    ]
+  },
+  {
+    "id": "2e543533d49b467c",
+    "type": "group",
+    "z": "vtest",
+    "g": "7158964bd67edc52",
+    "name": "Request verification with specific user & room",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "f7c043d39780b9a4",
+      "b2807fd5125b56b4"
+    ],
+    "x": 114,
+    "y": 719,
+    "w": 512,
+    "h": 82
+  },
+  {
+    "id": "f7c043d39780b9a4",
+    "type": "inject",
+    "z": "vtest",
+    "g": "2e543533d49b467c",
+    "name": "Verify a user & room",
+    "props": [
+      {
+        "p": "userId",
+        "v": "@CHANGE_ME:example.org",
+        "vt": "str"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "CHANGE_ME",
+    "x": 250,
+    "y": 760,
+    "wires": [
+      [
+        "b2807fd5125b56b4"
+      ]
+    ]
+  },
+  {
+    "id": "b2807fd5125b56b4",
+    "type": "matrix-verification-action",
+    "z": "vtest",
+    "g": "2e543533d49b467c",
+    "name": "Request verification",
+    "server": null,
+    "mode": "request",
+    "x": 510,
+    "y": 760,
+    "wires": [
+      [
+        "dbg_result"
+      ],
+      [
+        "dbg_err"
+      ]
+    ]
+  }
+]
