@@ -2,10 +2,14 @@ name: Publish to npm
 
 # Publishes the package to npm whenever a GitHub Release is published.
 #
-# The release tag (e.g. v1.2.3) is the source of truth for the version:
-# package.json is set from the tag, the package is published, and the
-# version bump is committed back to master. You do not edit package.json
-# by hand for a release - just publish a GitHub Release with the right tag.
+# The release tag is the source of truth for the version:
+#   - Stable tag (e.g. v1.2.3)             -> published to the "latest"
+#                                             dist-tag; the version bump is
+#                                             committed back to master.
+#   - Pre-release tag (e.g. v1.2.3-beta.1) -> published to a matching dist-tag
+#                                             ("beta", "rc", ...); does NOT
+#                                             become "latest" and is NOT
+#                                             committed back to master.
 #
 # Authentication uses npm Trusted Publishing (OIDC) - no token or secret is
 # needed. Configure a trusted publisher for this package on npmjs.com:
@@ -38,20 +42,39 @@ jobs:
         # Trusted Publishing requires npm 11.5.1 or newer; Node 22 ships npm 10.
         run: npm install -g npm@latest
 
-      - name: Set version from release tag
-        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+      - name: Determine version and dist-tag
+        id: ver
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == *-* ]]; then
+            # pre-release, e.g. 1.0.0-beta.1 -> dist-tag "beta"
+            DIST_TAG="${VERSION#*-}"
+            DIST_TAG="${DIST_TAG%%.*}"
+            PRERELEASE=true
+          else
+            DIST_TAG=latest
+            PRERELEASE=false
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "Publishing $VERSION to npm dist-tag '$DIST_TAG' (prerelease=$PRERELEASE)"
+
+      - name: Set version
+        run: npm version "${{ steps.ver.outputs.version }}" --no-git-tag-version --allow-same-version
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag "${{ steps.ver.outputs.dist_tag }}"
 
       - name: Commit version bump back to master
+        if: steps.ver.outputs.prerelease == 'false'
         run: |
           if git diff --quiet; then
-            echo "package.json already at ${GITHUB_REF_NAME#v}; nothing to commit."
+            echo "package.json already at ${{ steps.ver.outputs.version }}; nothing to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Set version to ${GITHUB_REF_NAME#v}"
+          git commit -am "Set version to ${{ steps.ver.outputs.version }}"
           git push origin HEAD:master \
             || echo "::warning::Could not push the version bump to master (branch protection?). The package was still published."
