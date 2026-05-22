@@ -1,0 +1,52 @@
+name: Publish to npm
+
+# Publishes the package to npm whenever a GitHub Release is published.
+#
+# The release tag (e.g. v1.2.3) is the source of truth for the version:
+# package.json is set from the tag, the package is published, and the
+# version bump is committed back to master. You do not edit package.json
+# by hand for a release - just publish a GitHub Release with the right tag.
+#
+# Requires an npm access token stored as the repository secret NPM_TOKEN.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # commit the version bump back to master
+      id-token: write   # npm provenance attestation
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Set version from release tag
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump back to master
+        run: |
+          if git diff --quiet; then
+            echo "package.json already at ${GITHUB_REF_NAME#v}; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Set version to ${GITHUB_REF_NAME#v}"
+          git push origin HEAD:master \
+            || echo "::warning::Could not push the version bump to master (branch protection?). The package was still published."
