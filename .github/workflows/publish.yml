@@ -1,6 +1,9 @@
 name: Publish to npm
 
 # Publishes the package to npm whenever a GitHub Release is published.
+# It publishes the exact commit the release tag points to, so a pre-release
+# can be cut from any branch (e.g. a beta off `dev`) without that branch
+# having to be merged into master first.
 #
 # The release tag is the source of truth for the version:
 #   - Stable tag (e.g. v1.2.3)             -> published to the "latest"
@@ -27,10 +30,8 @@ jobs:
       contents: write   # commit the version bump back to master
       id-token: write   # npm Trusted Publishing (OIDC) + provenance
     steps:
-      - name: Checkout master
+      - name: Check out the released commit
         uses: actions/checkout@v4
-        with:
-          ref: master
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
