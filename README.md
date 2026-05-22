@@ -13,7 +13,7 @@ Supported functionality in this package includes:
 
 - **End-to-end encryption (E2EE)** — send and receive encrypted messages (see the [encryption notes](#end-to-end-encryption-notes))
 - **Cross-signing & secure backup** — interactive setup from the server config node so the bot's own device shows as verified
-- **Device verification** — flow-driven SAS (emoji) verification via the `matrix-verification` and `matrix-verification-action` nodes
+- **Device verification** — interactive SAS (emoji) verification, either from the server config node or with the `matrix-verification` flow nodes
 - **Receive events** from rooms: Messages, reactions, images, audio, locations, files, encrypted or unencrypted
 - **Fetch/modify room state**: Update room settings
 - **Paginate room history**
@@ -54,11 +54,11 @@ You're not limited to just the nodes we've created. Enable global access in your
 ### End-to-End Encryption Notes
 
 - E2EE uses the Rust crypto stack from `matrix-js-sdk`. The first time a bot starts after upgrading from an older version, any existing (legacy libolm) crypto state is migrated automatically.
-- **Storage:** E2EE state is saved in a folder called `matrix-client-storage` within your Node-RED directory. Each account's Rust crypto store is persisted there as `rust-crypto-store.v8` (snapshotted on shutdown and every 5 minutes). Back up this folder regularly! If lost, you won’t be able to decrypt messages from E2EE rooms.
-- To move your bot to a different installation, migrate this folder and ensure the old and new clients don't run simultaneously.
-- It’s simplest to dedicate the account to the bot and run it only within Node-RED. The account can also be signed in elsewhere — if so, verify those sessions against the bot (see below) so they trust each other and share keys.
-- **Cross-signing & secure backup:** open the server config node and use the **Set up secure backup & cross-signing** button. It checks the account and lets you unlock an existing secure backup with its recovery key, or create a fresh one — after which the bot's own device is cross-signed and shows as verified to others.
-- **Device verification:** the `matrix-verification` node emits verification requests and phase changes, and `matrix-verification-action` accepts, starts, confirms, or cancels them — so you can build your own approval flow (e.g. emailing the SAS emoji for a human to confirm). See the [device verification example](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#device-verification).
+- **Storage:** E2EE state is saved in a folder called `matrix-client-storage` within your Node-RED directory — each account's Rust crypto store is persisted there as `rust-crypto-store.v8` (snapshotted on shutdown and every 5 minutes). Setting up secure backup (below) lets you recover the account's keys even if this folder is lost.
+- **Cross-signing & secure backup — strongly recommended:** open the server config node and use the **Set up secure backup & cross-signing** button. It lets you unlock an existing secure backup with its recovery key, or create a fresh one; once done, the bot's own device is cross-signed and shows as verified to others. **Save the recovery key somewhere safe** — it is shown only once, and is the only way to restore the account's encryption keys if the crypto store is ever lost.
+- **Device verification:** there are two ways to verify devices —
+    - From the server config node, the **Pending verification requests** button opens a list of incoming requests and lets you complete the SAS (emoji) check interactively, no flow required.
+    - Or build your own flow: the `matrix-verification` node emits verification requests and phase changes, and `matrix-verification-action` accepts, starts, confirms, or cancels them (e.g. emailing the SAS emoji for a human to confirm). See the [device verification example](https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#device-verification).
 
 ### Registering a User
 
