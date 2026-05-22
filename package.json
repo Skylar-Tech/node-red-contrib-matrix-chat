@@ -68,7 +68,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/skylar-tech/node-red-contrib-matrix-chat"
+    "url": "git+https://github.com/Skylar-Tech/node-red-contrib-matrix-chat.git"
   },
   "author": {
     "name": "Skylar Sadlier",
