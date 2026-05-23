@@ -1,0 +1,69 @@
+[
+  {
+    "id": "222bb5ef43d621b4",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Send location to room",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "ee742dfa934b4892",
+      "1ef540382789ff9d"
+    ],
+    "x": 354,
+    "y": 5279,
+    "w": 392,
+    "h": 82
+  },
+  {
+    "id": "ee742dfa934b4892",
+    "type": "matrix-send-location",
+    "z": "f025a8b9fbd1b054",
+    "g": "222bb5ef43d621b4",
+    "name": "",
+    "server": "",
+    "roomId": "!example:test.org",
+    "latitudeType": "msg",
+    "latitudeValue": "latitude",
+    "longitudeType": "msg",
+    "longitudeValue": "longitude",
+    "altitudeType": "msg",
+    "altitudeValue": "altitude",
+    "geoUriType": "str",
+    "geoUriValue": "geo:60.4720,8.4689",
+    "descriptionType": "str",
+    "descriptionValue": "Norway",
+    "assetTypeType": "str",
+    "assetTypeValue": "m.pin",
+    "timestampType": "msg",
+    "timestampValue": "timestamp",
+    "textType": "msg",
+    "textValue": "payload",
+    "x": 640,
+    "y": 5320,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "1ef540382789ff9d",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "222bb5ef43d621b4",
+    "name": "",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "x": 460,
+    "y": 5320,
+    "wires": [
+      [
+        "ee742dfa934b4892"
+      ]
+    ]
+  }
+]

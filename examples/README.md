@@ -183,6 +183,19 @@ Any messages containing "delete" will be removed by the client.
 
 </details>
 
+<details>
+<summary>Send a location to a room</summary>
+
+[View JSON](send-location-to-room.json)
+
+Sends an `m.location` event (a map pin) for the country of Norway to the configured room. Element and other matrix-react-sdk clients render it as a pin on the map with the label *"Norway"*; clients without map rendering see an auto-generated text fallback.
+
+Update the `Send Location` node's Room ID to your own room before deploying. The inject node is configured to fire a bare message (no payload, no topic), so the Send Location node falls back to its configured values for everything: asset type `m.pin`, description `Norway`, and geo URI `geo:60.4720,8.4689`.
+
+![send-location-to-room.png](send-location-to-room.png)
+
+</details>
+
 ### Event Handling
 
 <details>
