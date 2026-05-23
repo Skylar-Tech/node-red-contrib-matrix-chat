@@ -1,4 +1,5 @@
 const sdkPromise = import("matrix-js-sdk");
+const { Markdown } = require("./matrix-markdown");
 
 module.exports = function(RED) {
     function MatrixSendImage(n) {
@@ -143,7 +144,28 @@ module.exports = function(RED) {
                     body: payload.toString()
                 };
 
-                if (msgFormat === 'html') {
+                if (msgFormat === 'markdown') {
+                    // Convert the markdown body to HTML using the same logic
+                    // as Element (matrix-react-sdk's `Markdown` class).
+                    //
+                    // If the message contains any markdown syntax, send the
+                    // rendered HTML as `formatted_body` and keep the original
+                    // markdown source as `body` (matrix spec convention for
+                    // formatted messages).  If the message turns out to be
+                    // plain text and contains backslash escapes, strip those
+                    // from `body` and send no HTML; otherwise leave `body`
+                    // as the original payload.
+                    const source = payload.toString();
+                    const md = new Markdown(source);
+                    if (md.isPlainText()) {
+                        if (source.indexOf("\\") > -1) {
+                            content.body = md.toPlaintext();
+                        }
+                    } else {
+                        content.format = "org.matrix.custom.html";
+                        content.formatted_body = md.toHTML();
+                    }
+                } else if (msgFormat === 'html') {
                     content.format = "org.matrix.custom.html";
                     content.formatted_body =
                         (typeof msg.formatted_payload !== 'undefined' && msg.formatted_payload)
