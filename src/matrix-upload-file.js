@@ -293,7 +293,8 @@ module.exports = function(RED) {
                     msg.payload.url = file.content_uri;
                 }
                 msg.payload.msgtype = msgtype;
-                msg.payload.body = msg.body || msg.filename || "";
+                msg.payload.body = msg.body || filename || "";
+                msg.payload.filename = filename;
                 msg.payload.info = {
                     "mimetype": contentType,
                     "size": getFileSize(bufferOrPath),
