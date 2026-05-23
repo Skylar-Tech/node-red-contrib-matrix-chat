@@ -1,3 +1,16 @@
+// Parse an RFC 5870 geo URI into {latitude, longitude, altitude?}.
+// Returns null if the URI is missing or malformed.
+function parseGeoUri(uri) {
+    if (typeof uri !== "string" || uri.indexOf("geo:") !== 0) return null;
+    // strip any ";u=..." / ";crs=..." parameters
+    const body = uri.slice(4).split(";")[0];
+    const parts = body.split(",").map(function(s) { return parseFloat(s.trim()); });
+    if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) return null;
+    const result = { latitude: parts[0], longitude: parts[1] };
+    if (parts.length >= 3 && Number.isFinite(parts[2])) result.altitude = parts[2];
+    return result;
+}
+
 module.exports = function(RED) {
     function MatrixReceiveMessage(n) {
         RED.nodes.createNode(this, n);
@@ -146,11 +159,31 @@ module.exports = function(RED) {
                     setThumbnailUrls('thumbnail_file');
                     break;
 
-                case 'm.location':
+                case 'm.location': {
                     if (!node.acceptLocations) return;
                     msg.geo_uri = msg.content.geo_uri;
                     msg.payload = msg.content.body;
+                    // Surface the structured location fields at the top level
+                    // so a `matrix-send-location` node wired straight to this
+                    // output resends the same location.  Both the stable
+                    // (m.location / m.asset / m.ts) and the MSC3488-prefixed
+                    // namespaces are checked, since Element currently emits
+                    // the prefixed form even though the spec is stable.
+                    const loc   = msg.content["m.location"] || msg.content["org.matrix.msc3488.location"] || {};
+                    const asset = msg.content["m.asset"]    || msg.content["org.matrix.msc3488.asset"]    || {};
+                    let ts = msg.content["m.ts"];
+                    if (typeof ts !== "number") ts = msg.content["org.matrix.msc3488.ts"];
+                    const coords = parseGeoUri(loc.uri || msg.geo_uri);
+                    if (coords) {
+                        msg.latitude  = coords.latitude;
+                        msg.longitude = coords.longitude;
+                        if (coords.altitude !== undefined) msg.altitude = coords.altitude;
+                    }
+                    if (loc.description) msg.description = loc.description;
+                    msg.assetType = asset.type || "m.self";
+                    if (typeof ts === "number") msg.timestamp = ts;
                     break;
+                }
 
                 case 'm.reaction':
                     if (!node.acceptReactions) return;

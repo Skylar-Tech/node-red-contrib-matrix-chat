@@ -56,7 +56,8 @@
       "matrix-get-event": "src/matrix-get-event.js",
       "matrix-event-relations": "src/matrix-event-relations.js",
       "matrix-verification": "src/matrix-verification.js",
-      "matrix-verification-action": "src/matrix-verification-action.js"
+      "matrix-verification-action": "src/matrix-verification-action.js",
+      "matrix-send-location": "src/matrix-send-location.js"
     }
   },
   "engines": {

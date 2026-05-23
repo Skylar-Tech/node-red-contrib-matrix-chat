@@ -357,9 +357,36 @@
         </li>
 
         <li><code>msg.type</code> == '<strong>m.location</strong>'
+            <p>
+                The structured location fields are surfaced at the top level of
+                <code>msg</code> so the message can be wired straight into a
+                <code>matrix-send-location</code> node to resend the location
+                without any field translation in between.
+            </p>
             <dl class="message-properties">
                 <dt>msg.geo_uri <span class="property-type">string</span></dt>
-                <dd>URI format of the geolocation</dd>
+                <dd>The RFC&nbsp;5870 geo URI from the event (e.g. <code>geo:48.85,2.35</code>).</dd>
+
+                <dt>msg.latitude <span class="property-type">number</span></dt>
+                <dd>Latitude in decimal degrees, parsed from the geo URI.</dd>
+
+                <dt>msg.longitude <span class="property-type">number</span></dt>
+                <dd>Longitude in decimal degrees, parsed from the geo URI.</dd>
+
+                <dt class="optional">msg.altitude <span class="property-type">number</span></dt>
+                <dd>Metres above sea level, parsed from the geo URI. Only set when the geo URI includes an altitude component (<code>geo:lat,lng,alt</code>).</dd>
+
+                <dt class="optional">msg.description <span class="property-type">string</span></dt>
+                <dd>The location's label (e.g. <em>Eiffel Tower</em>). Only set when the sender included one.</dd>
+
+                <dt>msg.assetType <span class="property-type">string</span></dt>
+                <dd><code>"m.self"</code> when the sender was sharing their own location, <code>"m.pin"</code> for a generic dropped pin. Defaults to <code>"m.self"</code> when the event does not carry an explicit asset type (per the Matrix spec).</dd>
+
+                <dt class="optional">msg.timestamp <span class="property-type">number</span></dt>
+                <dd>Milliseconds since the UNIX epoch when the location was correct (the event's <code>m.ts</code> field). Only set when the sender included a timestamp.</dd>
+
+                <dt>msg.payload <span class="property-type">string</span></dt>
+                <dd>The event's <code>body</code> &mdash; a human-readable text fallback for clients that cannot render the map snippet.</dd>
             </dl>
         </li>
     </ul>
