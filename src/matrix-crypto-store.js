@@ -17,6 +17,13 @@ const v8 = require('v8');
 
 let shimInstalled = false;
 
+// Mirrors matrix-js-sdk's localStorage-crypto-store.js: olm sessions live under
+// "crypto.sessions/<deviceKey>" and migration batches are capped at 50.
+const E2E_PREFIX = 'crypto.';
+const SESSION_KEY_PREFIX = E2E_PREFIX + 'sessions/';
+const SESSION_BATCH_SIZE = 50;
+const OLM_BATCH_PATCH_MARKER = Symbol.for('node-red-contrib-matrix-chat.olmSessionBatchPatched');
+
 /**
  * Install the in-memory IndexedDB shim onto globalThis. Idempotent. Must be
  * called before MatrixClient.initRustCrypto().
@@ -172,4 +179,70 @@ async function snapshotCryptoStore(filePath, dbNamePrefix) {
     return true;
 }
 
-module.exports = { ensureIndexedDBShim, restoreCryptoStore, snapshotCryptoStore };
+/**
+ * Patch a LocalStorageCryptoStore instance so its getEndToEndSessionsBatch()
+ * returns olm sessions with deviceKey/sessionId attached.
+ *
+ * Why: matrix-js-sdk's LocalStorageCryptoStore stores olm sessions as
+ * `{ session, lastReceivedMessageTs }` with the curve25519 deviceKey encoded
+ * only in the localStorage key ("crypto.sessions/<deviceKey>"). On read,
+ * getEndToEndSessionsBatch() returns the bare session value without injecting
+ * the deviceKey or sessionId, so initRustCrypto()'s libolm-to-rust migration
+ * crashes at PickledSession.senderKey = session.deviceKey (undefined). The
+ * IndexedDB backend stores those fields in the record and is unaffected.
+ *
+ * Idempotent and safe to call on a store with no legacy sessions.
+ */
+function patchLocalStorageCryptoStoreForRustMigration(cryptoStore) {
+    if (!cryptoStore || cryptoStore[OLM_BATCH_PATCH_MARKER]) {
+        return cryptoStore;
+    }
+    const store = cryptoStore.store;
+    if (!store || typeof store.length !== 'number' || typeof store.key !== 'function') {
+        return cryptoStore;
+    }
+    cryptoStore.getEndToEndSessionsBatch = async function() {
+        const result = [];
+        for (let i = 0; i < store.length; i++) {
+            const key = store.key(i);
+            if (!key || !key.startsWith(SESSION_KEY_PREFIX)) {
+                continue;
+            }
+            const deviceKey = key.slice(SESSION_KEY_PREFIX.length);
+            let sessions;
+            try {
+                const raw = store.getItem(key);
+                sessions = raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                sessions = null;
+            }
+            if (!sessions || typeof sessions !== 'object') {
+                continue;
+            }
+            for (const [sessionId, val] of Object.entries(sessions)) {
+                if (val === null || val === undefined) {
+                    continue;
+                }
+                // Mirrors LocalStorageCryptoStore._getEndToEndSessions: very old
+                // entries were stored as bare base64 pickle strings.
+                const sessionInfo = (typeof val === 'string')
+                    ? { session: val, lastReceivedMessageTs: 0 }
+                    : val;
+                result.push({ ...sessionInfo, deviceKey, sessionId });
+                if (result.length >= SESSION_BATCH_SIZE) {
+                    return result;
+                }
+            }
+        }
+        return result.length === 0 ? null : result;
+    };
+    cryptoStore[OLM_BATCH_PATCH_MARKER] = true;
+    return cryptoStore;
+}
+
+module.exports = {
+    ensureIndexedDBShim,
+    restoreCryptoStore,
+    snapshotCryptoStore,
+    patchLocalStorageCryptoStoreForRustMigration,
+};

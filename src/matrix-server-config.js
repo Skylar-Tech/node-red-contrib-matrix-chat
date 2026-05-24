@@ -8,7 +8,12 @@ const cryptoApiPromise = import("matrix-js-sdk/lib/crypto-api/index.js");
 const fs = require("fs-extra");
 const { resolve } = require('path');
 const { LocalStorage } = require('node-localstorage');
-const { ensureIndexedDBShim, restoreCryptoStore, snapshotCryptoStore } = require('./matrix-crypto-store');
+const {
+    ensureIndexedDBShim,
+    restoreCryptoStore,
+    snapshotCryptoStore,
+    patchLocalStorageCryptoStoreForRustMigration,
+} = require('./matrix-crypto-store');
 require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
 if (!globalThis.fetch) {
     // polyfill fetch if we don't have it
@@ -453,8 +458,13 @@ module.exports = function(RED) {
                 if(node.e2ee) {
                     // Provide the legacy (pre-v37 libolm) crypto store so that
                     // initRustCrypto() can perform a one-time migration of any
-                    // existing crypto state into the Rust crypto store.
-                    clientOpts.cryptoStore = new LocalStorageCryptoStore(localStorage);
+                    // existing crypto state into the Rust crypto store. Patch
+                    // the store because matrix-js-sdk's LocalStorageCryptoStore
+                    // omits deviceKey/sessionId from getEndToEndSessionsBatch(),
+                    // which breaks the libolm->rust olm-session migration.
+                    clientOpts.cryptoStore = patchLocalStorageCryptoStoreForRustMigration(
+                        new LocalStorageCryptoStore(localStorage)
+                    );
                 }
                 node.matrixClient = sdk.createClient(clientOpts);
 
