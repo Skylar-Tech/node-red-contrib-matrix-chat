@@ -1,0 +1,263 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-send-location', {
+        category: 'matrix',
+        color: '#00b7ca',
+        defaults: {
+            name:             { value: "" },
+            server:           { type: "matrix-server-config", required: true },
+            roomId:           { value: "" },
+            latitudeType:     { value: "msg" },
+            latitudeValue:    { value: "latitude" },
+            longitudeType:    { value: "msg" },
+            longitudeValue:   { value: "longitude" },
+            altitudeType:     { value: "msg" },
+            altitudeValue:    { value: "altitude" },
+            geoUriType:       { value: "msg" },
+            geoUriValue:      { value: "geo_uri" },
+            descriptionType:  { value: "msg" },
+            descriptionValue: { value: "description" },
+            assetTypeType:    { value: "msg" },
+            assetTypeValue:   { value: "assetType" },
+            timestampType:    { value: "msg" },
+            timestampValue:   { value: "timestamp" },
+            textType:         { value: "msg" },
+            textValue:        { value: "payload" }
+        },
+        inputs: 1,
+        outputs: 2,
+        outputLabels: ["success", "error"],
+        icon: "matrix.png",
+        label: function() {
+            return this.name || "Send Location";
+        },
+        paletteLabel: 'Send Location',
+        oneditprepare: function() {
+            var numTypes = ["msg", "flow", "global", "num"];
+            var strTypes = ["msg", "flow", "global", "str"];
+
+            $("#node-input-latitudeValue").typedInput({
+                typeField: "#node-input-latitudeType",
+                types: numTypes,
+                default: "msg"
+            });
+            $("#node-input-longitudeValue").typedInput({
+                typeField: "#node-input-longitudeType",
+                types: numTypes,
+                default: "msg"
+            });
+            $("#node-input-altitudeValue").typedInput({
+                typeField: "#node-input-altitudeType",
+                types: numTypes,
+                default: "msg"
+            });
+            $("#node-input-geoUriValue").typedInput({
+                typeField: "#node-input-geoUriType",
+                types: strTypes,
+                default: "msg"
+            });
+            $("#node-input-descriptionValue").typedInput({
+                typeField: "#node-input-descriptionType",
+                types: strTypes,
+                default: "msg"
+            });
+            $("#node-input-assetTypeValue").typedInput({
+                typeField: "#node-input-assetTypeType",
+                types: [
+                    {
+                        value: "str",
+                        label: "string",
+                        options: [
+                            { value: "m.self", label: "My location (m.self)" },
+                            { value: "m.pin",  label: "Pin (m.pin)" }
+                        ]
+                    },
+                    "msg",
+                    "flow",
+                    "global"
+                ],
+                default: "msg"
+            });
+            $("#node-input-timestampValue").typedInput({
+                typeField: "#node-input-timestampType",
+                types: numTypes,
+                default: "msg"
+            });
+            $("#node-input-textValue").typedInput({
+                typeField: "#node-input-textType",
+                types: strTypes,
+                default: "msg"
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-send-location">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="!room:matrix.org">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">Optional. If empty, <code>msg.topic</code> is used.</div>
+
+    <div class="form-row">
+        <label for="node-input-latitudeValue"><i class="fa fa-crosshairs"></i> Latitude</label>
+        <input type="hidden" id="node-input-latitudeType">
+        <input type="text" id="node-input-latitudeValue" style="width:70%">
+    </div>
+    <div class="form-row">
+        <label for="node-input-longitudeValue"><i class="fa fa-crosshairs"></i> Longitude</label>
+        <input type="hidden" id="node-input-longitudeType">
+        <input type="text" id="node-input-longitudeValue" style="width:70%">
+    </div>
+    <div class="form-row">
+        <label for="node-input-altitudeValue"><i class="fa fa-arrow-up"></i> Altitude</label>
+        <input type="hidden" id="node-input-altitudeType">
+        <input type="text" id="node-input-altitudeValue" style="width:70%">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">
+        Optional. Metres above sea level. When provided the geo URI becomes <code>geo:lat,lng,alt</code>.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-geoUriValue"><i class="fa fa-map"></i> geo_uri</label>
+        <input type="hidden" id="node-input-geoUriType">
+        <input type="text" id="node-input-geoUriValue" style="width:70%">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">
+        Optional. A pre-built RFC&nbsp;5870 geo URI (e.g. <code>geo:48.85,2.35</code>). When set, Latitude / Longitude / Altitude are ignored.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-descriptionValue"><i class="fa fa-info-circle"></i> Description</label>
+        <input type="hidden" id="node-input-descriptionType">
+        <input type="text" id="node-input-descriptionValue" style="width:70%">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">
+        Optional. Label for the location (e.g. <em>Eiffel Tower</em>).
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-assetTypeValue"><i class="fa fa-map-marker"></i> Type</label>
+        <input type="hidden" id="node-input-assetTypeType">
+        <input type="text" id="node-input-assetTypeValue" style="width:70%">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">
+        <b>My location</b> (<code>m.self</code>) says "this is where I am"; <b>Pin</b> (<code>m.pin</code>) marks a generic pinned point.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-timestampValue"><i class="fa fa-clock-o"></i> Timestamp</label>
+        <input type="hidden" id="node-input-timestampType">
+        <input type="text" id="node-input-timestampValue" style="width:70%">
+    </div>
+    <div class="form-tips" style="margin-bottom:12px;">
+        Optional. Milliseconds since the UNIX epoch. Defaults to <em>now</em> when empty.
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-textValue"><i class="fa fa-file-text-o"></i> Body / text</label>
+        <input type="hidden" id="node-input-textType">
+        <input type="text" id="node-input-textValue" style="width:70%">
+    </div>
+    <div class="form-tips">
+        Optional. Override the auto-generated text fallback used in <code>body</code> and <code>m.text</code> for clients that can't render the map.
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-send-location">
+    <h3>Details</h3>
+    <p>Sends an m.location event to a Matrix room.</p>
+
+    <p>
+        Produces an <code>m.location</code> message just like Element's
+        <em>"Share my location"</em> feature, so the location renders as a map
+        snippet in clients that support it. The event content matches what
+        Element sends &mdash; legacy <code>geo_uri</code> + <code>body</code>
+        fields for older clients, plus the modern extensible-events fields
+        (<code>m.location</code>, <code>m.asset</code>, <code>m.text</code>,
+        <code>m.ts</code>) for newer ones. Built with
+        <code>matrix-js-sdk</code>'s <code>makeLocationContent</code> helper so
+        the wire format stays in lockstep with Element's.
+    </p>
+
+    <p>
+        Every input below is a <strong>typed input</strong>: pick the source
+        (<code>msg</code>, <code>flow</code>, <code>global</code>,
+        <code>num</code>, or <code>str</code>) and the value. The defaults
+        read from <code>msg.*</code> using the documented names so the simple
+        case <em>just works</em> &mdash; reach for the type selector when you
+        want to pull from a flow / global variable or pin a static value on
+        the node itself.
+    </p>
+
+    <h4>Configuration</h4>
+    <dl class="message-properties">
+        <dt>Server</dt>
+        <dd>The Matrix server config node.</dd>
+
+        <dt>Room ID</dt>
+        <dd>Optional default room. If empty, <code>msg.topic</code> is used.</dd>
+
+        <dt>Latitude <span class="property-type">number</span></dt>
+        <dd>Decimal degrees, between -90 and 90. Default: <code>msg.latitude</code>.</dd>
+
+        <dt>Longitude <span class="property-type">number</span></dt>
+        <dd>Decimal degrees, between -180 and 180. Default: <code>msg.longitude</code>.</dd>
+
+        <dt>Altitude <span class="property-type">number, optional</span></dt>
+        <dd>Metres above sea level. When provided, the geo URI becomes <code>geo:lat,lng,alt</code>. Default: <code>msg.altitude</code>.</dd>
+
+        <dt>geo_uri <span class="property-type">string, optional</span></dt>
+        <dd>A pre-built RFC&nbsp;5870 geo URI (e.g. <code>geo:48.85,2.35</code>). When set, the Latitude / Longitude / Altitude inputs are ignored. Default: <code>msg.geo_uri</code>.</dd>
+
+        <dt>Description <span class="property-type">string, optional</span></dt>
+        <dd>Label for the location (e.g. <em>Eiffel Tower</em>). Default: <code>msg.description</code>.</dd>
+
+        <dt>Type</dt>
+        <dd>
+            <b>My location</b> (<code>m.self</code>) marks the location as
+            "this is where I am right now" (the sender's location).
+            <b>Pin</b> (<code>m.pin</code>) marks it as a generic pinned
+            point. Defaults to <code>msg.assetType</code> (which the Receive
+            node populates for incoming location events, so a Receive node
+            wired straight to this one resends with the same asset type);
+            falls back to <code>m.self</code> when not provided. Flip the
+            type selector to <code>string</code> to pin a static value.
+        </dd>
+
+        <dt>Timestamp <span class="property-type">number, optional</span></dt>
+        <dd>Milliseconds since the UNIX epoch &mdash; when the location was correct. Defaults to <em>now</em>. Default source: <code>msg.timestamp</code>.</dd>
+
+        <dt>Body / text <span class="property-type">string, optional</span></dt>
+        <dd>Override the auto-generated text fallback used in <code>body</code> and <code>m.text</code>. If left empty, a sensible default like <code>User Location "Eiffel Tower" geo:48.85,2.35 at 2026-05-23T04:44:41Z</code> is generated. Default source: <code>msg.payload</code> (matches what the Receive node sets for incoming events).</dd>
+    </dl>
+
+    <h4>Inputs</h4>
+    <dl class="message-properties">
+        <dt>msg.topic <span class="property-type">string</span></dt>
+        <dd>Room ID to send the location to. Used when Room ID is not set on the node.</dd>
+
+        <dt class="optional">msg.&lt;configured&gt;</dt>
+        <dd>The specific message keys depend on the node configuration. By default the node reads <code>msg.latitude</code>, <code>msg.longitude</code>, <code>msg.altitude</code>, <code>msg.geo_uri</code>, <code>msg.description</code>, <code>msg.assetType</code>, <code>msg.timestamp</code>, and <code>msg.payload</code> &mdash; the same field names the Receive node populates for incoming <code>m.location</code> events, so a Receive node wired straight to this one re-sends the location verbatim. Rename or pull from <code>flow</code>/<code>global</code> via the typed-input selectors.</dd>
+    </dl>
+
+    <h4>Outputs</h4>
+    <p>Two outputs &mdash; <b>success</b> (top) and <b>error</b> (bottom).</p>
+    <dl class="message-properties">
+        <dt>msg.eventId <span class="property-type">string</span></dt>
+        <dd>The event ID of the sent location message (on the success output).</dd>
+
+        <dt>msg.payload <span class="property-type">object</span></dt>
+        <dd>The full content object that was sent to the room.</dd>
+
+        <dt>msg.error <span class="property-type">object</span></dt>
+        <dd>The error (on the error output, when sending fails).</dd>
+    </dl>
+</script>

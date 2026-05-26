@@ -99,6 +99,7 @@
         </label>
         <select id="node-input-messageFormat">
             <option value="">Default (plaintext)</option>
+            <option value="markdown">Markdown</option>
             <option value="html">HTML</option>
             <option value="msg.format">msg.format input</option>
         </select>
@@ -140,7 +141,7 @@
         <dt class="optional">msg.formatted_payload
             <span class="property-type">string</span>
         </dt>
-        <dd> the formatted HTML message (uses <code>msg.payload</code> if not defined). This only affects HTML messages.</dd>
+        <dd> the formatted HTML message (uses <code>msg.payload</code> if not defined). This only affects messages sent in <strong>HTML</strong> format &mdash; in Markdown mode the formatted body is generated from the markdown source.</dd>
 
         <dt class="optional">msg.type
             <span class="property-type">string | null</span>
@@ -150,7 +151,35 @@
         <dt class="optional">msg.format
             <span class="property-type">string | null</span>
         </dt>
-        <dd> This is only used and required when configured so on the node. Set to <code>null</code> for plain text and <code>'html'</code> for HTML.</dd>
+        <dd> This is only used and required when configured so on the node. Set to <code>null</code> for plain text, <code>'markdown'</code> for markdown (converted to HTML the same way Element does), or <code>'html'</code> for HTML.</dd>
+    </dl>
+
+    <h4>Message formats</h4>
+    <dl class="message-properties">
+        <dt>Default (plaintext)</dt>
+        <dd>The payload is sent as-is as the message body.</dd>
+
+        <dt>Markdown</dt>
+        <dd>
+            The payload is parsed as CommonMark markdown and converted to HTML
+            the same way Element does (using the same converter ported from
+            <code>matrix-react-sdk</code>). If the message turns out to contain
+            no markdown syntax it is sent as plain text; otherwise the original
+            markdown source becomes the message <code>body</code> and the
+            rendered HTML is sent as <code>formatted_body</code>, so clients
+            without HTML rendering still see a readable fallback.
+        </dd>
+
+        <dt>HTML</dt>
+        <dd>
+            The payload is sent as HTML. By default the same HTML is used for
+            both the plain-text and formatted versions; set
+            <code>msg.formatted_payload</code> if you want the
+            <code>formatted_body</code> to differ from <code>msg.payload</code>.
+        </dd>
+
+        <dt>msg.format input</dt>
+        <dd>Set <code>msg.format</code> at runtime to one of the options above (<code>null</code>, <code>'markdown'</code>, or <code>'html'</code>).</dd>
     </dl>
 
     <h3>Outputs</h3>

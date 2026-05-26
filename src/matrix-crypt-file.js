@@ -9,7 +9,7 @@ module.exports = function(RED) {
         this.name = n.name;
 
         node.on("input", async function (msg) {
-            const { got } = await import('got');
+            const got = (await import('got')).default;
 
             if(!msg.type) {
                 node.error('msg.type is required.', msg);
@@ -32,7 +32,9 @@ module.exports = function(RED) {
             }
 
             try{
-                let buffer = await got(msg.url).buffer();
+                const requestOptions = getRequestOptions(msg);
+
+                let buffer = await downloadBufferWithFallback(got, msg.url, requestOptions);
                 msg.payload = Buffer.from(await decryptAttachment(buffer, msg.content.file));
 
                 // handle thumbnail decryption if necessary
@@ -41,13 +43,14 @@ module.exports = function(RED) {
                     && msg.thumbnail_url
                     && msg.content.info.thumbnail_file
                 ) {
-                    let thumb_buffer = await got(msg.thumbnail_url).buffer();
+                    let thumb_buffer = await downloadBufferWithFallback(got, msg.thumbnail_url, requestOptions);
                     msg.thumbnail_payload = Buffer.from(await decryptAttachment(thumb_buffer, msg.content.info.thumbnail_file));
                 }
             } catch(error){
                 node.error(error);
                 msg.error = error;
                 node.send([null, msg]);
+                return;
             }
 
             msg.filename = msg.content.filename || msg.content.body;
@@ -57,12 +60,58 @@ module.exports = function(RED) {
     }
     RED.nodes.registerType("matrix-decrypt-file", MatrixDecryptFile);
 
+    function getRequestOptions(msg) {
+        const headers = { ...(msg.headers || {}) };
+        if (!headers.Authorization && msg.access_token) {
+            headers.Authorization = `Bearer ${msg.access_token}`;
+        }
+
+        return Object.keys(headers).length ? { headers } : {};
+    }
+
+    function getMediaEndpointFallbackUrl(url) {
+        if (typeof url !== "string") {
+            return null;
+        }
+
+        if (url.includes("/_matrix/media/v3/download/")) {
+            return url.replace("/_matrix/media/v3/download/", "/_matrix/client/v1/media/download/");
+        }
+
+        if (url.includes("/_matrix/client/v1/media/download/")) {
+            return url.replace("/_matrix/client/v1/media/download/", "/_matrix/media/v3/download/");
+        }
+
+        if (url.includes("/_matrix/media/v3/thumbnail/")) {
+            return url.replace("/_matrix/media/v3/thumbnail/", "/_matrix/client/v1/media/thumbnail/");
+        }
+
+        if (url.includes("/_matrix/client/v1/media/thumbnail/")) {
+            return url.replace("/_matrix/client/v1/media/thumbnail/", "/_matrix/media/v3/thumbnail/");
+        }
+
+        return null;
+    }
+
+    async function downloadBufferWithFallback(got, url, requestOptions) {
+        try {
+            return await got(url, requestOptions).buffer();
+        } catch (error) {
+            const fallbackUrl = getMediaEndpointFallbackUrl(url);
+            if (error?.response?.statusCode === 404 && fallbackUrl && fallbackUrl !== url) {
+                return await got(fallbackUrl, requestOptions).buffer();
+            }
+
+            throw error;
+        }
+    }
+
     function atob(a) {
-        return new Buffer.from(a, 'base64').toString('binary');
+        return Buffer.from(a, 'base64').toString('binary');
     }
 
     function btoa(b) {
-        return new Buffer.from(b).toString('base64');
+        return Buffer.from(b).toString('base64');
     }
 
     // the following was taken & modified from https://github.com/matrix-org/browser-encrypt-attachment/blob/master/index.js

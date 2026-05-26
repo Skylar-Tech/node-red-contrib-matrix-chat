@@ -183,6 +183,19 @@ Any messages containing "delete" will be removed by the client.
 
 </details>
 
+<details>
+<summary>Send a location to a room</summary>
+
+[View JSON](send-location-to-room.json)
+
+Sends an `m.location` event (a map pin) for the country of Norway to the configured room. Element and other matrix-react-sdk clients render it as a pin on the map with the label *"Norway"*; clients without map rendering see an auto-generated text fallback.
+
+Update the `Send Location` node's Room ID to your own room before deploying. The inject node is configured to fire a bare message (no payload, no topic), so the Send Location node falls back to its configured values for everything: asset type `m.pin`, description `Norway`, and geo URI `geo:60.4720,8.4689`.
+
+![send-location-to-room.png](send-location-to-room.png)
+
+</details>
+
 ### Event Handling
 
 <details>
@@ -428,6 +441,27 @@ Downloads received files/images. If the file is encrypted, it will decrypt it fo
 - Ensure that Node-RED has permission to write to the specified directory.
 
 ![Download & Store Received Files](store-received-files.png)
+
+</details>
+
+### Device Verification
+
+<details>
+<summary>Handle device verification (SAS / emoji)</summary>
+
+[View JSON](device-verification-flow.json)
+
+An end-to-end example of interactive device verification. The `matrix-verification` node emits every verification request and phase change; the flow routes by phase, automatically **accepts** incoming requests and **starts SAS**, then surfaces the SAS emoji so a human can compare it. Inject nodes let you **confirm** or **reject** the match, and there are paths to have the bot **request** verification of a specific user's device, or a user in a room.
+
+Requires end-to-end encryption to be enabled on the server config node. For the bot's own device to be trusted by others, also set up cross-signing via the **Set up secure backup & cross-signing** button on the server config node.
+
+**Instructions:**
+
+1. Import the flow and set the Matrix server config on each matrix node.
+2. Replace the `@CHANGE_ME:example.org` / `CHANGE_ME` placeholders in the "Verify a user" inject nodes if you want to use the bot-initiated paths.
+3. To verify the bot from another client, start a verification with it, watch the debug sidebar for the `sas` event, compare the emoji, then click the **Confirm SAS match** inject.
+
+![device-verification-flow.png](device-verification-flow.png)
 
 </details>
 
