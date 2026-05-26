@@ -9,7 +9,7 @@ module.exports = function(RED) {
         this.name = n.name;
 
         node.on("input", async function (msg) {
-            const { got } = await import('got');
+            const got = (await import('got')).default;
 
             if(!msg.type) {
                 node.error('msg.type is required.', msg);

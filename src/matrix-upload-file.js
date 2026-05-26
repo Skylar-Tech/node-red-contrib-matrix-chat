@@ -1,7 +1,8 @@
 const crypto = require("isomorphic-webcrypto");
 const ffmpeg = require('fluent-ffmpeg');
 const sharp = require('sharp');
-const getImageSize = require('image-size');
+const { imageSize } = require('image-size');
+const { imageSizeFromFile } = require('image-size/fromFile');
 const tmp = require('tmp');
 const fs = require('fs');
 const path = require('path');
@@ -37,7 +38,7 @@ module.exports = function(RED) {
         });
 
         async function detectFileType(filename, bufferOrPath, msg) {
-            const Mime = require('mime');
+            const Mime = (await import('mime')).default;
             let file = Buffer.isBuffer(bufferOrPath) ? filename : bufferOrPath;
 
             try {
@@ -216,10 +217,10 @@ module.exports = function(RED) {
 
                 async function addThumbnail(buffer) {
                     try {
-                        let imageSize = getImageSize(Buffer.isBuffer(buffer) ? buffer : buffer.data);
+                        let thumbSize = imageSize(Buffer.isBuffer(buffer) ? buffer : buffer.data);
                         msg.payload.info.thumbnail_info = {
-                            w: imageSize.width,
-                            h: imageSize.height,
+                            w: thumbSize.width,
+                            h: thumbSize.height,
                             size: getFileSize(Buffer.isBuffer(buffer) ? buffer : buffer.data)
                         }
                         let uploadedThumbnail = await node.server.matrixClient.uploadContent(
@@ -302,9 +303,11 @@ module.exports = function(RED) {
                 if (msgtype === 'm.image') {
                     // detect size of image
                     try {
-                        let imageSize = getImageSize(bufferOrPath);
-                        msg.payload.info.h = imageSize.height;
-                        msg.payload.info.w = imageSize.width;
+                        let dimensions = Buffer.isBuffer(bufferOrPath)
+                            ? imageSize(bufferOrPath)
+                            : await imageSizeFromFile(bufferOrPath);
+                        msg.payload.info.h = dimensions.height;
+                        msg.payload.info.w = dimensions.width;
 
                         // Generate thumbnail for image
                         if (node.generateThumbnails) {

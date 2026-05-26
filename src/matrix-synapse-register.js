@@ -22,7 +22,7 @@ module.exports = function(RED) {
         }
 
         node.on("input", async function (msg) {
-            const { got } = await import('got');
+            const got = (await import('got')).default;
 
             if(!msg.payload.username) {
                 node.error("msg.payload.username is required", msg);
