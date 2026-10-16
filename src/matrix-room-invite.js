@@ -24,7 +24,12 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.server.listen(node, "Room.invite", async function(msg) {
+        node.server.listen(node, "Room.invite", function(sharedMsg) {
+            // every Room Invite node gets the same msg; send a private copy
+            // (the live MatrixEvent stays shared, like in matrix-receive)
+            const { event, ...plain } = sharedMsg;
+            const msg = RED.util.cloneMessage(plain);
+            msg.event = event;
             node.send(msg);
         });
 
