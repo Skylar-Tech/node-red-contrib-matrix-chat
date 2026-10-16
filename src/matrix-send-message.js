@@ -68,8 +68,24 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
+        function sendError(text, msg, error) {
+            node.error(text, msg);
+            msg.error = error || text;
+            node.send([null, msg]);
+        }
+
         // Make the input handler async so we can await the dynamic import.
         node.on("input", async function (msg) {
+            // An exception escaping this async handler would be an unhandled
+            // rejection (which takes Node-RED down), so report it instead.
+            try {
+                await onInput(msg);
+            } catch(e) {
+                sendError("Error sending message: " + (e && e.message || e), msg, e);
+            }
+        });
+
+        async function onInput(msg) {
             // Await the SDK import and get the RelationType constant.
             const sdk = await sdkPromise;
             const RelationType = sdk.RelationType;
@@ -97,25 +113,24 @@ module.exports = function(RED) {
                 threadReply = getToValue(msg, node.threadReplyType, node.threadReplyValue);
 
             if (!node.server || !node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                sendError("No matrix server selected", msg);
                 return;
             }
 
             if(!node.server.isConnected()) {
-                node.error("Matrix server connection is currently closed", msg);
-                node.send([null, msg]);
+                sendError("Matrix server connection is currently closed", msg);
                 return;
             }
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.warn("Room must be specified in msg.topic or in configuration");
+                sendError("Room must be specified in msg.topic or in configuration", msg);
                 return;
             }
 
             let payload = n.message || msg.payload;
             if(!payload) {
-                node.error('msg.payload must be defined or the message configured on the node.', msg);
+                sendError('msg.payload must be defined or the message configured on the node.', msg);
                 return;
             }
 
@@ -125,7 +140,7 @@ module.exports = function(RED) {
             } else {
                 if (msgType === 'msg.type') {
                     if (!msg.type) {
-                        node.error("msg.type is set to be passed in via msg.type but was not defined", msg);
+                        sendError("msg.type is set to be passed in via msg.type but was not defined", msg);
                         return;
                     }
                     msgType = msg.type;
@@ -133,7 +148,7 @@ module.exports = function(RED) {
 
                 if (msgFormat === 'msg.format') {
                     if (!Object.hasOwn(msg, 'format')) {
-                        node.error("Message format is set to be passed in via msg.format but was not defined", msg);
+                        sendError("Message format is set to be passed in via msg.format but was not defined", msg);
                         return;
                     }
                     msgFormat = msg.format;
@@ -152,14 +167,16 @@ module.exports = function(RED) {
                     // rendered HTML as `formatted_body` and keep the original
                     // markdown source as `body` (matrix spec convention for
                     // formatted messages).  If the message turns out to be
-                    // plain text and contains backslash escapes, strip those
-                    // from `body` and send no HTML; otherwise leave `body`
-                    // as the original payload.
+                    // plain text and contains backslash escapes, send the
+                    // unescaped text as HTML (toPlaintext() returns
+                    // HTML-escaped text, so it must not go into `body`, where
+                    // "&" would show up as "&amp;"); `body` stays the source.
                     const source = payload.toString();
                     const md = new Markdown(source);
                     if (md.isPlainText()) {
                         if (source.indexOf("\\") > -1) {
-                            content.body = md.toPlaintext();
+                            content.format = "org.matrix.custom.html";
+                            content.formatted_body = md.toPlaintext();
                         }
                     } else {
                         content.format = "org.matrix.custom.html";
@@ -211,19 +228,16 @@ module.exports = function(RED) {
                 }
             }
 
-            node.server.matrixClient.sendMessage(msg.topic, content)
-                .then(function(e) {
-                    node.log("Message sent: " + payload);
-                    msg.eventId = e.event_id;
-                    node.log(JSON.stringify(e));
-                    node.send([msg, null]);
-                })
-                .catch(function(e){
-                    node.error("Error sending message: " + e, {});
-                    msg.error = e;
-                    node.send([null, msg]);
-                });
-        });
+            try {
+                let e = await node.server.matrixClient.sendMessage(msg.topic, content);
+                node.log("Message sent: " + payload);
+                msg.eventId = e.event_id;
+                node.log(JSON.stringify(e));
+                node.send([msg, null]);
+            } catch(e) {
+                sendError("Error sending message: " + e, msg, e);
+            }
+        }
 
         node.on("close", function() {
             node.server.deregister(node);
