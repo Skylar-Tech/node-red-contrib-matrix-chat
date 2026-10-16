@@ -41,16 +41,21 @@ module.exports = function(RED) {
                 return;
             }
 
-            try {
-                node.log("Leaving room " + msg.topic);
-                node.server.matrixClient.leave(msg.topic);
-                node.server.matrixClient.store.removeRoom(msg.topic);
-                node.send([msg, null]);
-            } catch(e) {
-                node.error("Failed to leave room " + msg.topic + ": " + e, msg);
-                msg.payload = e;
-                node.send([null, msg]);
-            }
+            // leave() returns a promise: it used to be ignored, so a failed
+            // leave (e.g. not a member) still reported success and the
+            // rejection went unhandled.
+            node.log("Leaving room " + msg.topic);
+            node.server.matrixClient.leave(msg.topic)
+                .then(function() {
+                    node.server.matrixClient.store.removeRoom(msg.topic);
+                    node.send([msg, null]);
+                })
+                .catch(function(e) {
+                    node.error("Failed to leave room " + msg.topic + ": " + e, msg);
+                    msg.error = e;
+                    msg.payload = e;
+                    node.send([null, msg]);
+                });
         });
         
         node.on("close", function() {
