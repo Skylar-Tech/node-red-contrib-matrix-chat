@@ -655,32 +655,64 @@ module.exports = function(RED) {
                     node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
                 }));
 
+                // Resolve a room that may not be in the store yet (invites are
+                // reported before the SDK stores the room). Gives up after 5s.
+                function waitForRoom(roomId) {
+                    let room = node.matrixClient.getRoom(roomId);
+                    if(room) {
+                        return Promise.resolve(room);
+                    }
+                    return new Promise(function(resolve) {
+                        let timer = setTimeout(function() {
+                            node.matrixClient.off(ClientEvent.Room, onRoom);
+                            resolve(node.matrixClient.getRoom(roomId));
+                        }, 5000);
+                        function onRoom(r) {
+                            if(r && r.roomId === roomId) {
+                                clearTimeout(timer);
+                                node.matrixClient.off(ClientEvent.Room, onRoom);
+                                resolve(r);
+                            }
+                        }
+                        node.matrixClient.on(ClientEvent.Room, onRoom);
+                    });
+                }
+
                 // handle auto-joining rooms
                 node.matrixClient.on(RoomMemberEvent.Membership, guardAsync("room membership event", async function(event, member) {
-                    if(node.initializedAt > event.getDate()) {
-                        return; // skip events that occurred before our client initialized
+                    if (member.membership !== "invite" || String(member.userId).toLowerCase() !== String(node.userId).toLowerCase()) {
+                        return;
                     }
-
-                    if (member.membership === "invite" && member.userId === node.userId) {
-                        node.log("Got invite to join room " + member.roomId);
-                        if(node.autoAcceptRoomInvites) {
-                            node.matrixClient.joinRoom(member.roomId).then(function() {
-                                node.log("Automatically accepted invitation to join room " + member.roomId);
-                            }).catch(function(e) {
-                                node.warn("Cannot join room (could be from being kicked/banned) " + member.roomId + ": " + e);
-                            });
-                        }
-
-                        let room = node.matrixClient.getRoom(event.getRoomId());
-                        node.emit("Room.invite", {
-                            type      : 'm.room.member',
-                            userId    : event.getSender(),
-                            topic     : event.getRoomId(),
-                            topicName : (room ? room.name : null) || null,
-                            event     : event,
-                            eventId   : event.getId(),
+                    // Invites reach us as stripped state with no timestamp
+                    // (getDate() is null; the old `initializedAt > null` check
+                    // skipped every invite, #141). Those are always handled,
+                    // including invites still pending from while Node-RED was
+                    // offline. Dated member events from before startup are
+                    // skipped: initial sync replays the bot's past invites in
+                    // the timeline of rooms it has already joined.
+                    if(event.getDate() && event.getDate() < node.initializedAt) {
+                        return;
+                    }
+                    node.log("Got invite to join room " + member.roomId);
+                    if(node.autoAcceptRoomInvites) {
+                        node.matrixClient.joinRoom(member.roomId).then(function() {
+                            node.log("Automatically accepted invitation to join room " + member.roomId);
+                        }).catch(function(e) {
+                            node.warn("Cannot join room (could be from being kicked/banned) " + member.roomId + ": " + e);
                         });
                     }
+
+                    // The SDK fires this before it stores the invited room,
+                    // so wait for the room to get its name.
+                    let room = await waitForRoom(member.roomId);
+                    node.emit("Room.invite", {
+                        type      : 'm.room.member',
+                        userId    : event.getSender(),
+                        topic     : event.getRoomId(),
+                        topicName : (room ? room.name : null) || null,
+                        event     : event,
+                        eventId   : event.getId(),
+                    });
                 }));
 
                 node.matrixClient.on(ClientEvent.Sync, guardAsync("sync state change", async function(state, prevState, data) {

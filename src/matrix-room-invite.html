@@ -33,7 +33,9 @@
 <script type="text/html" data-help-name="matrix-room-invite">
     <h3>Details</h3>
     <p>
-        This node receives room invites.
+        This node receives room invites. If "Auto join invited rooms" is off on the
+        server configuration, invites that are still pending are reported again each
+        time Node-RED starts or the flows are fully deployed.
     </p>
 
     <h3>Outputs</h3>
