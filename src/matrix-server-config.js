@@ -247,7 +247,7 @@ module.exports = function(RED) {
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
 
-                            if(!device_id && node.enableE2ee) {
+                            if(!device_id && node.e2ee) {
                                 node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
                             } else {
                                 if(!stored_device_id || stored_device_id !== device_id) {
