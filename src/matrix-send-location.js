@@ -17,22 +17,45 @@ module.exports = function(RED) {
         // Dynamic inputs: each has a `*Type` (msg | flow | global | str | num)
         // and a `*Value` (the property path or literal).  Defaults preserve the
         // documented per-message names so existing flows keep working.
-        this.latitudeType     = n.latitudeType     || "msg";
-        this.latitudeValue    = n.latitudeValue    || "latitude";
-        this.longitudeType    = n.longitudeType    || "msg";
-        this.longitudeValue   = n.longitudeValue   || "longitude";
-        this.altitudeType     = n.altitudeType     || "msg";
-        this.altitudeValue    = n.altitudeValue    || "altitude";
-        this.geoUriType       = n.geoUriType       || "msg";
-        this.geoUriValue      = n.geoUriValue      || "geo_uri";
-        this.descriptionType  = n.descriptionType  || "msg";
-        this.descriptionValue = n.descriptionValue || "description";
-        this.assetTypeType    = n.assetTypeType    || "msg";
-        this.assetTypeValue   = n.assetTypeValue   || "assetType";
-        this.timestampType    = n.timestampType    || "msg";
-        this.timestampValue   = n.timestampValue   || "timestamp";
-        this.textType         = n.textType         || "msg";
-        this.textValue        = n.textValue        || "payload";
+        //
+        // The default name is only used when the setting is missing (older
+        // configs) or a msg property is left blank. An empty str/num literal
+        // means "not provided"; it used to be replaced by the default *name*,
+        // so e.g. the text "geo_uri" was sent as the geo URI and an empty
+        // asset type failed as "assetType".
+        function typedSetting(type, value, defaultValue) {
+            type = type || "msg";
+            if (value === undefined || value === null || (value === "" && type === "msg")) {
+                value = defaultValue;
+            }
+            return { type: type, value: value };
+        }
+        const settings = {
+            latitude:    typedSetting(n.latitudeType,    n.latitudeValue,    "latitude"),
+            longitude:   typedSetting(n.longitudeType,   n.longitudeValue,   "longitude"),
+            altitude:    typedSetting(n.altitudeType,    n.altitudeValue,    "altitude"),
+            geoUri:      typedSetting(n.geoUriType,      n.geoUriValue,      "geo_uri"),
+            description: typedSetting(n.descriptionType, n.descriptionValue, "description"),
+            assetType:   typedSetting(n.assetTypeType,   n.assetTypeValue,   "assetType"),
+            timestamp:   typedSetting(n.timestampType,   n.timestampValue,   "timestamp"),
+            text:        typedSetting(n.textType,        n.textValue,        "payload"),
+        };
+        this.latitudeType     = settings.latitude.type;
+        this.latitudeValue    = settings.latitude.value;
+        this.longitudeType    = settings.longitude.type;
+        this.longitudeValue   = settings.longitude.value;
+        this.altitudeType     = settings.altitude.type;
+        this.altitudeValue    = settings.altitude.value;
+        this.geoUriType       = settings.geoUri.type;
+        this.geoUriValue      = settings.geoUri.value;
+        this.descriptionType  = settings.description.type;
+        this.descriptionValue = settings.description.value;
+        this.assetTypeType    = settings.assetType.type;
+        this.assetTypeValue   = settings.assetType.value;
+        this.timestampType    = settings.timestamp.type;
+        this.timestampValue   = settings.timestamp.value;
+        this.textType         = settings.text.type;
+        this.textValue        = settings.text.value;
 
         if (!node.server) {
             node.warn("No configuration node");
@@ -90,7 +113,8 @@ module.exports = function(RED) {
 
         node.on("input", async function(msg) {
             if (!node.server || !node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
             if (!node.server.isConnected()) {
@@ -102,6 +126,7 @@ module.exports = function(RED) {
             msg.topic = node.roomId || msg.topic;
             if (!msg.topic) {
                 node.error("Room must be specified in msg.topic or in configuration", msg);
+                node.send([null, msg]);
                 return;
             }
 
