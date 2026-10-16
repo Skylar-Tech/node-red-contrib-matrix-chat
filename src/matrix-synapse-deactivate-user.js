@@ -37,7 +37,7 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                node.error("No matrix server selected", msg);
                 return;
             }
 
@@ -47,8 +47,10 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(!msg.userId) {
-                node.error("msg.userId must be set to edit/create a user (ex: @user:server.com)", msg);
+            if(!msg.userId || typeof msg.userId !== 'string') {
+                node.error("msg.userId must be set to deactivate a user (ex: @user:server.com)", msg);
+                msg.error = "msg.userId must be set to deactivate a user (ex: @user:server.com)";
+                node.send([null, msg]);
                 return;
             }
 
@@ -61,13 +63,14 @@ module.exports = function(RED) {
                     'POST',
                     path,
                     undefined,
-                    {"erase": (msg.erase || false)},
+                    // Synapse requires a JSON boolean (a string is rejected with 400)
+                    {"erase": (msg.erase === true || msg.erase === 'true')},
                     {"prefix": '' })
                 .then(function(e){
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error deactivating user " + e);
+                    node.error("Error deactivating user " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });
