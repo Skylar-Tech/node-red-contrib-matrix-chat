@@ -120,8 +120,35 @@ module.exports = function(RED) {
         node.register = function(consumerNode) {
             node.users[consumerNode.id] = consumerNode;
         };
+        // Listeners consumers attach to this node, so deregister() can remove
+        // them. Without this a consumer that is redeployed on its own
+        // ("Modified Nodes" deploy, this config node keeps running) left its
+        // old listeners behind: closed receive nodes kept forwarding every
+        // message, so each redeploy added another duplicate.
+        let consumerListeners = new Map(); // consumer id -> [[event, fn], ...]
+        node.listen = function(consumerNode, event, fn) {
+            node.on(event, fn);
+            if(!consumerListeners.has(consumerNode.id)) {
+                consumerListeners.set(consumerNode.id, []);
+            }
+            consumerListeners.get(consumerNode.id).push([event, fn]);
+            // A consumer created while we are already connected missed the
+            // "connected" event; replay it so its status is not stuck on
+            // "disconnected".
+            if(event === "connected" && node.connected === true) {
+                setImmediate(function() {
+                    if(node.connected === true && consumerListeners.has(consumerNode.id)) {
+                        fn();
+                    }
+                });
+            }
+        };
         node.deregister = function(consumerNode) {
             delete node.users[consumerNode.id];
+            for(const [event, fn] of consumerListeners.get(consumerNode.id) || []) {
+                node.removeListener(event, fn);
+            }
+            consumerListeners.delete(consumerNode.id);
         };
 
         if(!this.userId) {

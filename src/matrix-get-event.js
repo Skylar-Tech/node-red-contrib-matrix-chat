@@ -19,11 +19,11 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 

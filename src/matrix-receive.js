@@ -41,15 +41,15 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.server.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
+        node.server.listen(node, "Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
             // if node has a room ID set we only listen on that room
             if (node.roomIds.length && !node.roomIds.includes(room.roomId)) {
                 return;

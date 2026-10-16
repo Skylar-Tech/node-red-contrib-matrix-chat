@@ -16,15 +16,15 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.server.on("Room.invite", async function(msg) {
+        node.server.listen(node, "Room.invite", async function(msg) {
             node.send(msg);
         });
 
