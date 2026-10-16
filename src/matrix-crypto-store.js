@@ -186,6 +186,11 @@ async function snapshotCryptoStore(filePath, dbNamePrefix) {
         db.close();
         out.push({ name, version, stores });
     }
+    if (!out.length) {
+        // Nothing in memory (e.g. the store was not restored yet). Writing
+        // that would replace a good snapshot with an empty one.
+        return false;
+    }
 
     const tmp = `${filePath}.tmp`;
     fs.writeFileSync(tmp, v8.serialize(out));

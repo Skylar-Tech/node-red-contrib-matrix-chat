@@ -227,6 +227,10 @@ module.exports = function(RED) {
             // endpoint. Stops any further snapshot from writing the (deleted
             // or recreated-empty) store back to disk before the redeploy.
             cryptoCleared = false,
+            // Set once the Rust crypto stack is initialized. Until then the
+            // in-memory store may not be restored yet, and snapshotting it
+            // would overwrite the saved store on disk.
+            cryptoReady = false,
             // Set when the node is closed. Startup is asynchronous (SDK import,
             // homeserver discovery, /whoami, crypto init), so every step checks
             // it: a node closed mid-startup (e.g. deployed again quickly) must
@@ -306,7 +310,7 @@ module.exports = function(RED) {
             // Snapshot the Rust crypto store to disk so E2EE state survives
             // restarts. No-op when E2EE is disabled.
             async function persistCrypto() {
-                if(!cryptoSnapshotPath || cryptoCleared) {
+                if(!cryptoSnapshotPath || cryptoCleared || !cryptoReady) {
                     return;
                 }
                 try {
@@ -1009,6 +1013,7 @@ module.exports = function(RED) {
                                     { cause: cryptoInitError }
                                 );
                             }
+                            cryptoReady = true;
                             let crypto = node.matrixClient.getCrypto();
                             if(crypto) {
                                 // Blacklist (refuse to encrypt to) unverified devices only
