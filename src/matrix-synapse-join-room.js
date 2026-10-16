@@ -12,6 +12,7 @@ module.exports = function(RED) {
             node.error('Server must be configured on the node.', {});
             return;
         }
+        node.server.register(node);
         this.encodeUri = function(pathTemplate, variables) {
             for (const key in variables) {
                 if (!variables.hasOwnProperty(key)) {
@@ -36,7 +37,7 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                node.error("No matrix server selected", msg);
                 return;
             }
 
@@ -72,7 +73,7 @@ module.exports = function(RED) {
                     msg.topic = e.room_id;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error joining user to room " + e);
+                    node.error("Error joining user to room " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });
