@@ -95,8 +95,12 @@ module.exports = function(RED) {
             };
 
             const setUrls = (urlKey, encryptedKey) => {
-                const url = msg.encrypted ? msg.content[encryptedKey]?.url : msg.content[urlKey];
-                if (url) {
+                // Detect encrypted vs plain media by shape, not by whether the
+                // event is encrypted: an encrypted event can carry plain media
+                // (stickers always do, some clients and bridges do for files),
+                // where content.url is the mxc string.
+                const url = msg.content[encryptedKey]?.url || msg.content[urlKey];
+                if (typeof url === 'string' && url) {
                     const authenticatedUrl = node.server.matrixClient.mxcUrlToHttp(
                         url,
                         undefined,
@@ -165,10 +169,8 @@ module.exports = function(RED) {
                 case 'm.audio':
                     if (!node.acceptAudio) return;
                     setUrls('url', 'file');
-                    if ('org.matrix.msc1767.file' in msg.content) {
-                        msg.filename = msg.content['org.matrix.msc1767.file'].name;
-                        msg.mimetype = msg.content['org.matrix.msc1767.file'].mimetype;
-                    }
+                    msg.filename = msg.content['org.matrix.msc1767.file']?.name || msg.content.filename || msg.content.body;
+                    msg.mimetype = msg.content['org.matrix.msc1767.file']?.mimetype || msg.content.info?.mimetype;
                     if ('org.matrix.msc1767.audio' in msg.content) {
                         msg.duration = msg.content['org.matrix.msc1767.audio'].duration;
                         msg.waveform = msg.content['org.matrix.msc1767.audio'].waveform;
@@ -215,12 +217,16 @@ module.exports = function(RED) {
                     break;
                 }
 
-                case 'm.reaction':
+                case 'm.reaction': {
                     if (!node.acceptReactions) return;
-                    msg.info = msg.content["m.relates_to"].info;
-                    msg.referenceEventId = msg.content["m.relates_to"].event_id;
-                    msg.payload = msg.content["m.relates_to"].key;
+                    // a redacted or malformed reaction has no m.relates_to
+                    const relation = msg.content["m.relates_to"];
+                    if (!relation) return;
+                    msg.info = relation.info;
+                    msg.referenceEventId = relation.event_id;
+                    msg.payload = relation.key;
                     break;
+                }
 
                 default:
                     return;
