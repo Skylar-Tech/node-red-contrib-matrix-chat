@@ -49,9 +49,9 @@ module.exports = function(RED) {
             }
 
             node.server.matrixClient.kick(msg.topic, msg.userId, n.reason || msg.reason || undefined)
-                .then(function(e) {
+                .then(function() {
+                    // the endpoint returns {} (no event id), so msg is passed on unchanged
                     node.log("Successfully kicked " + msg.userId + " from " + msg.topic);
-                    msg.eventId = e.event_id;
                     node.send([msg, null]);
                 })
                 .catch(function(e){
