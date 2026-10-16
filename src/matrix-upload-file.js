@@ -482,16 +482,18 @@ module.exports = function(RED) {
      * @return {string} The base64 without padding.
      */
     function encodeBase64(uint8Array) {
-        // Misinterpt the Uint8Array as Latin-1.
-        // window.btoa expects a unicode string with codepoints in the range 0-255.
-        // var latin1String = String.fromCharCode.apply(null, uint8Array);
-        // Use the builtin base64 encoder.
-        var paddedBase64 = btoa(uint8Array);
-        // Calculate the unpadded length.
-        var inputLength = uint8Array.length;
-        var outputLength = 4 * Math.floor((inputLength + 2) / 3) + (inputLength + 2) % 3 - 2;
-        // Return the unpadded base64.
-        return paddedBase64.slice(0, outputLength);
+        // Encode the actual bytes as unpadded base64.
+        //
+        // NOTE: do not pass the Uint8Array straight to btoa(). btoa() coerces
+        // its argument to a string, so btoa(uint8Array) base64-encodes the
+        // array's "1,2,3,..." text form rather than the raw bytes, producing a
+        // corrupt iv / sha256 and breaking attachment decryption on the
+        // recipient side ("unable to decrypt"). Buffer handles the byte view
+        // (offset/length) correctly even for pooled buffers.
+        return Buffer
+            .from(uint8Array.buffer, uint8Array.byteOffset, uint8Array.byteLength)
+            .toString('base64')
+            .replace(/=+$/, '');
     }
 
     /**
