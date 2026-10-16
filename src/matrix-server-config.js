@@ -140,7 +140,11 @@ module.exports = function(RED) {
         // multiple server-config nodes never collide.
         let cryptoDbPrefix = 'mxjssdk-' + MatrixFolderNameFromUserId(this.userId),
             cryptoSnapshotPath = null,
-            cryptoSnapshotInterval = null;
+            cryptoSnapshotInterval = null,
+            // Set once the encryption data has been cleared via the admin
+            // endpoint. Stops any further snapshot from writing the (deleted
+            // or recreated-empty) store back to disk before the redeploy.
+            cryptoCleared = false;
 
         if(!this.credentials.accessToken) {
             node.error("Matrix connection failed: missing access token in configuration.");
@@ -214,7 +218,7 @@ module.exports = function(RED) {
             // Snapshot the Rust crypto store to disk so E2EE state survives
             // restarts. No-op when E2EE is disabled.
             async function persistCrypto() {
-                if(!cryptoSnapshotPath) {
+                if(!cryptoSnapshotPath || cryptoCleared) {
                     return;
                 }
                 try {
@@ -227,7 +231,10 @@ module.exports = function(RED) {
             // Discard all persisted crypto state for this account. Used when the
             // device ID changes - the old crypto store belongs to a device that
             // no longer exists and the Rust crypto stack refuses to load it.
+            // Resolves to false if the in-memory database could not be deleted
+            // (e.g. it is still held open), true otherwise.
             async function discardCryptoStore() {
+                let complete = true;
                 // remove the persisted Rust crypto snapshot
                 try {
                     if(cryptoSnapshotPath) {
@@ -253,17 +260,78 @@ module.exports = function(RED) {
                         let dbs = await indexedDB.databases();
                         for(let db of dbs) {
                             if(db.name && db.name.indexOf(cryptoDbPrefix) === 0) {
-                                await new Promise(function(resolve) {
+                                // Wait for the delete to actually finish. While
+                                // a connection is open the request only fires
+                                // "blocked" and completes once it closes, so
+                                // treating "blocked" as done would leave the
+                                // database in place.
+                                let deleted = await new Promise(function(resolve) {
                                     let req = indexedDB.deleteDatabase(db.name);
-                                    req.onsuccess = req.onerror = req.onblocked = function(){ resolve(); };
+                                    let timer = setTimeout(function(){ resolve(false); }, 10000);
+                                    req.onsuccess = function(){ clearTimeout(timer); resolve(true); };
+                                    req.onerror = function(){ clearTimeout(timer); resolve(false); };
                                 });
+                                if(!deleted) {
+                                    complete = false;
+                                    node.warn("Could not delete in-memory crypto database " + db.name + " (still in use)");
+                                }
                             }
                         }
                     }
                 } catch(e) {
+                    complete = false;
                     node.warn("Could not clear in-memory crypto database: " + e);
                 }
+                return complete;
             }
+
+            // "Encryption hold": after the encryption data is cleared the node
+            // must not reconnect with the same device ID. The homeserver still
+            // has that device's old one-time keys, so the regenerated keys are
+            // rejected ("One time key ... already exists") and incoming
+            // encrypted messages can never be decrypted. A marker file records
+            // the cleared device; while it matches, the node stays disconnected
+            // (across deploys and restarts) until the bot logs in as a new
+            // session, which gets a new device ID.
+            let encryptionHoldPath = localStorageDir + '/encryption-hold.json';
+
+            function readEncryptionHold() {
+                try {
+                    if(fs.pathExistsSync(encryptionHoldPath)) {
+                        return fs.readJsonSync(encryptionHoldPath);
+                    }
+                } catch(e) {
+                    node.warn("Could not read " + encryptionHoldPath + ": " + e);
+                    return { clearedAt: null, deviceId: null }; // unreadable - stay on hold
+                }
+                return null;
+            }
+
+            node.getEncryptionHold = readEncryptionHold;
+
+            // Clear all encryption data for this account (used by the
+            // /matrix-chat/clear-encryption-data admin endpoint). The client is
+            // stopped first: the running crypto stack holds its IndexedDB
+            // database open, which blocks deleting it. Snapshotting is disabled
+            // so the node's close handler cannot write the store back to disk.
+            // The hold marker is written before anything is deleted, so the
+            // node stays disconnected even if this is interrupted.
+            node.clearEncryptionData = async function() {
+                cryptoCleared = true;
+                stopClient();
+                if(node.matrixClient) {
+                    // also stops the crypto stack when the client never
+                    // started syncing (stopClient() above skips that case)
+                    node.matrixClient.stopClient();
+                }
+                let deviceId = (node.matrixClient && node.matrixClient.getDeviceId())
+                    || node.deviceId || getStoredDeviceId(localStorage) || null;
+                fs.writeJsonSync(encryptionHoldPath, { clearedAt: new Date().toISOString(), deviceId: deviceId });
+                return {
+                    complete: await discardCryptoStore(),
+                    deviceId: deviceId,
+                };
+            };
 
             function stopClient() {
                 if(node.matrixClient && node.matrixClient.clientRunning) {
@@ -664,6 +732,25 @@ module.exports = function(RED) {
                 async function run() {
                     try {
                         if(node.e2ee){
+                            // Encryption data was cleared: only connect once the
+                            // bot has logged in as a new session (new device ID).
+                            let hold = readEncryptionHold();
+                            if(hold) {
+                                let deviceId = node.matrixClient.getDeviceId();
+                                // a hold without a device ID (unreadable file, or the
+                                // device was unknown when clearing) cannot tell the
+                                // old session from a new one, so it always holds
+                                if(!deviceId || !hold.deviceId || deviceId === hold.deviceId) {
+                                    node.warn(
+                                        `Encryption data was cleared for session ${hold.deviceId || '(unknown)'}, so the Matrix client stays disconnected. ` +
+                                        'Log in as a new session ("Update Access Token" in the server configuration), then deploy. ' +
+                                        `To reconnect with the same session anyway, delete ${encryptionHoldPath} and redeploy.`
+                                    );
+                                    return;
+                                }
+                                fs.removeSync(encryptionHoldPath);
+                                node.log(`New session ${deviceId} after encryption data was cleared; connecting with a fresh encryption store.`);
+                            }
                             node.log("Initializing crypto...");
                             ensureIndexedDBShim();
                             // If the device ID has changed (e.g. a new login), the
@@ -678,10 +765,25 @@ module.exports = function(RED) {
                             } else {
                                 await restoreCryptoStore(cryptoSnapshotPath);
                             }
-                            await node.matrixClient.initRustCrypto({
-                                useIndexedDB: true,
-                                cryptoDatabasePrefix: cryptoDbPrefix,
-                            });
+                            try {
+                                await node.matrixClient.initRustCrypto({
+                                    useIndexedDB: true,
+                                    cryptoDatabasePrefix: cryptoDbPrefix,
+                                });
+                            } catch(cryptoInitError) {
+                                // Most likely a corrupted encryption store (e.g. from
+                                // an incomplete migration). Fail with instructions
+                                // rather than a bare WASM error, and never clear the
+                                // data automatically - the user decides via the UI.
+                                throw new Error(
+                                    `Encryption initialization failed (${cryptoInitError && cryptoInitError.message || cryptoInitError}). ` +
+                                    'This may indicate a corrupted encryption store. ' +
+                                    'To recover, log in as a new session ("Update Access Token" in the server configuration) and deploy, ' +
+                                    'which starts a fresh encryption store. Use "Clear encryption data" there first to also delete the old data. ' +
+                                    'Previously received encrypted messages will no longer be decryptable.',
+                                    { cause: cryptoInitError }
+                                );
+                            }
                             let crypto = node.matrixClient.getCrypto();
                             if(crypto) {
                                 // Blacklist (refuse to encrypt to) unverified devices only
@@ -944,6 +1046,63 @@ module.exports = function(RED) {
                 }
 
                 return res.json({ result: 'error', message: 'Unknown action: ' + action });
+            } catch(error) {
+                res.json({ result: 'error', message: String(error && error.message || error) });
+            }
+        });
+
+    /**
+     * Clear encryption data for a server configuration, used when the crypto
+     * store is corrupted and needs to be reset. Same flows.write protection
+     * as the other admin endpoints, so it is not publicly exposed.
+     *
+     * Actions (on req.body.id, the server config node):
+     *  - status : whether the node is on an encryption hold (see
+     *             readEncryptionHold in MatrixServerNode)
+     *  - clear  : (default) stop the client, delete the encryption data and
+     *             put the node on hold until it logs in as a new session.
+     *             Requires confirmDelete: true to prevent accidental data loss.
+     */
+    RED.httpAdmin.post(
+        "/matrix-chat/clear-encryption-data",
+        RED.auth.needsPermission('flows.write'),
+        async function(req, res) {
+            try {
+                const serverNode = RED.nodes.getNode(req.body.id);
+                if(!serverNode || typeof serverNode.clearEncryptionData !== 'function') {
+                    return res.json({ result: 'error', message: 'Server configuration not found or not running. Save and deploy the server configuration node first.' });
+                }
+                const action = req.body.action || 'clear';
+
+                if(action === 'status') {
+                    return res.json({ result: 'ok', hold: serverNode.getEncryptionHold() });
+                }
+                if(action !== 'clear') {
+                    return res.json({ result: 'error', message: 'Unknown action: ' + action });
+                }
+                if(!serverNode.e2ee) {
+                    // the hold is only checked with E2EE on, and there is no
+                    // encryption data to clear without it
+                    return res.json({ result: 'error', message: 'End-to-end encryption is not enabled for this server configuration, so there is no encryption data to clear.' });
+                }
+                if(req.body.confirmDelete !== true) {
+                    return res.json({ result: 'error', message: 'Confirmation required. Pass confirmDelete: true to proceed.' });
+                }
+
+                const { complete, deviceId } = await serverNode.clearEncryptionData();
+                if(!complete) {
+                    return res.json({
+                        result: 'error',
+                        message: 'The Matrix client was stopped but some encryption data is still in use and could not be removed. Restart Node-RED to finish clearing it.'
+                    });
+                }
+
+                serverNode.log(`Encryption data cleared for session ${deviceId}. The client stays disconnected until it logs in as a new session.`);
+                return res.json({
+                    result: 'ok',
+                    deviceId: deviceId,
+                    message: 'Encryption data has been cleared. The Matrix client is disconnected and will stay disconnected, even after deploys and restarts, until the bot logs in as a new session.',
+                });
             } catch(error) {
                 res.json({ result: 'error', message: String(error && error.message || error) });
             }

@@ -88,6 +88,12 @@ async function restoreCryptoStore(filePath) {
         if (existing.has(dbSpec.name)) {
             continue; // already live in memory - don't overwrite
         }
+        if (!Array.isArray(dbSpec.stores) || !dbSpec.stores.length) {
+            // An empty database at the store's version would stop the Rust
+            // crypto stack from creating its schema - leave it out so it
+            // initializes fresh instead.
+            continue;
+        }
 
         const openReq = indexedDB.open(dbSpec.name, dbSpec.version);
         openReq.onupgradeneeded = () => {
@@ -152,6 +158,14 @@ async function snapshotCryptoStore(filePath, dbNamePrefix) {
     const out = [];
     for (const { name, version } of dbList) {
         const db = await reqAsync(indexedDB.open(name, version));
+        if (!db.objectStoreNames.length) {
+            // Nothing worth persisting, and opening a database that was just
+            // deleted recreates it empty. Writing that shell to disk would make
+            // the Rust crypto stack fail on the next start
+            // ("No objectStore named core").
+            db.close();
+            continue;
+        }
         const stores = [];
         for (const storeName of Array.from(db.objectStoreNames)) {
             const tx = db.transaction(storeName, 'readonly');
