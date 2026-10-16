@@ -34,17 +34,19 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function() {
+        node.server.listen(node, "disconnected", function() {
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on("input", async function(msg) {
             if (!node.server || !node.server.matrixClient) {
-                node.error("No matrix server selected", msg);
+                msg.error = "No matrix server selected";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
             }
 

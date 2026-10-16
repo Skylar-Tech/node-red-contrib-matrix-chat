@@ -3,7 +3,7 @@
         category: 'matrix',
         color: '#00b7ca',
         icon: "matrix.png",
-        outputLabels: ["success", "error"],
+        outputLabels: ["invite"],
         inputs: 0,
         outputs: 1,
         defaults: {
@@ -33,12 +33,14 @@
 <script type="text/html" data-help-name="matrix-room-invite">
     <h3>Details</h3>
     <p>
-        This node receives room invites.
+        This node receives room invites. If "Auto join invited rooms" is off on the
+        server configuration, invites that are still pending are reported again each
+        time Node-RED starts or the flows are fully deployed.
     </p>
 
     <h3>Outputs</h3>
     <ol class="node-ports">
-        <li>Success
+        <li>Invite
             <dl class="message-properties">
                 <dt>msg.type <span class="property-type">string</span></dt>
                 <dd>Always <code>m.room.member</code></dd>
@@ -67,12 +69,6 @@
             <dl class="message-properties">
                 <dt>msg.eventId <span class="property-type">object</span></dt>
                 <dd>The ID of the event for this invite.</dd>
-            </dl>
-        </li>
-        <li>Error
-            <dl class="message-properties">
-                <dt>msg.error <span class="property-type">string</span></dt>
-                <dd>the error that occurred.</dd>
             </dl>
         </li>
     </ol>

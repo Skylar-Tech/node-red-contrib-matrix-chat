@@ -36,9 +36,11 @@
         defaults: {
             name: { value: null },
             autoAcceptRoomInvites: { value: true },
-            enableE2ee: { type: "checkbox", value: true },
-            global: { type: "checkbox", value: true },
-            allowUnknownDevices: { type: "checkbox", value: true }
+            // no "type" here: in defaults, "type" marks a reference to a config
+            // node, so the editor showed these as undefined in the Info panel
+            enableE2ee: { value: true },
+            global: { value: true },
+            allowUnknownDevices: { value: true }
         },
         icon: "matrix.png",
         label: function() {
@@ -202,6 +204,147 @@
             $("#matrix-secure-backup-btn").on("click", function() {
                 $("#matrix-sb-overlay").data("matrixNodeId", nodeId).fadeIn(120);
                 $("#matrix-sb-overlay").data("sbStatusFn")();
+            });
+
+            // --- Clear encryption data (modal dialog) ---
+            // Destructive, so the user must type "delete" before Confirm is
+            // enabled. Reuses the secure backup modal's styles (built above).
+            // After clearing, the node stays disconnected ("encryption hold")
+            // until the bot logs in as a new session; the dialog then walks
+            // the user through that.
+            if (!document.getElementById("matrix-ce-overlay")) {
+                $('<style>'
+                    + '.matrix-ce-danger{background:#c9302c !important;border-color:#ac2925 !important;color:#fff !important;}'
+                    + '.matrix-ce-danger:disabled{opacity:.5;cursor:not-allowed;}'
+                    + '.matrix-ce-list{margin:8px 0 0 18px;padding:0;font-size:13px;line-height:1.6;}'
+                    + '.matrix-ce-steps{margin:10px 0 0 20px;padding:0;font-size:13px;line-height:1.7;}'
+                    + '</style>').appendTo("head");
+
+                $('<div id="matrix-ce-overlay" class="matrix-sb-overlay"><div class="matrix-sb-modal">'
+                    + '<div class="matrix-sb-head"><span><i class="fa fa-trash"></i> Clear Encryption Data</span>'
+                    + '<span class="matrix-sb-x" id="matrix-ce-x" title="Close">&times;</span></div>'
+                    + '<div class="matrix-sb-body">'
+                    + '<div id="matrix-ce-form">'
+                    + '<div class="matrix-sb-warn"><b>This cannot be undone.</b> It deletes this bot\'s local encryption store:'
+                    + '<ul class="matrix-ce-list">'
+                    + '<li>Messages that were already received encrypted can no longer be decrypted.</li>'
+                    + '<li>The Matrix client is disconnected and stays disconnected, even after deploys and restarts, until the bot logs in as a new session.</li>'
+                    + '<li>Other users and sessions will need to verify the bot\'s new session.</li>'
+                    + '</ul></div>'
+                    + 'Only do this if encryption fails to start (for example a corrupted encryption store after an update).'
+                    + '<div class="matrix-sb-section">'
+                    + '<label for="matrix-ce-confirm-input">Type <code>delete</code> to confirm</label>'
+                    + '<input type="text" id="matrix-ce-confirm-input" autocomplete="off" spellcheck="false" placeholder="delete">'
+                    + '</div>'
+                    + '</div>'
+                    + '<div id="matrix-ce-next" style="display:none;">'
+                    + '<div class="matrix-sb-state"><i class="fa fa-check-circle" style="color:#3a9a4e;font-size:18px;"></i>'
+                    + '<span><b>Encryption data deleted.</b> The Matrix client is disconnected and will stay disconnected, '
+                    + 'even after deploys and restarts, until the bot logs in as a new session. '
+                    + 'Reconnecting with the old session is not possible: the homeserver rejects its regenerated keys.</span></div>'
+                    + '<div class="matrix-sb-section"><label>Next steps</label>'
+                    + '<ol class="matrix-ce-steps">'
+                    + '<li>Enter the bot\'s password and click <b>Update Access Token</b> to log in as a new session.</li>'
+                    + '<li>Click <b>Update</b>, then <b>Deploy</b>. The client connects with a fresh encryption store.</li>'
+                    + '<li>Once connected, remove the old session <code id="matrix-ce-old-device"></code> in <b>Manage sessions</b>.</li>'
+                    + '</ol></div>'
+                    + '</div>'
+                    + '<div class="matrix-sb-result" id="matrix-ce-result" style="display:none;"></div>'
+                    + '</div>'
+                    + '<div class="matrix-sb-foot">'
+                    + '<button type="button" class="red-ui-button" id="matrix-ce-cancel">Cancel</button>'
+                    + '<button type="button" class="red-ui-button matrix-ce-danger" id="matrix-ce-confirm" disabled>Confirm</button>'
+                    + '<button type="button" class="red-ui-button primary" id="matrix-ce-goto-login" style="display:none;">Go to login</button>'
+                    + '</div></div></div>').appendTo(document.body);
+
+                var ceEsc = function(s) { return $("<div>").text(s == null ? "" : String(s)).html(); };
+                var ceClose = function() { $("#matrix-ce-overlay").fadeOut(120); };
+                var ceTyped = function() { return $("#matrix-ce-confirm-input").val().trim().toLowerCase() === "delete"; };
+                var ceResult = function(ok, text) {
+                    $("#matrix-ce-result").removeClass("ok err").addClass(ok ? "ok" : "err").html(ceEsc(text)).show();
+                };
+                var ceRetry = function() {
+                    $("#matrix-ce-confirm-input").prop("disabled", false);
+                    $("#matrix-ce-confirm").prop("disabled", !ceTyped());
+                };
+
+                $("#matrix-ce-x,#matrix-ce-cancel").on("click", ceClose);
+                $("#matrix-ce-overlay").on("mousedown", function(e) { if (e.target === this) { ceClose(); } });
+                $(document).on("keydown.matrixce", function(e) {
+                    if (e.key === "Escape" && $("#matrix-ce-overlay").is(":visible")) { ceClose(); }
+                });
+                $("#matrix-ce-confirm-input").on("input", function() {
+                    $("#matrix-ce-confirm").prop("disabled", !ceTyped());
+                }).on("keydown", function(e) {
+                    if (e.key === "Enter" && ceTyped()) { $("#matrix-ce-confirm").trigger("click"); }
+                });
+                $("#matrix-ce-confirm").on("click", function() {
+                    if (!ceTyped()) { return; }
+                    $("#matrix-ce-confirm,#matrix-ce-confirm-input").prop("disabled", true);
+                    $("#matrix-ce-result").removeClass("ok err").text("Clearing encryption data…").show();
+                    $.ajax({
+                        url: "matrix-chat/clear-encryption-data", type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({ id: $("#matrix-ce-overlay").data("matrixNodeId"), action: "clear", confirmDelete: true }),
+                    }).done(function(data) {
+                        if (data.result !== "ok") {
+                            ceResult(false, data.message || "Unknown error");
+                            ceRetry();
+                            return;
+                        }
+                        $("#matrix-ce-form,#matrix-ce-result,#matrix-ce-confirm").hide();
+                        $("#matrix-ce-old-device").text(data.deviceId || "(unknown)");
+                        $("#matrix-ce-next,#matrix-ce-goto-login").show();
+                        $("#matrix-ce-cancel").text("Close");
+                        var refresh = $("#matrix-ce-overlay").data("ceRefreshHold");
+                        if (refresh) { refresh(); }
+                    }).fail(function() {
+                        ceResult(false, "Request failed. Is Node-RED still running?");
+                        ceRetry();
+                    });
+                });
+                $("#matrix-ce-goto-login").on("click", function() {
+                    ceClose();
+                    var pw = $("#node-config-input-password");
+                    if (pw.length) {
+                        pw[0].scrollIntoView({ block: "center" });
+                        setTimeout(function() { pw.trigger("focus"); }, 150);
+                    }
+                });
+            }
+
+            // Show whether this node is on an encryption hold (data cleared,
+            // waiting for a new session), so the way forward is visible even
+            // after the dialog was closed or Node-RED restarted.
+            var ceRefreshHold = function() {
+                $.ajax({
+                    url: "matrix-chat/clear-encryption-data", type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ id: nodeId, action: "status" }),
+                }).done(function(data) {
+                    var notice = $("#matrix-ce-hold-notice");
+                    if (data.result !== "ok" || !data.hold) { notice.hide(); return; }
+                    var when = data.hold.clearedAt ? new Date(data.hold.clearedAt).toLocaleString() : "earlier";
+                    notice.html(
+                        '<i class="fa fa-pause-circle"></i> <b>Disconnected: encryption data was cleared</b> (' + $("<div>").text(when).html() + ') '
+                        + 'for session <code>' + $("<div>").text(data.hold.deviceId || "(unknown)").html() + '</code>. '
+                        + 'The client stays disconnected until the bot logs in as a new session: enter the password above, click '
+                        + '<b>Update Access Token</b>, then <b>Update</b> and <b>Deploy</b>.'
+                    ).show();
+                }).fail(function() { $("#matrix-ce-hold-notice").hide(); });
+            };
+            $("#matrix-ce-overlay").data("ceRefreshHold", ceRefreshHold);
+            ceRefreshHold();
+
+            $("#matrix-clear-encryption-btn").on("click", function() {
+                // reset the dialog every time it is opened
+                $("#matrix-ce-form").show();
+                $("#matrix-ce-next,#matrix-ce-goto-login,#matrix-ce-result").hide();
+                $("#matrix-ce-confirm-input").val("").prop("disabled", false);
+                $("#matrix-ce-confirm").prop("disabled", true).show();
+                $("#matrix-ce-cancel").text("Cancel");
+                $("#matrix-ce-overlay").data("matrixNodeId", nodeId).fadeIn(120);
+                setTimeout(function() { $("#matrix-ce-confirm-input").trigger("focus"); }, 150);
             });
 
             // --- Verification list (modal) ---
@@ -923,6 +1066,18 @@
         View the account's logged-in sessions, verify them, or remove ones you don't recognize.
         The server configuration must be deployed and connected first.
     </div>
+
+    <div class="form-row">
+        <label><i class="fa fa-trash"></i> Encryption</label>
+        <button type="button" class="red-ui-button" id="matrix-clear-encryption-btn">Clear encryption data</button>
+    </div>
+    <div class="form-tips" style="margin-bottom: 12px;">
+        Deletes the bot's local encryption store. Only use this if encryption fails to start
+        (for example a corrupted store after an update). Previously received encrypted messages
+        can no longer be decrypted, and the bot must then log in as a new session before it reconnects.
+        The server configuration must be deployed first.
+    </div>
+    <div class="form-tips" id="matrix-ce-hold-notice" style="display:none;margin-bottom: 12px;color:#7a5b16;background-color:#fdf3e7;border-color:#f0c36d;"></div>
 </script>
 
 <script type="text/html" data-help-name="matrix-server-config">
@@ -963,6 +1118,29 @@
             node to receive verification requests and <code>matrix-verification-action</code> to
             accept, start, confirm or cancel them. This lets you build your own approval flow
             (for example emailing the emoji for a human to confirm).
+        </p>
+    </div>
+
+    <h3>Clearing encryption data</h3>
+    <div>
+        <p>
+            If encryption fails to start (the node logs <em>Encryption initialization failed</em>,
+            for example because the encryption store was corrupted by an update), the fix is a fresh
+            encryption store under a <strong>new session</strong>. Logging in again with
+            <strong>Update Access Token</strong> and deploying does this on its own: a new session
+            always starts with a fresh store.
+        </p>
+        <p>
+            The <strong>Clear encryption data</strong> button (you must type <code>delete</code> to confirm)
+            also deletes the old store first. It disconnects the Matrix client and keeps it disconnected,
+            even across deploys and Node-RED restarts, until the bot logs in as a new session. Reconnecting
+            with the old session is not possible because the homeserver still holds that session's old keys
+            and rejects the regenerated ones. Once the new session is connected, remove the old one in
+            <strong>Manage sessions</strong>.
+        </p>
+        <p>
+            This cannot be undone: previously received encrypted messages can no longer be decrypted,
+            and other users and sessions will need to verify the bot's new session.
         </p>
     </div>
 </script>

@@ -69,7 +69,7 @@
                 <dd>filename of the decoded file (if content.filename isn't defined on the message we fallback to content.body).</dd>
 
                 <dt>msg.thumbnail_payload <span class="property-type">buffer</span></dt>
-                <dd>If the file is an image then this property is set to the buffer of the thumbnail. If not an image this is left off.</dd>
+                <dd>If the media includes an encrypted thumbnail (images, videos, etc) this property is set to the decrypted thumbnail buffer. If there is no thumbnail this is left off.</dd>
             </dl>
         </li>
         <li>Error

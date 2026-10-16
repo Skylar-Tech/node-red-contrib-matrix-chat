@@ -17,11 +17,11 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
@@ -45,10 +45,11 @@ module.exports = function(RED) {
 
             if(!Array.isArray(node.rules) || !node.rules.length) {
                 node.warn("No rules configured, skipping", msg);
-                return msg;
+                node.send([msg, null]);
+                return;
             }
 
-            function getToValue(msg, rule) {
+            async function getToValue(msg, rule) {
                 var value = rule.to;
                 if (rule.tot === 'json') {
                     try {
@@ -74,12 +75,21 @@ module.exports = function(RED) {
                 } else if (rule.tot === 'date') {
                     value = Date.now();
                 } else if (rule.tot === 'jsonata') {
+                    let expr;
                     try {
-                        value = RED.util.evaluateJSONataExpression(rule.to,msg);
+                        expr = RED.util.prepareJSONataExpression(rule.to, node);
                     } catch(e3) {
-                        throw new Error("Invalid expression");
+                        throw new Error("Invalid expression: " + e3.message);
                     }
-                    return;
+                    value = await new Promise(function(resolve, reject) {
+                        RED.util.evaluateJSONataExpression(expr, msg, function(err, result) {
+                            if (err) {
+                                reject(new Error("Invalid expression: " + err.message));
+                            } else {
+                                resolve(result);
+                            }
+                        });
+                    });
                 }
                 return value;
             }
@@ -106,6 +116,7 @@ module.exports = function(RED) {
                 }
             }
 
+            let cachedGetters = {};
             for(let rule of node.rules) {
                 // [
                 //     {
@@ -116,11 +127,10 @@ module.exports = function(RED) {
                 //     }, ...
                 // ]
 
-                let cachedGetters = {};
                 if(rule.t === 'set') {
                     let value;
                     try {
-                        value = getToValue(msg, rule);
+                        value = await getToValue(msg, rule);
                         switch(rule.p) {
                             case "display_name":
                                 await node.server.matrixClient.setDisplayName(value);
@@ -132,10 +142,13 @@ module.exports = function(RED) {
                     } catch(e) {
                         setterErrors[rule.p] = e.message;
                     }
+                    // a later getter must not return what was cached before this set
+                    cachedGetters = {};
                 } else if(rule.t === 'get') {
                     let value;
                     if(cachedGetters.hasOwnProperty(rule.p)) {
                         value = cachedGetters[rule.p];
+                        setToValue(value, rule);
                     } else {
                         try {
                             // normalize some simpler events for easier access
@@ -150,7 +163,7 @@ module.exports = function(RED) {
                             setToValue(value, rule);
                             cachedGetters[rule.p] = value;
                         } catch(e) {
-                            getterErrors[rule.p] = e;
+                            getterErrors[rule.p] = (e && e.message) || String(e);
                         }
                     }
 

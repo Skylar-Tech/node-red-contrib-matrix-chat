@@ -35,7 +35,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-reason"><i class="fa fa-comment"></i> Reason</label>
-        <input type="text" id="node-input-reason" placeholder="msg.topic">
+        <input type="text" id="node-input-reason" placeholder="msg.reason">
     </div>
     <script type="text/javascript">
         $(function(){
@@ -76,8 +76,8 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dt>msg.eventId <span class="property-type">string</span></dt>
-                <dd>the eventId from the ban event.</dd>
+                <dt>msg <span class="property-type">object</span></dt>
+                <dd>the input message, unchanged (the server does not return an event id for a ban).</dd>
             </dl>
         </li>
         <li>Error

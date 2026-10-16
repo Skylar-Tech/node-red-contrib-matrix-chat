@@ -22,22 +22,24 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on('input', async function(msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
                 node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -68,14 +70,23 @@ module.exports = function(RED) {
 
                 if(!roomId) {
                     node.error('No room provided in msg.topic', msg);
+                    msg.error = 'No room provided in msg.topic';
+                    node.send([null, msg]);
                     return;
                 }
+
+                // The SDK treats any truthy value as "typing", so the string
+                // "false" (e.g. from a msg property) used to start typing.
+                if (typeof typing === 'string') {
+                    typing = typing.trim().toLowerCase() === 'true';
+                }
+                typing = !!typing;
 
                 await node.server.matrixClient.sendTyping(roomId, typing, timeoutMs);
                 node.send([msg, null]);
             } catch(e) {
                 node.error("Failed to send typing event " + msg.topic + ": " + e, msg);
-                msg.payload = e;
+                msg.error = e;
                 node.send([null, msg]);
             }
         });

@@ -15,35 +15,53 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
             }
 
             if(!msg.topic) {
+                msg.error = "Room must be specified in msg.topic";
                 node.error("Room must be specified in msg.topic", msg);
+                node.send([null, msg]);
                 return;
             }
 
             node.server.matrixClient.joinRoom(msg.topic, msg.joinOpts || {})
-                .then(function(e) {
-                    msg.payload = e;
-                    msg.topic = e.roomId;
+                .then(function(room) {
+                    // Plain data only: the SDK Room object references the whole
+                    // client, so Node-RED cloning the msg (an output wired to
+                    // more than one node) failed with "Maximum call stack size
+                    // exceeded".
+                    // After a fresh join the SDK returns a room without state
+                    // (its name is the room ID and membership "leave") until
+                    // the next sync, so only report the details it really has.
+                    let synced = room.getMyMembership() === "join";
+                    msg.payload = {
+                        roomId: room.roomId,
+                        name: synced ? (room.name || null) : null,
+                        canonicalAlias: synced ? room.getCanonicalAlias() : null,
+                        membership: "join",
+                    };
+                    msg.topic = room.roomId;
                     node.log("Successfully joined room " + msg.topic);
                     node.send([msg, null]);
                 })

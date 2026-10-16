@@ -94,18 +94,11 @@ module.exports = function(RED) {
             node.send(RED.util.cloneMessage(verificationMsg));
         };
 
-        node.server.on("connected", onConnected);
-        node.server.on("disconnected", onDisconnected);
-        node.server.on("Verification.update", onVerificationUpdate);
-
-        if (node.server.isConnected && node.server.isConnected()) {
-            onConnected();
-        }
+        node.server.listen(node, "connected", onConnected);
+        node.server.listen(node, "disconnected", onDisconnected);
+        node.server.listen(node, "Verification.update", onVerificationUpdate);
 
         node.on("close", function() {
-            node.server.removeListener("connected", onConnected);
-            node.server.removeListener("disconnected", onDisconnected);
-            node.server.removeListener("Verification.update", onVerificationUpdate);
             node.server.deregister(node);
         });
     }

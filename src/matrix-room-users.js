@@ -7,7 +7,6 @@ module.exports = function(RED) {
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
         this.roomId = n.roomId;
-        this.contentType = n.contentType;
 
         if (!node.server) {
             node.warn("No configuration node");
@@ -17,21 +16,24 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                msg.error = "No matrix server selected";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -39,21 +41,10 @@ module.exports = function(RED) {
 
             let roomId = node.roomId || msg.topic;
             if(!roomId) {
-                node.error("msg.topic is required. Specify in the input or configure the room ID on the node.", msg);
+                msg.error = "msg.topic is required. Specify in the input or configure the room ID on the node.";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
-            }
-
-            let queryParams = {
-                'from': msg.from || 0,
-                'limit': msg.limit || 100
-            };
-
-            if(msg.guests) {
-                queryParams['guests'] = msg.guests;
-            }
-
-            if(msg.order_by) {
-                queryParams['order_by'] = msg.order_by;
             }
 
             node.server.matrixClient
@@ -62,7 +53,7 @@ module.exports = function(RED) {
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error fetching room user list " + e);
+                    node.error("Error fetching room user list " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });

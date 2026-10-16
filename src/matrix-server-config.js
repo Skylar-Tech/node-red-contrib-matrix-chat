@@ -1,6 +1,7 @@
 // matrix-js-sdk is an ES module; load it via dynamic import so this CommonJS
 // node keeps working. All SDK-dependent setup awaits this promise.
 const sdkPromise = import("matrix-js-sdk");
+const SYNC_GUARD = Symbol('node-red-contrib-matrix-chat.syncRequestGuard');
 // The crypto-api enums (CryptoEvent, VerificationPhase, ...) are not re-exported
 // from the package root, so they are imported from the crypto-api subpath.
 const cryptoApiPromise = import("matrix-js-sdk/lib/crypto-api/index.js");
@@ -47,29 +48,83 @@ async function resolveHomeserverUrl(sdk, configuredUrl) {
     if(!domain) {
         return configuredUrl;
     }
-    try {
-        const discovery = await sdk.AutoDiscovery.findClientConfig(domain);
-        const homeserver = discovery['m.homeserver'];
+    // Discovery forces https, so on hosts without an HTTPS .well-known (LAN
+    // IPs, localhost, plain http) it can wait for a 5 second timeout on every
+    // start. Check in parallel whether the configured URL already serves the
+    // client API: if it does, discovery only gets a short grace period to
+    // report a delegation. A delegation always wins when there is one.
+    const discovery = sdk.AutoDiscovery.findClientConfig(domain).then(function(result) {
+        const homeserver = result['m.homeserver'];
         if(homeserver && homeserver.state === sdk.AutoDiscovery.SUCCESS && homeserver.base_url) {
             return homeserver.base_url;
         }
-    } catch(e) {
-        // discovery failed unexpectedly - fall back to the configured URL
+        return null;
+    }).catch(function() {
+        return null; // discovery failed unexpectedly - fall back to the configured URL
+    });
+    const servesClientApi = !/^https?:\/\//i.test(String(configuredUrl)) ? Promise.resolve(false) :
+        fetch(String(configuredUrl).replace(/\/+$/, '') + '/_matrix/client/versions', {
+            signal: AbortSignal.timeout(5000),
+        }).then(function(res) {
+            return res.ok ? res.json() : null;
+        }).then(function(body) {
+            return !!(body && Array.isArray(body.versions));
+        }).catch(function() {
+            return false; // not reachable as a homeserver
+        });
+    // an IP address or localhost cannot delegate, so do not wait for it
+    const canDelegate = !/^(localhost|[0-9.]+|\[[0-9a-f:.]+\])(:\d+)?$/i.test(domain);
+    const DISCOVERY_GRACE_MS = canDelegate ? 1000 : 0;
+    const first = await Promise.race([
+        discovery.then(function(url) { return { discovered: url }; }),
+        servesClientApi.then(function(ok) { return ok ? { servesClientApi: true } : discovery.then(function(url) { return { discovered: url }; }); }),
+    ]);
+    if(first.discovered) {
+        return first.discovered;
+    }
+    if(first.servesClientApi) {
+        const delegated = await Promise.race([discovery, new Promise(function(r) { setTimeout(r, DISCOVERY_GRACE_MS, null); })]);
+        return delegated || configuredUrl;
     }
     return configuredUrl;
 }
 
 module.exports = function(RED) {
-    // disable logging if set to "off"
-    let loggingSettings = RED.settings.get('logging');
-    if(
-        typeof loggingSettings.console !== 'undefined' &&
-        typeof loggingSettings.console.level !== 'undefined' &&
-        ['info','debug','trace'].indexOf(loggingSettings.console.level.toLowerCase()) >= 0
-    ) {
-        import('matrix-js-sdk/lib/logger.js')
-            .then(({ logger }) => logger.disableAll())
-            .catch(() => { /* logger module path changed - ignore */ });
+    // matrix-js-sdk logs verbosely (debug level) on its own logger. Follow the
+    // Node-RED console level: SDK debug/info output only at debug or trace,
+    // warnings and errors at the matching levels. This used to be inverted:
+    // the SDK was silenced at "info" but flooded the console when the level
+    // was lowered to "warn"/"error"/"off".
+    let loggingSettings = RED.settings.get('logging') || {};
+    let consoleLevel = String(loggingSettings.console && loggingSettings.console.level || 'info').toLowerCase();
+    // lowest SDK method level still shown for each Node-RED level
+    let minSdkLevel = { off: 5, fatal: 4, error: 4, warn: 3, info: 3 }[consoleLevel];
+    if(minSdkLevel !== undefined) {
+        // logger.disableAll() on the SDK's root logger is not enough: every
+        // child logger (FetchHttpApi, MatrixRTCSession, ...) resets itself to
+        // DEBUG when created. Wrap the method factory of the loglevel instance
+        // the SDK uses instead. Only the SDK's own "matrix" loggers are
+        // filtered: loglevel can be shared with other modules.
+        sdkPromise.then(function() {
+            const loglevel = require('module').createRequire(require.resolve('matrix-js-sdk'))('loglevel');
+            const methodLevels = { trace: 0, debug: 1, log: 2, info: 2, warn: 3, error: 4 };
+            const isSdkLogger = function(name) { return typeof name === 'string' && /^matrix(-|$)/.test(name); };
+            const originalFactory = loglevel.methodFactory;
+            const filteredFactory = function(methodName, level, loggerName) {
+                let method = originalFactory.apply(this, arguments);
+                let methodLevel = methodLevels[methodName] !== undefined ? methodLevels[methodName] : 2;
+                return (isSdkLogger(loggerName) && methodLevel < minSdkLevel) ? function() {} : method;
+            };
+            // new loggers copy the root factory; existing SDK loggers are
+            // switched over here (their children copy it from them)
+            loglevel.methodFactory = filteredFactory;
+            Object.entries(loglevel.getLoggers()).forEach(function([name, l]) {
+                if(isSdkLogger(name)) {
+                    l.methodFactory = filteredFactory;
+                    l.rebuild();
+                }
+            });
+        }).catch(function() { /* logging internals changed - leave SDK logging as is */ });
     }
 
     function MatrixFolderNameFromUserId(name) {
@@ -120,8 +175,35 @@ module.exports = function(RED) {
         node.register = function(consumerNode) {
             node.users[consumerNode.id] = consumerNode;
         };
+        // Listeners consumers attach to this node, so deregister() can remove
+        // them. Without this a consumer that is redeployed on its own
+        // ("Modified Nodes" deploy, this config node keeps running) left its
+        // old listeners behind: closed receive nodes kept forwarding every
+        // message, so each redeploy added another duplicate.
+        let consumerListeners = new Map(); // consumer id -> [[event, fn], ...]
+        node.listen = function(consumerNode, event, fn) {
+            node.on(event, fn);
+            if(!consumerListeners.has(consumerNode.id)) {
+                consumerListeners.set(consumerNode.id, []);
+            }
+            consumerListeners.get(consumerNode.id).push([event, fn]);
+            // A consumer created while we are already connected missed the
+            // "connected" event; replay it so its status is not stuck on
+            // "disconnected".
+            if(event === "connected" && node.connected === true) {
+                setImmediate(function() {
+                    if(node.connected === true && consumerListeners.has(consumerNode.id)) {
+                        fn();
+                    }
+                });
+            }
+        };
         node.deregister = function(consumerNode) {
             delete node.users[consumerNode.id];
+            for(const [event, fn] of consumerListeners.get(consumerNode.id) || []) {
+                node.removeListener(event, fn);
+            }
+            consumerListeners.delete(consumerNode.id);
         };
 
         if(!this.userId) {
@@ -140,7 +222,21 @@ module.exports = function(RED) {
         // multiple server-config nodes never collide.
         let cryptoDbPrefix = 'mxjssdk-' + MatrixFolderNameFromUserId(this.userId),
             cryptoSnapshotPath = null,
-            cryptoSnapshotInterval = null;
+            cryptoSnapshotInterval = null,
+            // Set once the encryption data has been cleared via the admin
+            // endpoint. Stops any further snapshot from writing the (deleted
+            // or recreated-empty) store back to disk before the redeploy.
+            cryptoCleared = false,
+            // Set once the Rust crypto stack is initialized. Until then the
+            // in-memory store may not be restored yet, and snapshotting it
+            // would overwrite the saved store on disk.
+            cryptoReady = false,
+            // Set when the node is closed. Startup is asynchronous (SDK import,
+            // homeserver discovery, /whoami, crypto init), so every step checks
+            // it: a node closed mid-startup (e.g. deployed again quickly) must
+            // not go on to start a client that then syncs forever unseen.
+            closing = false,
+            clientStarting = null; // promise of an in-progress startup (crypto init + startClient)
 
         if(!this.credentials.accessToken) {
             node.error("Matrix connection failed: missing access token in configuration.");
@@ -162,7 +258,7 @@ module.exports = function(RED) {
                             let stored_device_id = getStoredDeviceId(localStorage),
                                 device_id = this.matrixClient.getDeviceId();
 
-                            if(!device_id && node.enableE2ee) {
+                            if(!device_id && node.e2ee) {
                                 node.error("Failed to auto detect deviceId for this auth token. You will need to manually specify one. You may need to login to create a new deviceId.")
                             } else {
                                 if(!stored_device_id || stored_device_id !== device_id) {
@@ -214,7 +310,7 @@ module.exports = function(RED) {
             // Snapshot the Rust crypto store to disk so E2EE state survives
             // restarts. No-op when E2EE is disabled.
             async function persistCrypto() {
-                if(!cryptoSnapshotPath) {
+                if(!cryptoSnapshotPath || cryptoCleared || !cryptoReady) {
                     return;
                 }
                 try {
@@ -227,7 +323,10 @@ module.exports = function(RED) {
             // Discard all persisted crypto state for this account. Used when the
             // device ID changes - the old crypto store belongs to a device that
             // no longer exists and the Rust crypto stack refuses to load it.
+            // Resolves to false if the in-memory database could not be deleted
+            // (e.g. it is still held open), true otherwise.
             async function discardCryptoStore() {
+                let complete = true;
                 // remove the persisted Rust crypto snapshot
                 try {
                     if(cryptoSnapshotPath) {
@@ -253,17 +352,83 @@ module.exports = function(RED) {
                         let dbs = await indexedDB.databases();
                         for(let db of dbs) {
                             if(db.name && db.name.indexOf(cryptoDbPrefix) === 0) {
-                                await new Promise(function(resolve) {
+                                // Wait for the delete to actually finish. While
+                                // a connection is open the request only fires
+                                // "blocked" and completes once it closes, so
+                                // treating "blocked" as done would leave the
+                                // database in place.
+                                let deleted = await new Promise(function(resolve) {
                                     let req = indexedDB.deleteDatabase(db.name);
-                                    req.onsuccess = req.onerror = req.onblocked = function(){ resolve(); };
+                                    let timer = setTimeout(function(){ resolve(false); }, 10000);
+                                    req.onsuccess = function(){ clearTimeout(timer); resolve(true); };
+                                    req.onerror = function(){ clearTimeout(timer); resolve(false); };
                                 });
+                                if(!deleted) {
+                                    complete = false;
+                                    node.warn("Could not delete in-memory crypto database " + db.name + " (still in use)");
+                                }
                             }
                         }
                     }
                 } catch(e) {
+                    complete = false;
                     node.warn("Could not clear in-memory crypto database: " + e);
                 }
+                return complete;
             }
+
+            // "Encryption hold": after the encryption data is cleared the node
+            // must not reconnect with the same device ID. The homeserver still
+            // has that device's old one-time keys, so the regenerated keys are
+            // rejected ("One time key ... already exists") and incoming
+            // encrypted messages can never be decrypted. A marker file records
+            // the cleared device; while it matches, the node stays disconnected
+            // (across deploys and restarts) until the bot logs in as a new
+            // session, which gets a new device ID.
+            let encryptionHoldPath = localStorageDir + '/encryption-hold.json';
+
+            function readEncryptionHold() {
+                try {
+                    if(fs.pathExistsSync(encryptionHoldPath)) {
+                        return fs.readJsonSync(encryptionHoldPath);
+                    }
+                } catch(e) {
+                    node.warn("Could not read " + encryptionHoldPath + ": " + e);
+                    return { clearedAt: null, deviceId: null }; // unreadable - stay on hold
+                }
+                return null;
+            }
+
+            node.getEncryptionHold = readEncryptionHold;
+
+            // Clear all encryption data for this account (used by the
+            // /matrix-chat/clear-encryption-data admin endpoint). The client is
+            // stopped first: the running crypto stack holds its IndexedDB
+            // database open, which blocks deleting it. Snapshotting is disabled
+            // so the node's close handler cannot write the store back to disk.
+            // The hold marker is written before anything is deleted, so the
+            // node stays disconnected even if this is interrupted.
+            node.clearEncryptionData = async function() {
+                cryptoCleared = true;
+                stopClient();
+                // also stops the crypto stack when the client never started
+                // syncing (stopClient() above skips that case)
+                haltClient(node.matrixClient);
+                if(clientStarting) {
+                    // A startup in progress (crypto init, startClient) stops
+                    // itself once it sees cryptoCleared. Wait for it, so its
+                    // crypto stack has let go of the database before deleting.
+                    await Promise.race([clientStarting, new Promise(function(r) { setTimeout(r, 15000); })]);
+                    haltClient(node.matrixClient);
+                }
+                let deviceId = (node.matrixClient && node.matrixClient.getDeviceId())
+                    || node.deviceId || getStoredDeviceId(localStorage) || null;
+                fs.writeJsonSync(encryptionHoldPath, { clearedAt: new Date().toISOString(), deviceId: deviceId });
+                return {
+                    complete: await discardCryptoStore(),
+                    deviceId: deviceId,
+                };
+            };
 
             function stopClient() {
                 if(node.matrixClient && node.matrixClient.clientRunning) {
@@ -280,9 +445,81 @@ module.exports = function(RED) {
                 }
             }
 
+            // matrix-js-sdk issues its first /sync request after its startup
+            // prelude without checking whether the client was stopped in the
+            // meantime, and nothing handles that request's AbortError, which
+            // takes Node-RED down. Attach a no-op catch to every request the
+            // (stopped) SyncApi stores, including ones created later.
+            function swallowSyncRequests(syncApi) {
+                if(!syncApi || syncApi[SYNC_GUARD]) {
+                    return;
+                }
+                syncApi[SYNC_GUARD] = true;
+                let current = syncApi.currentSyncRequest;
+                let guard = function(request) {
+                    if(request && typeof request.catch === 'function') {
+                        request.catch(function() {});
+                    }
+                };
+                guard(current);
+                Object.defineProperty(syncApi, 'currentSyncRequest', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() { return current; },
+                    set: function(request) { current = request; guard(request); },
+                });
+            }
+
+            // Stop a client for good, also when startClient() is still running:
+            // the SDK can create its SyncApi after stopClient() was called.
+            function haltClient(client) {
+                if(!client) {
+                    return;
+                }
+                let syncApi = client.syncApi;
+                swallowSyncRequests(syncApi);
+                client.stopClient();
+                if(syncApi) {
+                    syncApi.stop();
+                }
+            }
+
+            // Resolves once the SDK has sent its first /sync request (or the
+            // client is not starting up), so stopping it cannot race the sync
+            // loop's startup prelude. Bounded to 5 seconds.
+            function syncPreludeDone(client) {
+                let deadline = Date.now() + 5000;
+                return new Promise(function(resolve) {
+                    (function check() {
+                        let syncApi = client && client.syncApi;
+                        if(!client || !client.clientRunning || !syncApi || syncApi.currentSyncRequest
+                            || client.getSyncState() !== null || Date.now() > deadline) {
+                            return resolve();
+                        }
+                        setTimeout(check, 50);
+                    })();
+                });
+            }
+
             node.on('close', function(done) {
-                stopClient();
-                persistCrypto().finally(function() {
+                closing = true;
+                // Let an in-progress startup (crypto init, startClient) settle
+                // first, so the client is stopped in a known state (bounded,
+                // well inside Node-RED's close timeout).
+                let starting = clientStarting
+                    ? Promise.race([clientStarting.catch(function(){}), new Promise(function(r) { setTimeout(r, 5000); })])
+                    : Promise.resolve();
+                starting.then(function() {
+                    return syncPreludeDone(node.matrixClient);
+                }).then(function() {
+                    // guard the SyncApi before stopClient() drops it
+                    swallowSyncRequests(node.matrixClient && node.matrixClient.syncApi);
+                    stopClient();
+                    // a startup that is still running past the wait above is
+                    // halted by run() once startClient() returns
+                    haltClient(node.matrixClient);
+                    return persistCrypto();
+                }).finally(function() {
                     if(node.globalAccess) {
                         try {
                             node.context().global.set('matrixClient["'+node.userId+'"]', undefined);
@@ -307,6 +544,9 @@ module.exports = function(RED) {
 
             async function setupClient() {
                 const sdk = await sdkPromise;
+                if(closing) {
+                    return;
+                }
                 const {
                     RelationType, RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent,
                     MemoryStore, LocalStorageCryptoStore,
@@ -424,6 +664,9 @@ module.exports = function(RED) {
                 // Resolve the real homeserver via .well-known discovery so a
                 // delegating domain (e.g. "example.org") works as the server URL.
                 const baseUrl = await resolveHomeserverUrl(sdk, node.url);
+                if(closing) {
+                    return;
+                }
                 if(baseUrl !== node.url) {
                     node.log(`Discovered homeserver ${baseUrl} for ${node.url} via .well-known`);
                 }
@@ -475,7 +718,36 @@ module.exports = function(RED) {
                     node.context().global.set('matrixClient["'+node.userId+'"]', node.matrixClient);
                 }
 
-                node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
+                // Plain copy of an SDK User for msg.user, without its private
+                // (underscore) fields. The live User must not be modified: it
+                // is an EventEmitter, and deleting its "_events" key used to
+                // strip the listeners the SDK attached to it, so the client
+                // stopped receiving that user's presence/display name updates.
+                function snapshotUser(user) {
+                    if(!user) {
+                        return null;
+                    }
+                    let copy = {};
+                    Object.keys(user).forEach(function(key) {
+                        if(!/^_/.test(key)) {
+                            copy[key] = user[key];
+                        }
+                    });
+                    return copy;
+                }
+
+                // Wrap an async SDK event handler so a throw inside it is
+                // reported instead of becoming an unhandled promise rejection
+                // (which takes the whole Node-RED process down).
+                function guardAsync(what, handler) {
+                    return function() {
+                        handler.apply(this, arguments).catch(function(e) {
+                            node.error("Error handling " + what + ": " + (e && e.stack || e));
+                        });
+                    };
+                }
+
+                node.matrixClient.on(RoomEvent.Timeline, guardAsync("timeline event", async function(event, room, toStartOfTimeline, removed, data) {
                     if (toStartOfTimeline) {
                         node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: paginated result");
                         return; // ignore paginated results
@@ -521,52 +793,77 @@ module.exports = function(RED) {
                         isThread     : event.getContent()?.['m.relates_to']?.rel_type === RelationType.Thread,
                         mentions     : event.getContent()["m.mentions"] || null,
                         userId       : event.getSender(),
-                        user         : node.matrixClient.getUser(event.getSender()),
+                        user         : snapshotUser(node.matrixClient.getUser(event.getSender())),
                         topic        : event.getRoomId(),
                         eventId      : event.getId(),
                         event        : event,
                     };
 
-                    // remove keys from user property that start with an underscore
-                    Object.keys(msg.user).forEach(function (key) {
-                        if (/^_/.test(key)) {
-                            delete msg.user[key];
-                        }
-                    });
-
                     node.log(`Received ${msg.encrypted ? 'encrypted ' : ''}timeline event [${msg.type}]: (${room.name}) ${event.getSender()} :: ${msg.content.body} ${toStartOfTimeline ? ' [PAGINATED]' : ''}`);
                     node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
-                });
+                }));
+
+                // Resolve a room that may not be in the store yet (invites are
+                // reported before the SDK stores the room). Gives up after 5s.
+                function waitForRoom(roomId) {
+                    let room = node.matrixClient.getRoom(roomId);
+                    if(room) {
+                        return Promise.resolve(room);
+                    }
+                    return new Promise(function(resolve) {
+                        let timer = setTimeout(function() {
+                            node.matrixClient.off(ClientEvent.Room, onRoom);
+                            resolve(node.matrixClient.getRoom(roomId));
+                        }, 5000);
+                        function onRoom(r) {
+                            if(r && r.roomId === roomId) {
+                                clearTimeout(timer);
+                                node.matrixClient.off(ClientEvent.Room, onRoom);
+                                resolve(r);
+                            }
+                        }
+                        node.matrixClient.on(ClientEvent.Room, onRoom);
+                    });
+                }
 
                 // handle auto-joining rooms
-                node.matrixClient.on(RoomMemberEvent.Membership, async function(event, member) {
-                    if(node.initializedAt > event.getDate()) {
-                        return; // skip events that occurred before our client initialized
+                node.matrixClient.on(RoomMemberEvent.Membership, guardAsync("room membership event", async function(event, member) {
+                    if (member.membership !== "invite" || String(member.userId).toLowerCase() !== String(node.userId).toLowerCase()) {
+                        return;
                     }
-
-                    if (member.membership === "invite" && member.userId === node.userId) {
-                        node.log("Got invite to join room " + member.roomId);
-                        if(node.autoAcceptRoomInvites) {
-                            node.matrixClient.joinRoom(member.roomId).then(function() {
-                                node.log("Automatically accepted invitation to join room " + member.roomId);
-                            }).catch(function(e) {
-                                node.warn("Cannot join room (could be from being kicked/banned) " + member.roomId + ": " + e);
-                            });
-                        }
-
-                        let room = node.matrixClient.getRoom(event.getRoomId());
-                        node.emit("Room.invite", {
-                            type      : 'm.room.member',
-                            userId    : event.getSender(),
-                            topic     : event.getRoomId(),
-                            topicName : (room ? room.name : null) || null,
-                            event     : event,
-                            eventId   : event.getId(),
+                    // Invites reach us as stripped state with no timestamp
+                    // (getDate() is null; the old `initializedAt > null` check
+                    // skipped every invite, #141). Those are always handled,
+                    // including invites still pending from while Node-RED was
+                    // offline. Dated member events from before startup are
+                    // skipped: initial sync replays the bot's past invites in
+                    // the timeline of rooms it has already joined.
+                    if(event.getDate() && event.getDate() < node.initializedAt) {
+                        return;
+                    }
+                    node.log("Got invite to join room " + member.roomId);
+                    if(node.autoAcceptRoomInvites) {
+                        node.matrixClient.joinRoom(member.roomId).then(function() {
+                            node.log("Automatically accepted invitation to join room " + member.roomId);
+                        }).catch(function(e) {
+                            node.warn("Cannot join room (could be from being kicked/banned) " + member.roomId + ": " + e);
                         });
                     }
-                });
 
-                node.matrixClient.on(ClientEvent.Sync, async function(state, prevState, data) {
+                    // The SDK fires this before it stores the invited room,
+                    // so wait for the room to get its name.
+                    let room = await waitForRoom(member.roomId);
+                    node.emit("Room.invite", {
+                        type      : 'm.room.member',
+                        userId    : event.getSender(),
+                        topic     : event.getRoomId(),
+                        topicName : (room ? room.name : null) || null,
+                        event     : event,
+                        eventId   : event.getId(),
+                    });
+                }));
+
+                node.matrixClient.on(ClientEvent.Sync, guardAsync("sync state change", async function(state, prevState, data) {
                     node.debug("SYNC [STATE=" + state + "] [PREVSTATE=" + prevState + "]");
                     if(prevState === null && state === "PREPARED" ) {
                         // Occurs when the initial sync is completed first time.
@@ -632,10 +929,10 @@ module.exports = function(RED) {
                             node.error("Connection to Matrix server lost");
                         });
                     }
-                });
+                }));
 
 
-                node.matrixClient.on(HttpApiEvent.SessionLoggedOut, async function(errorObj){
+                node.matrixClient.on(HttpApiEvent.SessionLoggedOut, guardAsync("logout", async function(errorObj){
                     // Example if user auth token incorrect:
                     // {
                     //     errcode: 'M_UNKNOWN_TOKEN',
@@ -649,7 +946,7 @@ module.exports = function(RED) {
 
                     node.error("Authentication failure: " + errorObj);
                     stopClient();
-                });
+                }));
 
                 // incoming device-verification requests from other users/devices
                 node.matrixClient.on(CryptoEvent.VerificationRequestReceived, function(request) {
@@ -664,6 +961,25 @@ module.exports = function(RED) {
                 async function run() {
                     try {
                         if(node.e2ee){
+                            // Encryption data was cleared: only connect once the
+                            // bot has logged in as a new session (new device ID).
+                            let hold = readEncryptionHold();
+                            if(hold) {
+                                let deviceId = node.matrixClient.getDeviceId();
+                                // a hold without a device ID (unreadable file, or the
+                                // device was unknown when clearing) cannot tell the
+                                // old session from a new one, so it always holds
+                                if(!deviceId || !hold.deviceId || deviceId === hold.deviceId) {
+                                    node.warn(
+                                        `Encryption data was cleared for session ${hold.deviceId || '(unknown)'}, so the Matrix client stays disconnected. ` +
+                                        'Log in as a new session ("Update Access Token" in the server configuration), then deploy. ' +
+                                        `To reconnect with the same session anyway, delete ${encryptionHoldPath} and redeploy.`
+                                    );
+                                    return;
+                                }
+                                fs.removeSync(encryptionHoldPath);
+                                node.log(`New session ${deviceId} after encryption data was cleared; connecting with a fresh encryption store.`);
+                            }
                             node.log("Initializing crypto...");
                             ensureIndexedDBShim();
                             // If the device ID has changed (e.g. a new login), the
@@ -678,10 +994,26 @@ module.exports = function(RED) {
                             } else {
                                 await restoreCryptoStore(cryptoSnapshotPath);
                             }
-                            await node.matrixClient.initRustCrypto({
-                                useIndexedDB: true,
-                                cryptoDatabasePrefix: cryptoDbPrefix,
-                            });
+                            try {
+                                await node.matrixClient.initRustCrypto({
+                                    useIndexedDB: true,
+                                    cryptoDatabasePrefix: cryptoDbPrefix,
+                                });
+                            } catch(cryptoInitError) {
+                                // Most likely a corrupted encryption store (e.g. from
+                                // an incomplete migration). Fail with instructions
+                                // rather than a bare WASM error, and never clear the
+                                // data automatically - the user decides via the UI.
+                                throw new Error(
+                                    `Encryption initialization failed (${cryptoInitError && cryptoInitError.message || cryptoInitError}). ` +
+                                    'This may indicate a corrupted encryption store. ' +
+                                    'To recover, log in as a new session ("Update Access Token" in the server configuration) and deploy, ' +
+                                    'which starts a fresh encryption store. Use "Clear encryption data" there first to also delete the old data. ' +
+                                    'Previously received encrypted messages will no longer be decryptable.',
+                                    { cause: cryptoInitError }
+                                );
+                            }
+                            cryptoReady = true;
                             let crypto = node.matrixClient.getCrypto();
                             if(crypto) {
                                 // Blacklist (refuse to encrypt to) unverified devices only
@@ -692,10 +1024,25 @@ module.exports = function(RED) {
                             // periodically persist crypto state so it survives an unclean shutdown
                             cryptoSnapshotInterval = setInterval(persistCrypto, 5 * 60 * 1000);
                         }
+                        if(closing || cryptoCleared) {
+                            // closed (or encryption data cleared) while crypto
+                            // was initializing
+                            if(cryptoSnapshotInterval) {
+                                clearInterval(cryptoSnapshotInterval);
+                                cryptoSnapshotInterval = null;
+                            }
+                            haltClient(node.matrixClient);
+                            return;
+                        }
                         node.log("Connecting to Matrix server...");
                         await node.matrixClient.startClient({
                             initialSyncLimit: node.initialSyncLimit
                         });
+                        if(closing || cryptoCleared) {
+                            // closed (or encryption data cleared) while
+                            // startClient() was running
+                            haltClient(node.matrixClient);
+                        }
                     } catch(error) {
                         node.error(error);
                     }
@@ -704,7 +1051,7 @@ module.exports = function(RED) {
                 // do an authed request and only continue if we don't get an error
                 // this prevent the matrix client from crashing Node-RED on invalid auth token
                 (function checkAuthTokenThenStart() {
-                    if(node.matrixClient.clientRunning) {
+                    if(closing || node.matrixClient.clientRunning) {
                         return;
                     }
 
@@ -717,7 +1064,10 @@ module.exports = function(RED) {
                     node.matrixClient.whoami()
                         .then(
                             function(data) {
-                                if((typeof data['device_id'] === undefined || !data['device_id']) && !node.deviceId && !getStoredDeviceId(localStorage)) {
+                                if(closing) {
+                                    return;
+                                }
+                                if(!data['device_id'] && !node.deviceId && !getStoredDeviceId(localStorage)) {
                                     node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.");
                                 }
                                 if('device_id' in data && data['device_id'] && !node.deviceId) {
@@ -731,14 +1081,23 @@ module.exports = function(RED) {
                                     node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`);
                                     return;
                                 }
-                                run().catch((error) => node.error(error));
+                                clientStarting = run().catch((error) => node.error(error));
                             },
                             function(err) {
-                                // if the error isn't authentication related retry in a little bit
-                                if(err.code !== "M_UNKNOWN_TOKEN") {
-                                    retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
-                                    node.error("Auth check failed: " + err);
+                                if(closing) {
+                                    return;
                                 }
+                                // An invalid or logged-out token will never work, so
+                                // report it and stop. (This used to check err.code,
+                                // which the SDK never sets - it is err.errcode - so
+                                // a bad token was retried every 15s forever.)
+                                if(err && err.errcode === "M_UNKNOWN_TOKEN") {
+                                    node.error("Matrix connection failed: the access token is invalid or has been logged out (M_UNKNOWN_TOKEN). Log in again to get a new access token.");
+                                    return;
+                                }
+                                // anything else (network, server down) - retry in a little bit
+                                retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
+                                node.error("Auth check failed: " + err);
                             }
                         )
                 })();
@@ -944,6 +1303,63 @@ module.exports = function(RED) {
                 }
 
                 return res.json({ result: 'error', message: 'Unknown action: ' + action });
+            } catch(error) {
+                res.json({ result: 'error', message: String(error && error.message || error) });
+            }
+        });
+
+    /**
+     * Clear encryption data for a server configuration, used when the crypto
+     * store is corrupted and needs to be reset. Same flows.write protection
+     * as the other admin endpoints, so it is not publicly exposed.
+     *
+     * Actions (on req.body.id, the server config node):
+     *  - status : whether the node is on an encryption hold (see
+     *             readEncryptionHold in MatrixServerNode)
+     *  - clear  : (default) stop the client, delete the encryption data and
+     *             put the node on hold until it logs in as a new session.
+     *             Requires confirmDelete: true to prevent accidental data loss.
+     */
+    RED.httpAdmin.post(
+        "/matrix-chat/clear-encryption-data",
+        RED.auth.needsPermission('flows.write'),
+        async function(req, res) {
+            try {
+                const serverNode = RED.nodes.getNode(req.body.id);
+                if(!serverNode || typeof serverNode.clearEncryptionData !== 'function') {
+                    return res.json({ result: 'error', message: 'Server configuration not found or not running. Save and deploy the server configuration node first.' });
+                }
+                const action = req.body.action || 'clear';
+
+                if(action === 'status') {
+                    return res.json({ result: 'ok', hold: serverNode.getEncryptionHold() });
+                }
+                if(action !== 'clear') {
+                    return res.json({ result: 'error', message: 'Unknown action: ' + action });
+                }
+                if(!serverNode.e2ee) {
+                    // the hold is only checked with E2EE on, and there is no
+                    // encryption data to clear without it
+                    return res.json({ result: 'error', message: 'End-to-end encryption is not enabled for this server configuration, so there is no encryption data to clear.' });
+                }
+                if(req.body.confirmDelete !== true) {
+                    return res.json({ result: 'error', message: 'Confirmation required. Pass confirmDelete: true to proceed.' });
+                }
+
+                const { complete, deviceId } = await serverNode.clearEncryptionData();
+                if(!complete) {
+                    return res.json({
+                        result: 'error',
+                        message: 'The Matrix client was stopped but some encryption data is still in use and could not be removed. Restart Node-RED to finish clearing it.'
+                    });
+                }
+
+                serverNode.log(`Encryption data cleared for session ${deviceId}. The client stays disconnected until it logs in as a new session.`);
+                return res.json({
+                    result: 'ok',
+                    deviceId: deviceId,
+                    message: 'Encryption data has been cleared. The Matrix client is disconnected and will stay disconnected, even after deploys and restarts, until the bot logs in as a new session.',
+                });
             } catch(error) {
                 res.json({ result: 'error', message: String(error && error.message || error) });
             }

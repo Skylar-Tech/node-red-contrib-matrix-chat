@@ -60,13 +60,13 @@
         <dt>msg.userId
             <span class="property-type">string</span>
         </dt>
-        <dd> ID of user to create/edit (ex: @bob:example.com)</dd>
+        <dd> ID of user to deactivate (ex: @bob:example.com)</dd>
 
         <dt class="optional">msg.erase
-            <span class="property-type">string</span>
+            <span class="property-type">bool</span>
         </dt>
         <dd>
-            The following additional actions are performed during deactivation if set to true (defaults to false)
+            The following additional actions are performed during deactivation if set to <code>true</code> (or the string <code>"true"</code>; defaults to false)
             <ul>
                 <li>Remove the user's display name</li>
                 <li>Remove the user's avatar URL</li>
@@ -79,8 +79,8 @@
     <ol class="node-ports">
         <li>Success
             <dl class="message-properties">
-                <dt>msg.error <span class="property-type">object</span></dt>
-                <dd>empty object response</dd>
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>the response from Synapse (contains <code>id_server_unbind_result</code>)</dd>
             </dl>
         </li>
         <li>Error

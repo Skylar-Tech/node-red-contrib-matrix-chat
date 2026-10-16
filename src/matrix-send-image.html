@@ -75,7 +75,7 @@
 
 <script type="text/html" data-help-name="matrix-send-image">
     <h3>Details</h3>
-    <p>This node will send an image to a Matrix chat room. Supports direct linking to a File In node. It's recommended you set <code>msg.contentType</code> so the client knows how to render the image (otherwise the image could show blank).</p>
+    <p>This node will send an image to a Matrix chat room. Supports direct linking to a File In node. The MIME type, size and width/height are filled in automatically (from the image data, or the file name), so clients and bridges render it as an image. The image is uploaded unencrypted; to send encrypted media into an encrypted room use the Upload File node (with <code>msg.encrypted</code>) followed by Send Message.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
@@ -97,17 +97,17 @@
         <dt class="optional">msg.body
             <span class="property-type">string | null</span>
         </dt>
-        <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty it will just display as "Attachment".</dd>
+        <dd> this will be the display name (caption) the client will see when rendered in their chat client. If this is left empty the file name is used, or "Image" without one.</dd>
 
         <dt class="optional">msg.contentType
             <span class="property-type">string | null</span>
         </dt>
-        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. Overridden if configured on the node. Optional but highly recommended (so the client receiving knows what type of file it is).</dd>
+        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. Overridden if configured on the node. If neither is set it is detected from the image data, then from <code>msg.filename</code>.</dd>
 
         <dt class="optional">msg.content
             <span class="property-type">object | null</span>
         </dt>
-        <dd> craft your own msg.content to send to the server. If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
+        <dd> craft your own msg.content to send to the server (used only when <code>msg.type</code> is <code>m.image</code>). If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -116,6 +116,12 @@
             <dl class="message-properties">
                 <dt>msg.eventId <span class="property-type">string</span></dt>
                 <dd>the eventId from the posted message.</dd>
+
+                <dt>msg.content_uri_mxc <span class="property-type">string</span></dt>
+                <dd>the mxc:// URI of the uploaded image.</dd>
+
+                <dt>msg.content_uri <span class="property-type">string</span></dt>
+                <dd>an HTTP download URL for the uploaded image. Homeservers with authenticated media require an <code>Authorization: Bearer &lt;access token&gt;</code> header to download it.</dd>
             </dl>
         </li>
         <li>Error

@@ -45,13 +45,8 @@
         </dt>
         <dd> Extra options that can be passed when joining a room.</dd>
 
-        <dt class="optional">msg.joinOpts.syncRoom
-            <span class="property-type">bool</span>
-        </dt>
-        <dd> True to do a room initial sync on the resulting room. If false, the returned Room object will have no current state. Default: true.</dd>
-
         <dt class="optional">msg.joinOpts.inviteSignUrl
-            <span class="property-type">bool</span>
+            <span class="property-type">string</span>
         </dt>
         <dd> If the caller has a keypair 3pid invite, the signing URL is passed in this parameter.</dd>
 
@@ -69,7 +64,7 @@
                 <dd>ID of the joined room.</dd>
 
                 <dt>msg.payload <span class="property-type">object</span></dt>
-                <dd>Room object.</dd>
+                <dd>Details of the joined room: <code>roomId</code>, <code>name</code>, <code>canonicalAlias</code> and <code>membership</code> (always <code>join</code>). <code>name</code> and <code>canonicalAlias</code> are <code>null</code> if the bot was not in the room yet: the room's details only arrive with the next sync.</dd>
             </dl>
         </li>
         <li>Error

@@ -17,11 +17,11 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
@@ -34,11 +34,14 @@ module.exports = function(RED) {
             }
 
             if (!node.server || !node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                node.error("No matrix server selected", msg);
+                msg.error = "No matrix server selected";
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -46,7 +49,9 @@ module.exports = function(RED) {
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
-                node.warn("Room must be specified in msg.topic or in configuration");
+                node.error("Room must be specified in msg.topic or in configuration", msg);
+                msg.error = "Room must be specified in msg.topic or in configuration";
+                node.send([null, msg]);
                 return;
             }
 
@@ -65,7 +70,7 @@ module.exports = function(RED) {
                 node.send([msg, null]);
             })
             .catch(function(e){
-                node.warn("Error deleting event " + e);
+                node.error("Error deleting event " + e, msg);
                 msg.error = e;
                 msg.deleted = false
                 node.send([null, msg]);

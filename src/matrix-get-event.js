@@ -19,22 +19,24 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on('input', async function(msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
                 node.send([null, msg]);
                 return;
             }
 
             if (!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -63,18 +65,23 @@ module.exports = function(RED) {
                     eventId = getToValue(msg, node.eventIdType, node.eventIdValue);
 
                 if(!roomId) {
-                    node.error('Missing roomId', msg);
+                    msg.error = 'Missing roomId';
+                    node.error(msg.error, msg);
+                    node.send([null, msg]);
                     return;
                 } else if(!eventId) {
-                    node.error('Missing eventId', msg);
+                    msg.error = 'Missing eventId';
+                    node.error(msg.error, msg);
+                    node.send([null, msg]);
                     return;
                 }
 
                 msg.payload = await node.server.matrixClient.fetchRoomEvent(roomId, eventId);
                 node.send([msg, null]);
             } catch(e) {
-                node.error("Failed to get event " + msg.topic + ": " + e, msg);
-                msg.payload = e;
+                node.error("Failed to get event: " + e, msg);
+                msg.error = e;
+                msg.payload = e; // kept for flows written against older versions
                 node.send([null, msg]);
             }
         });

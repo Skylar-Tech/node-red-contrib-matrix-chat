@@ -80,7 +80,7 @@
     <div class="form-row">
         <label for="node-input-paginateKey"><i class="fa fa-key"></i> Pagination Key</label>
         <input type="text" id="node-input-paginateKey">
-        <div class="form-tips" style="margin-top: 10px;">A unique key to identify the current pagination session. If not provided, a new key will be generated for each session.</div>
+        <div class="form-tips" style="margin-top: 10px;">A unique key to identify the current pagination session. If not provided, a new key will be generated for each session. Up to 50 sessions are kept per node; when more are started, the least recently used session is dropped and its key starts over.</div>
     </div>
 
     <div class="form-row">

@@ -17,21 +17,24 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -39,19 +42,23 @@ module.exports = function(RED) {
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
+                msg.error = "Room must be specified in msg.topic or in configuration";
                 node.error("Room must be specified in msg.topic or in configuration", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!msg.userId) {
+                msg.error = "msg.userId was not set.";
                 node.error("msg.userId was not set.", msg);
+                node.send([null, msg]);
                 return;
             }
 
             node.server.matrixClient.kick(msg.topic, msg.userId, n.reason || msg.reason || undefined)
-                .then(function(e) {
+                .then(function() {
+                    // the endpoint returns {} (no event id), so msg is passed on unchanged
                     node.log("Successfully kicked " + msg.userId + " from " + msg.topic);
-                    msg.eventId = e.event_id;
                     node.send([msg, null]);
                 })
                 .catch(function(e){

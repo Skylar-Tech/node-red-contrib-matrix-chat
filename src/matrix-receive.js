@@ -41,19 +41,43 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.server.on("Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
+        node.server.listen(node, "Room.timeline", async function(event, room, toStartOfTimeline, removed, data, sharedMsg) {
+            // This runs inside the SDK's event emission; an exception thrown
+            // here would become an unhandled rejection and can stop Node-RED.
+            try {
+                handleTimelineEvent(event, room, sharedMsg);
+            } catch(e) {
+                // a small msg for Catch nodes, so a Catch flow cannot modify the shared msg
+                node.error("Failed to process timeline event " + (event && event.getId ? event.getId() : "") + ": " + e, {
+                    topic: sharedMsg && sharedMsg.topic, eventId: sharedMsg && sharedMsg.eventId,
+                    userId: sharedMsg && sharedMsg.userId, type: sharedMsg && sharedMsg.type,
+                });
+            }
+        });
+
+        function handleTimelineEvent(event, room, sharedMsg) {
             // if node has a room ID set we only listen on that room
             if (node.roomIds.length && !node.roomIds.includes(room.roomId)) {
                 return;
             }
+
+            // Every receive node gets the same msg from the config node, so
+            // work on a private copy: otherwise one flow changing its msg (or
+            // this node setting msg.url/payload) leaks into every other
+            // receive node's flow, and into the SDK's own event content
+            // (#144). The live MatrixEvent stays shared; deep-cloning it would
+            // copy the client it references.
+            const { event: liveEvent, ...plain } = sharedMsg;
+            const msg = RED.util.cloneMessage(plain);
+            msg.event = liveEvent;
 
             if (!node.acceptOwnEvents && (!event.getSender() || event.getSender().toLowerCase() === node.server.matrixClient.getUserId().toLowerCase())) {
                 node.log(`Ignoring${msg.encrypted ? ' encrypted' : ''} timeline event [${msg.type}]: (${room.name}) ${event.getId()} for reason: own event`);
@@ -71,8 +95,12 @@ module.exports = function(RED) {
             };
 
             const setUrls = (urlKey, encryptedKey) => {
-                const url = msg.encrypted ? msg.content[encryptedKey]?.url : msg.content[urlKey];
-                if (url) {
+                // Detect encrypted vs plain media by shape, not by whether the
+                // event is encrypted: an encrypted event can carry plain media
+                // (stickers always do, some clients and bridges do for files),
+                // where content.url is the mxc string.
+                const url = msg.content[encryptedKey]?.url || msg.content[urlKey];
+                if (typeof url === 'string' && url) {
                     const authenticatedUrl = node.server.matrixClient.mxcUrlToHttp(
                         url,
                         undefined,
@@ -88,23 +116,29 @@ module.exports = function(RED) {
                 }
             };
 
-            const setThumbnailUrls = (infoKey) => {
-                const thumbnailFile = msg.content.info?.[infoKey];
-                const thumbnailUrl = thumbnailFile?.url;
-                if (thumbnailUrl) {
-                    const authenticatedThumbnailUrl = node.server.matrixClient.mxcUrlToHttp(
-                        thumbnailUrl,
-                        undefined,
-                        undefined,
-                        undefined,
-                        false,
-                        true,
-                        true,
-                    );
-                    msg.thumbnail_url = authenticatedThumbnailUrl || node.server.matrixClient.mxcUrlToHttp(thumbnailUrl);
-                    msg.thumbnail_mxc_url = thumbnailUrl;
-                    setAuthHeaders();
-                }
+            const setThumbnailUrls = () => {
+                const info = msg.content.info;
+                if (!info) return;
+                // A thumbnail is either encrypted - info.thumbnail_file, an
+                // EncryptedFile object whose .url holds the mxc - or unencrypted
+                // - info.thumbnail_url, a plain mxc string. Detect by shape so
+                // both image/video and encrypted/unencrypted events resolve a
+                // thumbnail (the old code only ever read an object .url, so
+                // unencrypted thumbnails were silently dropped).
+                const thumbnailUrl = info.thumbnail_file?.url || info.thumbnail_url;
+                if (typeof thumbnailUrl !== 'string' || !thumbnailUrl) return;
+                const authenticatedThumbnailUrl = node.server.matrixClient.mxcUrlToHttp(
+                    thumbnailUrl,
+                    undefined,
+                    undefined,
+                    undefined,
+                    false,
+                    true,
+                    true,
+                );
+                msg.thumbnail_url = authenticatedThumbnailUrl || node.server.matrixClient.mxcUrlToHttp(thumbnailUrl);
+                msg.thumbnail_mxc_url = thumbnailUrl;
+                setAuthHeaders();
             };
 
             switch (msg.type) {
@@ -122,7 +156,7 @@ module.exports = function(RED) {
 
                 case 'm.sticker':
                     if (!node.acceptStickers) return;
-                    setThumbnailUrls('thumbnail_url');
+                    setThumbnailUrls();
                     setUrls('url', 'url');
                     break;
 
@@ -135,10 +169,8 @@ module.exports = function(RED) {
                 case 'm.audio':
                     if (!node.acceptAudio) return;
                     setUrls('url', 'file');
-                    if ('org.matrix.msc1767.file' in msg.content) {
-                        msg.filename = msg.content['org.matrix.msc1767.file'].name;
-                        msg.mimetype = msg.content['org.matrix.msc1767.file'].mimetype;
-                    }
+                    msg.filename = msg.content['org.matrix.msc1767.file']?.name || msg.content.filename || msg.content.body;
+                    msg.mimetype = msg.content['org.matrix.msc1767.file']?.mimetype || msg.content.info?.mimetype;
                     if ('org.matrix.msc1767.audio' in msg.content) {
                         msg.duration = msg.content['org.matrix.msc1767.audio'].duration;
                         msg.waveform = msg.content['org.matrix.msc1767.audio'].waveform;
@@ -149,14 +181,14 @@ module.exports = function(RED) {
                     if (!node.acceptImages) return;
                     msg.filename = msg.content.filename || msg.content.body;
                     setUrls('url', 'file');
-                    setThumbnailUrls('thumbnail_file');
+                    setThumbnailUrls();
                     break;
 
                 case 'm.video':
                     if (!node.acceptVideos) return;
                     msg.filename = msg.content.filename || msg.content.body;
                     setUrls('url', 'file');
-                    setThumbnailUrls('thumbnail_file');
+                    setThumbnailUrls();
                     break;
 
                 case 'm.location': {
@@ -185,19 +217,23 @@ module.exports = function(RED) {
                     break;
                 }
 
-                case 'm.reaction':
+                case 'm.reaction': {
                     if (!node.acceptReactions) return;
-                    msg.info = msg.content["m.relates_to"].info;
-                    msg.referenceEventId = msg.content["m.relates_to"].event_id;
-                    msg.payload = msg.content["m.relates_to"].key;
+                    // a redacted or malformed reaction has no m.relates_to
+                    const relation = msg.content["m.relates_to"];
+                    if (!relation) return;
+                    msg.info = relation.info;
+                    msg.referenceEventId = relation.event_id;
+                    msg.payload = relation.key;
                     break;
+                }
 
                 default:
                     return;
             }
 
             node.send(msg);
-        });
+        }
 
         node.on("close", function() {
             node.server.deregister(node);

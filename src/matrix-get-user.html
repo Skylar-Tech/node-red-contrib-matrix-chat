@@ -43,13 +43,17 @@
                 <dd>Original message object with modifications based on config.</dd>
             </dl>
             <dl class="message-properties">
-                <dt>msg.error <span class="property-type">undefined|object</span></dt>
-                <dd>Returned if there was an error getting the user</dd>
+                <dt class="optional">dynamic
+                    <span class="property-type">object|null</span>
+                </dt>
+                <dd> The user (<code>userId</code>, <code>displayName</code>, <code>avatarUrl</code>, <code>presence</code>, <code>presenceStatusMsg</code>, ...) written to the configured output property (<code>null</code> if the server has no profile details for them). A user the server does not know goes to the error output. It is a plain copy, so changing it does not affect the Matrix client. Presence fields are only included when the homeserver shares them (usually only for users in a room with the bot).</dd>
             </dl>
-            <dt class="optional">dynamic
-                <span class="property-type">string|object</span>
-            </dt>
-            <dd> You configure what to return on the node.</dd>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>The reason the user could not be looked up.</dd>
+            </dl>
         </li>
     </ol>
 </script>
@@ -90,15 +94,15 @@
             },
             oneditprepare: function() {
                 $("#node-input-user").typedInput({
-                    type: this.roomType,
+                    type: this.userType,
                     types:['msg','flow','global','str'],
                 })
                     .typedInput('value', this.userValue)
                     .typedInput('type', this.userType);
 
                 $("#node-input-property").typedInput({
-                    type: this.roomType,
-                    types:['msg','flow','global','str'],
+                    type: this.propertyType,
+                    types:['msg','flow','global'],
                 })
                     .typedInput('value', this.propertyValue)
                     .typedInput('type', this.propertyType);

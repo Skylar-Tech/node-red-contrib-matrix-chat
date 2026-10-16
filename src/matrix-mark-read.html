@@ -3,7 +3,7 @@
         category: 'matrix',
         color: '#00b7ca',
         icon: "matrix.png",
-        outputLabels: ["message"],
+        outputLabels: ["success", "error"],
         inputs: 1,
         outputs: 2,
         defaults: {
@@ -27,7 +27,7 @@
                 .typedInput('type', this.roomType);
 
             $("#node-input-eventId").typedInput({
-                types:['msg','flow','global','bool'],
+                types:['msg','flow','global','str'],
             })
                 .typedInput('value', this.eventIdValue)
                 .typedInput('type', this.eventIdType);

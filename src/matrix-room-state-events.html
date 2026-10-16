@@ -35,12 +35,12 @@
         <dt class="optional">dynamic
             <span class="property-type">string|object</span>
         </dt>
-        <dd> You configure what room state events in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> allow you to pass a string to set their value but all other room state events will require the full content object (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>)</dd>
+        <dd> You configure what room state events in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.topic</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> allow you to pass a string to set their value but all other room state events will require the full content object (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>)</dd>
 
         <dt class="optional">msg.state_key
             <span class="property-type">string</span>
         </dt>
-        <dd> Required for some events such as <code style="white-space: normal;">m.space.parent</code> and <code style="white-space: normal;">m.room.child</code> to set the referenced child/parent room</dd>
+        <dd> The state key of the space event to set or get. Required for <code style="white-space: normal;">m.space.child</code> (sent in the space, state key = the child room ID) and <code style="white-space: normal;">m.space.parent</code> (sent in the child room, state key = the parent space ID). Other event types are read with an empty state key; when setting a custom event type it is used as that event's state key (defaults to empty).</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -56,12 +56,12 @@
             </dl>
             <dl class="message-properties">
                 <dt>msg.getter_errors <span class="property-type">undefined|object</span></dt>
-                <dd>Returned if getting a room state event failed. The key of the object is the room state event type and the value is the error that occurred. Note that you will get an error if you try getting a room state event that doesn't exist (such as fetching avatar on a room that doesn't have one).</dd>
+                <dd>Returned if getting a room state event failed. The key of the object is the room state event type and the value is the error message. Note that you will get an error if you try getting a room state event that doesn't exist (such as fetching avatar on a room that doesn't have one).</dd>
             </dl>
             <dt class="optional">dynamic
                 <span class="property-type">string|object</span>
             </dt>
-            <dd> You configure what room state events to output in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> will come back as strings otherwise you will get the full content object of the event (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>). Additionally there is a setting when configuring a getter called "Fetch from local storage" that if enabled will search the local storage for the room and try to fetch the state event that way and fallback to hitting the server if that isn't possible.</dd>
+            <dd> You configure what room state events to output in the node configuration. <code style="white-space: normal;">m.room.name</code>, <code style="white-space: normal;">m.room.topic</code>, <code style="white-space: normal;">m.room.avatar</code>, and <code style="white-space: normal;">m.room.guest_access</code> will come back as strings otherwise you will get the full content object of the event (find this by referencing the <a href="https://spec.matrix.org/latest/client-server-api" target="_blank">Matrix Client-Server docs</a>). Additionally there is a setting when configuring a getter called "Fetch from local storage" that if enabled will search the local storage for the room and try to fetch the state event that way and fallback to hitting the server if that isn't possible; both return the same value.</dd>
         </li>
     </ol>
 </script>

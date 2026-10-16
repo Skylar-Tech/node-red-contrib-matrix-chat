@@ -17,6 +17,18 @@ module.exports = function(RED) {
         this.pageSizeType = n.pageSizeType;
         this.pageSizeValue = n.pageSizeValue;
         this.timelineWindows = new Map();
+        // Each pagination key keeps a TimelineWindow, and the SDK attaches a
+        // listener for it to the room that it never removes. Keep at most
+        // this many (least recently used dropped first) and detach the
+        // listener of every window that is dropped.
+        const MAX_TIMELINE_WINDOWS = 50;
+        function dropTimelineWindow(pageKey) {
+            let entry = node.timelineWindows.get(pageKey);
+            if (entry && entry.listener) {
+                entry.room.removeListener(entry.event, entry.listener);
+            }
+            node.timelineWindows.delete(pageKey);
+        }
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -26,17 +38,19 @@ module.exports = function(RED) {
         }
         node.server.register(node);
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on("input", async function (msg) {
             if (!node.server || !node.server.matrixClient) {
-                node.error("No matrix server selected", msg);
+                msg.error = "No matrix server selected";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
             }
 
@@ -102,20 +116,35 @@ module.exports = function(RED) {
                     pageKey = crypto.randomUUID();
                     setToValue(pageKey, node.paginateKeyType, node.paginateKeyValue);
                 }
-                let timelineWindow = node.timelineWindows.get(pageKey),
+                let entry = node.timelineWindows.get(pageKey),
+                    timelineWindow = entry && entry.timelineWindow,
                     moreMessages = true;
                 if (!timelineWindow) {
                     let timelineSet = room.getUnfilteredTimelineSet();
+                    // the SDK keeps no reference to the listener it adds, so
+                    // find it by comparing the room's listeners
+                    let before = new Set(room.listeners(sdk.RoomEvent.Timeline));
                     // MatrixClient's option initialSyncLimit gets set to the filter we are using,
                     // so override that value with our pageSize.
                     timelineWindow = new TimelineWindow(node.server.matrixClient, timelineSet);
+                    let listener = room.listeners(sdk.RoomEvent.Timeline).find(function(l) { return !before.has(l); });
+                    node.timelineWindows.set(pageKey, { timelineWindow, room, event: sdk.RoomEvent.Timeline, listener });
                     await timelineWindow.load(msg.eventId || null, pageSize);
-                    node.timelineWindows.set(pageKey, timelineWindow);
                 } else {
+                    // refresh the key's position so the cap below drops the least recently used
+                    node.timelineWindows.delete(pageKey);
+                    node.timelineWindows.set(pageKey, entry);
+                    let previousCount = timelineWindow.getEvents().length;
                     moreMessages = await timelineWindow.paginate(paginateBackwards ? 'b' : 'f', pageSize); // 'b' for backwards, 'f' for forwards
-                    if (moreMessages) {
-                        await timelineWindow.unpaginate(pageSize, !paginateBackwards);
+                    if (moreMessages && previousCount > 0) {
+                        // Drop the previous page so only the new one is returned. Never
+                        // more than the window holds: the SDK throws if asked to remove
+                        // more events than it has (e.g. a short first page).
+                        timelineWindow.unpaginate(Math.min(previousCount, timelineWindow.getEvents().length), !paginateBackwards);
                     }
+                }
+                while (node.timelineWindows.size > MAX_TIMELINE_WINDOWS) {
+                    dropTimelineWindow(node.timelineWindows.keys().next().value);
                 }
 
                 // To avoid errors converting massive MatrixEvent objects to JSON, we omit them.
@@ -149,6 +178,9 @@ module.exports = function(RED) {
         });
 
         node.on("close", function() {
+            for (let pageKey of Array.from(node.timelineWindows.keys())) {
+                dropTimelineWindow(pageKey);
+            }
             node.server.deregister(node);
         });
     }

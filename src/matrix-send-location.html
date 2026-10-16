@@ -194,7 +194,9 @@
         read from <code>msg.*</code> using the documented names so the simple
         case <em>just works</em> &mdash; reach for the type selector when you
         want to pull from a flow / global variable or pin a static value on
-        the node itself.
+        the node itself. An empty <code>str</code> or <code>num</code> value
+        means "not provided", so the optional field is left out (or its
+        default is generated).
     </p>
 
     <h4>Configuration</h4>

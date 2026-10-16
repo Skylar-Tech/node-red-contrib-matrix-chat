@@ -300,12 +300,12 @@
         <li><code>msg.type</code> == '<strong>m.audio</strong>'
             <dl class="message-properties">
                 <dt>msg.filename <span class="property-type">string</span></dt>
-                <dd>the image's parsed filename</dd>
+                <dd>the audio file's name (from the event, falling back to its body)</dd>
             </dl>
 
             <dl class="message-properties">
                 <dt>msg.mimetype <span class="property-type">string</span></dt>
-                <dd>audio file mimetype (ex: audio/ogg)</dd>
+                <dd>audio file mimetype (ex: audio/ogg), if the sender included one</dd>
             </dl>
 
             <dl class="message-properties">

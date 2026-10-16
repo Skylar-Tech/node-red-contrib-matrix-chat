@@ -19,11 +19,11 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
@@ -58,7 +58,6 @@ module.exports = function(RED) {
                     var callback = err => {
                         if (err) {
                             node.error(err, msg);
-                            getterErrors[rule.p] = err.message;
                         }
                     }
                     target.set(contextKey.key, value, contextKey.store, callback);
@@ -83,7 +82,15 @@ module.exports = function(RED) {
                 return;
             }
 
-            let userId = getToValue(msg, node.userType, node.userValue);
+            let userId;
+            try {
+                userId = getToValue(msg, node.userType, node.userValue);
+            } catch(e) {
+                msg.error = "Failed getting userId: " + e.message;
+                node.error(msg.error, msg);
+                node.send([null, msg]);
+                return;
+            }
             if(!userId) {
                 msg.error = "Missing userId";
                 node.error(msg.error, msg);
@@ -112,15 +119,23 @@ module.exports = function(RED) {
                         user2.avatarUrl = profileInfo.avatar_url;
                     }
 
-                    let presence = await node.server.matrixClient.getPresence(userId);
+                    // Presence is optional: homeservers refuse it (403) for users
+                    // we share no room with, or have it disabled entirely.
+                    let presence = null;
+                    try {
+                        presence = await node.server.matrixClient.getPresence(userId);
+                    } catch(e) {
+                        presence = null;
+                    }
                     if(presence && Object.keys(presence).length > 0) {
                         user2.currentlyActive = presence.currently_active;
                         user2.lastActiveAgo = presence.last_active_ago;
-                        user2.presenceStatusMsg = presence.presence_status_msg;
+                        user2.presenceStatusMsg = presence.status_msg;
                         user2.presence = presence.presence;
                     }
 
                     if(Object.keys(user2).length > 0) {
+                        user2.userId = userId;
                         setToValue(user2, node.propertyType, node.propertyValue);
                         node.send([msg, null]);
                         return;
@@ -133,7 +148,19 @@ module.exports = function(RED) {
                 }
             }
 
-            setToValue(user, node.propertyType, node.propertyValue);
+            // A plain copy of the SDK's cached User (without its private
+            // underscore fields), so changes made by the flow cannot alter the
+            // SDK's cache or strip the User's event listeners.
+            let userCopy = null;
+            if(user) {
+                userCopy = {};
+                Object.keys(user).forEach(function(key) {
+                    if(!/^_/.test(key)) {
+                        userCopy[key] = user[key];
+                    }
+                });
+            }
+            setToValue(userCopy, node.propertyType, node.propertyValue);
             node.send([msg, null]);
         });
 

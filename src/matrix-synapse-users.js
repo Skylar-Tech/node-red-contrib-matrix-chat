@@ -16,21 +16,24 @@ module.exports = function(RED) {
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-        node.server.on("disconnected", function(){
+        node.server.listen(node, "disconnected", function(){
             node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
 
-        node.server.on("connected", function() {
+        node.server.listen(node, "connected", function() {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                msg.error = "No matrix server selected";
+                node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -41,8 +44,11 @@ module.exports = function(RED) {
                 'limit': msg.limit || 100
             };
 
-            if(msg.guests) {
-                queryParams['guests'] = msg.guests ? 'true' : 'false';
+            // msg.guests=false must be sent explicitly: Synapse defaults to
+            // including guests, so only sending the parameter when truthy
+            // made "false" impossible.
+            if(msg.guests !== undefined && msg.guests !== null) {
+                queryParams['guests'] = (msg.guests === true || msg.guests === 'true') ? 'true' : 'false';
             }
 
             if(msg.order_by) {
@@ -60,7 +66,7 @@ module.exports = function(RED) {
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error fetching server user list " + e);
+                    node.error("Error fetching server user list " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });

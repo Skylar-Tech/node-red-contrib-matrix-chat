@@ -70,11 +70,11 @@
 
     <h3>Inputs</h3>
     <dl class="message-properties">
-        <dt>msg.payload.roomId <span class="property-type">string</span></dt>
-        <dd>The Room ID from which the event will be fetched.</dd>
+        <dt>msg.topic | dynamic <span class="property-type">string</span></dt>
+        <dd>The Room ID from which the event will be fetched. Read from <code>msg.topic</code> by default; configurable on the node.</dd>
 
-        <dt>msg.payload.eventId <span class="property-type">string</span></dt>
-        <dd>The Event ID of the message to fetch.</dd>
+        <dt>msg.eventId | dynamic <span class="property-type">string</span></dt>
+        <dd>The Event ID of the message to fetch. Read from <code>msg.eventId</code> by default; configurable on the node.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -87,8 +87,8 @@
         </li>
         <li>Error
             <dl class="message-properties">
-                <dt>msg.payload <span class="property-type">string</span></dt>
-                <dd>Error details.</dd>
+                <dt>msg.error <span class="property-type">string|object</span></dt>
+                <dd>Error details (also copied to <code>msg.payload</code> for older flows).</dd>
             </dl>
         </li>
     </ol>
