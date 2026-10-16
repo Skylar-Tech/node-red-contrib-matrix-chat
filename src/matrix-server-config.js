@@ -47,14 +47,43 @@ async function resolveHomeserverUrl(sdk, configuredUrl) {
     if(!domain) {
         return configuredUrl;
     }
-    try {
-        const discovery = await sdk.AutoDiscovery.findClientConfig(domain);
-        const homeserver = discovery['m.homeserver'];
+    // Discovery forces https, so on hosts without an HTTPS .well-known (LAN
+    // IPs, localhost, plain http) it can wait for a 5 second timeout on every
+    // start. Check in parallel whether the configured URL already serves the
+    // client API: if it does, discovery only gets a short grace period to
+    // report a delegation. A delegation always wins when there is one.
+    const discovery = sdk.AutoDiscovery.findClientConfig(domain).then(function(result) {
+        const homeserver = result['m.homeserver'];
         if(homeserver && homeserver.state === sdk.AutoDiscovery.SUCCESS && homeserver.base_url) {
             return homeserver.base_url;
         }
-    } catch(e) {
-        // discovery failed unexpectedly - fall back to the configured URL
+        return null;
+    }).catch(function() {
+        return null; // discovery failed unexpectedly - fall back to the configured URL
+    });
+    const servesClientApi = !/^https?:\/\//i.test(String(configuredUrl)) ? Promise.resolve(false) :
+        fetch(String(configuredUrl).replace(/\/+$/, '') + '/_matrix/client/versions', {
+            signal: AbortSignal.timeout(5000),
+        }).then(function(res) {
+            return res.ok ? res.json() : null;
+        }).then(function(body) {
+            return !!(body && Array.isArray(body.versions));
+        }).catch(function() {
+            return false; // not reachable as a homeserver
+        });
+    // an IP address or localhost cannot delegate, so do not wait for it
+    const canDelegate = !/^(localhost|[0-9.]+|\[[0-9a-f:.]+\])(:\d+)?$/i.test(domain);
+    const DISCOVERY_GRACE_MS = canDelegate ? 1000 : 0;
+    const first = await Promise.race([
+        discovery.then(function(url) { return { discovered: url }; }),
+        servesClientApi.then(function(ok) { return ok ? { servesClientApi: true } : discovery.then(function(url) { return { discovered: url }; }); }),
+    ]);
+    if(first.discovered) {
+        return first.discovered;
+    }
+    if(first.servesClientApi) {
+        const delegated = await Promise.race([discovery, new Promise(function(r) { setTimeout(r, DISCOVERY_GRACE_MS, null); })]);
+        return delegated || configuredUrl;
     }
     return configuredUrl;
 }
