@@ -36,9 +36,11 @@
         defaults: {
             name: { value: null },
             autoAcceptRoomInvites: { value: true },
-            enableE2ee: { type: "checkbox", value: true },
-            global: { type: "checkbox", value: true },
-            allowUnknownDevices: { type: "checkbox", value: true }
+            // no "type" here: in defaults, "type" marks a reference to a config
+            // node, so the editor showed these as undefined in the Info panel
+            enableE2ee: { value: true },
+            global: { value: true },
+            allowUnknownDevices: { value: true }
         },
         icon: "matrix.png",
         label: function() {
