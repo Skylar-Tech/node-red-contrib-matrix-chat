@@ -407,10 +407,15 @@ module.exports = function(RED) {
             node.clearEncryptionData = async function() {
                 cryptoCleared = true;
                 stopClient();
-                if(node.matrixClient) {
-                    // also stops the crypto stack when the client never
-                    // started syncing (stopClient() above skips that case)
-                    node.matrixClient.stopClient();
+                // also stops the crypto stack when the client never started
+                // syncing (stopClient() above skips that case)
+                haltClient(node.matrixClient);
+                if(clientStarting) {
+                    // A startup in progress (crypto init, startClient) stops
+                    // itself once it sees cryptoCleared. Wait for it, so its
+                    // crypto stack has let go of the database before deleting.
+                    await Promise.race([clientStarting, new Promise(function(r) { setTimeout(r, 15000); })]);
+                    haltClient(node.matrixClient);
                 }
                 let deviceId = (node.matrixClient && node.matrixClient.getDeviceId())
                     || node.deviceId || getStoredDeviceId(localStorage) || null;
@@ -1014,8 +1019,9 @@ module.exports = function(RED) {
                             // periodically persist crypto state so it survives an unclean shutdown
                             cryptoSnapshotInterval = setInterval(persistCrypto, 5 * 60 * 1000);
                         }
-                        if(closing) {
-                            // closed while crypto was initializing
+                        if(closing || cryptoCleared) {
+                            // closed (or encryption data cleared) while crypto
+                            // was initializing
                             if(cryptoSnapshotInterval) {
                                 clearInterval(cryptoSnapshotInterval);
                                 cryptoSnapshotInterval = null;
@@ -1027,9 +1033,9 @@ module.exports = function(RED) {
                         await node.matrixClient.startClient({
                             initialSyncLimit: node.initialSyncLimit
                         });
-                        if(closing) {
-                            // closed while startClient() was running (the close
-                            // handler only waits so long)
+                        if(closing || cryptoCleared) {
+                            // closed (or encryption data cleared) while
+                            // startClient() was running
                             haltClient(node.matrixClient);
                         }
                     } catch(error) {
