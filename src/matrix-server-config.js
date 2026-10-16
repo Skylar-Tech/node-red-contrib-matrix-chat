@@ -588,7 +588,18 @@ module.exports = function(RED) {
                     return copy;
                 }
 
-                node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
+                // Wrap an async SDK event handler so a throw inside it is
+                // reported instead of becoming an unhandled promise rejection
+                // (which takes the whole Node-RED process down).
+                function guardAsync(what, handler) {
+                    return function() {
+                        handler.apply(this, arguments).catch(function(e) {
+                            node.error("Error handling " + what + ": " + (e && e.stack || e));
+                        });
+                    };
+                }
+
+                node.matrixClient.on(RoomEvent.Timeline, guardAsync("timeline event", async function(event, room, toStartOfTimeline, removed, data) {
                     if (toStartOfTimeline) {
                         node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: paginated result");
                         return; // ignore paginated results
@@ -642,10 +653,10 @@ module.exports = function(RED) {
 
                     node.log(`Received ${msg.encrypted ? 'encrypted ' : ''}timeline event [${msg.type}]: (${room.name}) ${event.getSender()} :: ${msg.content.body} ${toStartOfTimeline ? ' [PAGINATED]' : ''}`);
                     node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);
-                });
+                }));
 
                 // handle auto-joining rooms
-                node.matrixClient.on(RoomMemberEvent.Membership, async function(event, member) {
+                node.matrixClient.on(RoomMemberEvent.Membership, guardAsync("room membership event", async function(event, member) {
                     if(node.initializedAt > event.getDate()) {
                         return; // skip events that occurred before our client initialized
                     }
@@ -670,9 +681,9 @@ module.exports = function(RED) {
                             eventId   : event.getId(),
                         });
                     }
-                });
+                }));
 
-                node.matrixClient.on(ClientEvent.Sync, async function(state, prevState, data) {
+                node.matrixClient.on(ClientEvent.Sync, guardAsync("sync state change", async function(state, prevState, data) {
                     node.debug("SYNC [STATE=" + state + "] [PREVSTATE=" + prevState + "]");
                     if(prevState === null && state === "PREPARED" ) {
                         // Occurs when the initial sync is completed first time.
@@ -738,10 +749,10 @@ module.exports = function(RED) {
                             node.error("Connection to Matrix server lost");
                         });
                     }
-                });
+                }));
 
 
-                node.matrixClient.on(HttpApiEvent.SessionLoggedOut, async function(errorObj){
+                node.matrixClient.on(HttpApiEvent.SessionLoggedOut, guardAsync("logout", async function(errorObj){
                     // Example if user auth token incorrect:
                     // {
                     //     errcode: 'M_UNKNOWN_TOKEN',
@@ -755,7 +766,7 @@ module.exports = function(RED) {
 
                     node.error("Authentication failure: " + errorObj);
                     stopClient();
-                });
+                }));
 
                 // incoming device-verification requests from other users/devices
                 node.matrixClient.on(CryptoEvent.VerificationRequestReceived, function(request) {
