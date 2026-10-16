@@ -116,59 +116,6 @@ module.exports = function(RED) {
 
     // the following was taken & modified from https://github.com/matrix-org/browser-encrypt-attachment/blob/master/index.js
     /**
-     * Encrypt an attachment.
-     * @param {ArrayBuffer} plaintextBuffer The attachment data buffer.
-     * @return {Promise} A promise that resolves with an object when the attachment is encrypted.
-     *      The object has a "data" key with an ArrayBuffer of encrypted data and an "info" key
-     *      with an object containing the info needed to decrypt the data.
-     */
-    function encryptAttachment(plaintextBuffer) {
-        let cryptoKey; // The AES key object.
-        let exportedKey; // The AES key exported as JWK.
-        let ciphertextBuffer; // ArrayBuffer of encrypted data.
-        let sha256Buffer; // ArrayBuffer of digest.
-        let ivArray; // Uint8Array of AES IV
-        // Generate an IV where the first 8 bytes are random and the high 8 bytes
-        // are zero. We set the counter low bits to 0 since it makes it unlikely
-        // that the 64 bit counter will overflow.
-        ivArray = new Uint8Array(16);
-        crypto.getRandomValues(ivArray.subarray(0,8));
-        // Load the encryption key.
-        return crypto.subtle.generateKey(
-            {"name": "AES-CTR", length: 256}, true, ["encrypt", "decrypt"]
-        ).then(function(generateKeyResult) {
-            cryptoKey = generateKeyResult;
-            // Export the Key as JWK.
-            return crypto.subtle.exportKey("jwk", cryptoKey);
-        }).then(function(exportKeyResult) {
-            exportedKey = exportKeyResult;
-            // Encrypt the input ArrayBuffer.
-            // Use half of the iv as the counter by setting the "length" to 64.
-            return crypto.subtle.encrypt(
-                {name: "AES-CTR", counter: ivArray, length: 64}, cryptoKey, plaintextBuffer
-            );
-        }).then(function(encryptResult) {
-            ciphertextBuffer = encryptResult;
-            // SHA-256 the encrypted data.
-            return crypto.subtle.digest("SHA-256", ciphertextBuffer);
-        }).then(function (digestResult) {
-            sha256Buffer = digestResult;
-
-            return {
-                data: ciphertextBuffer,
-                info: {
-                    v: "v2",
-                    key: exportedKey,
-                    iv: encodeBase64(ivArray),
-                    hashes: {
-                        sha256: encodeBase64(new Uint8Array(sha256Buffer)),
-                    },
-                },
-            };
-        });
-    }
-
-    /**
      * Decrypt an attachment.
      * @param {ArrayBuffer} ciphertextBuffer The encrypted attachment data buffer.
      * @param {Object} info The information needed to decrypt the attachment.
