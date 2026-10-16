@@ -1,6 +1,7 @@
 // matrix-js-sdk is an ES module; load it via dynamic import so this CommonJS
 // node keeps working. All SDK-dependent setup awaits this promise.
 const sdkPromise = import("matrix-js-sdk");
+const SYNC_GUARD = Symbol('node-red-contrib-matrix-chat.syncRequestGuard');
 // The crypto-api enums (CryptoEvent, VerificationPhase, ...) are not re-exported
 // from the package root, so they are imported from the crypto-api subpath.
 const cryptoApiPromise = import("matrix-js-sdk/lib/crypto-api/index.js");
@@ -225,7 +226,13 @@ module.exports = function(RED) {
             // Set once the encryption data has been cleared via the admin
             // endpoint. Stops any further snapshot from writing the (deleted
             // or recreated-empty) store back to disk before the redeploy.
-            cryptoCleared = false;
+            cryptoCleared = false,
+            // Set when the node is closed. Startup is asynchronous (SDK import,
+            // homeserver discovery, /whoami, crypto init), so every step checks
+            // it: a node closed mid-startup (e.g. deployed again quickly) must
+            // not go on to start a client that then syncs forever unseen.
+            closing = false,
+            clientStarting = null; // promise of an in-progress startup (crypto init + startClient)
 
         if(!this.credentials.accessToken) {
             node.error("Matrix connection failed: missing access token in configuration.");
@@ -429,9 +436,81 @@ module.exports = function(RED) {
                 }
             }
 
+            // matrix-js-sdk issues its first /sync request after its startup
+            // prelude without checking whether the client was stopped in the
+            // meantime, and nothing handles that request's AbortError, which
+            // takes Node-RED down. Attach a no-op catch to every request the
+            // (stopped) SyncApi stores, including ones created later.
+            function swallowSyncRequests(syncApi) {
+                if(!syncApi || syncApi[SYNC_GUARD]) {
+                    return;
+                }
+                syncApi[SYNC_GUARD] = true;
+                let current = syncApi.currentSyncRequest;
+                let guard = function(request) {
+                    if(request && typeof request.catch === 'function') {
+                        request.catch(function() {});
+                    }
+                };
+                guard(current);
+                Object.defineProperty(syncApi, 'currentSyncRequest', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() { return current; },
+                    set: function(request) { current = request; guard(request); },
+                });
+            }
+
+            // Stop a client for good, also when startClient() is still running:
+            // the SDK can create its SyncApi after stopClient() was called.
+            function haltClient(client) {
+                if(!client) {
+                    return;
+                }
+                let syncApi = client.syncApi;
+                swallowSyncRequests(syncApi);
+                client.stopClient();
+                if(syncApi) {
+                    syncApi.stop();
+                }
+            }
+
+            // Resolves once the SDK has sent its first /sync request (or the
+            // client is not starting up), so stopping it cannot race the sync
+            // loop's startup prelude. Bounded to 5 seconds.
+            function syncPreludeDone(client) {
+                let deadline = Date.now() + 5000;
+                return new Promise(function(resolve) {
+                    (function check() {
+                        let syncApi = client && client.syncApi;
+                        if(!client || !client.clientRunning || !syncApi || syncApi.currentSyncRequest
+                            || client.getSyncState() !== null || Date.now() > deadline) {
+                            return resolve();
+                        }
+                        setTimeout(check, 50);
+                    })();
+                });
+            }
+
             node.on('close', function(done) {
-                stopClient();
-                persistCrypto().finally(function() {
+                closing = true;
+                // Let an in-progress startup (crypto init, startClient) settle
+                // first, so the client is stopped in a known state (bounded,
+                // well inside Node-RED's close timeout).
+                let starting = clientStarting
+                    ? Promise.race([clientStarting.catch(function(){}), new Promise(function(r) { setTimeout(r, 5000); })])
+                    : Promise.resolve();
+                starting.then(function() {
+                    return syncPreludeDone(node.matrixClient);
+                }).then(function() {
+                    // guard the SyncApi before stopClient() drops it
+                    swallowSyncRequests(node.matrixClient && node.matrixClient.syncApi);
+                    stopClient();
+                    // a startup that is still running past the wait above is
+                    // halted by run() once startClient() returns
+                    haltClient(node.matrixClient);
+                    return persistCrypto();
+                }).finally(function() {
                     if(node.globalAccess) {
                         try {
                             node.context().global.set('matrixClient["'+node.userId+'"]', undefined);
@@ -456,6 +535,9 @@ module.exports = function(RED) {
 
             async function setupClient() {
                 const sdk = await sdkPromise;
+                if(closing) {
+                    return;
+                }
                 const {
                     RelationType, RoomEvent, RoomMemberEvent, HttpApiEvent, ClientEvent,
                     MemoryStore, LocalStorageCryptoStore,
@@ -573,6 +655,9 @@ module.exports = function(RED) {
                 // Resolve the real homeserver via .well-known discovery so a
                 // delegating domain (e.g. "example.org") works as the server URL.
                 const baseUrl = await resolveHomeserverUrl(sdk, node.url);
+                if(closing) {
+                    return;
+                }
                 if(baseUrl !== node.url) {
                     node.log(`Discovered homeserver ${baseUrl} for ${node.url} via .well-known`);
                 }
@@ -929,10 +1014,24 @@ module.exports = function(RED) {
                             // periodically persist crypto state so it survives an unclean shutdown
                             cryptoSnapshotInterval = setInterval(persistCrypto, 5 * 60 * 1000);
                         }
+                        if(closing) {
+                            // closed while crypto was initializing
+                            if(cryptoSnapshotInterval) {
+                                clearInterval(cryptoSnapshotInterval);
+                                cryptoSnapshotInterval = null;
+                            }
+                            haltClient(node.matrixClient);
+                            return;
+                        }
                         node.log("Connecting to Matrix server...");
                         await node.matrixClient.startClient({
                             initialSyncLimit: node.initialSyncLimit
                         });
+                        if(closing) {
+                            // closed while startClient() was running (the close
+                            // handler only waits so long)
+                            haltClient(node.matrixClient);
+                        }
                     } catch(error) {
                         node.error(error);
                     }
@@ -941,7 +1040,7 @@ module.exports = function(RED) {
                 // do an authed request and only continue if we don't get an error
                 // this prevent the matrix client from crashing Node-RED on invalid auth token
                 (function checkAuthTokenThenStart() {
-                    if(node.matrixClient.clientRunning) {
+                    if(closing || node.matrixClient.clientRunning) {
                         return;
                     }
 
@@ -954,7 +1053,10 @@ module.exports = function(RED) {
                     node.matrixClient.whoami()
                         .then(
                             function(data) {
-                                if((typeof data['device_id'] === undefined || !data['device_id']) && !node.deviceId && !getStoredDeviceId(localStorage)) {
+                                if(closing) {
+                                    return;
+                                }
+                                if(!data['device_id'] && !node.deviceId && !getStoredDeviceId(localStorage)) {
                                     node.error("/whoami request did not return device_id. You will need to manually set one in your configuration because this cannot be automatically fetched.");
                                 }
                                 if('device_id' in data && data['device_id'] && !node.deviceId) {
@@ -968,9 +1070,12 @@ module.exports = function(RED) {
                                     node.error(`User ID provided is ${node.userId} but token belongs to ${data['user_id']}`);
                                     return;
                                 }
-                                run().catch((error) => node.error(error));
+                                clientStarting = run().catch((error) => node.error(error));
                             },
                             function(err) {
+                                if(closing) {
+                                    return;
+                                }
                                 // if the error isn't authentication related retry in a little bit
                                 if(err.code !== "M_UNKNOWN_TOKEN") {
                                     retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
