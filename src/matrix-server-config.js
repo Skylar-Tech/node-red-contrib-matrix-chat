@@ -89,16 +89,41 @@ async function resolveHomeserverUrl(sdk, configuredUrl) {
 }
 
 module.exports = function(RED) {
-    // disable logging if set to "off"
-    let loggingSettings = RED.settings.get('logging');
-    if(
-        typeof loggingSettings.console !== 'undefined' &&
-        typeof loggingSettings.console.level !== 'undefined' &&
-        ['info','debug','trace'].indexOf(loggingSettings.console.level.toLowerCase()) >= 0
-    ) {
-        import('matrix-js-sdk/lib/logger.js')
-            .then(({ logger }) => logger.disableAll())
-            .catch(() => { /* logger module path changed - ignore */ });
+    // matrix-js-sdk logs verbosely (debug level) on its own logger. Follow the
+    // Node-RED console level: SDK debug/info output only at debug or trace,
+    // warnings and errors at the matching levels. This used to be inverted:
+    // the SDK was silenced at "info" but flooded the console when the level
+    // was lowered to "warn"/"error"/"off".
+    let loggingSettings = RED.settings.get('logging') || {};
+    let consoleLevel = String(loggingSettings.console && loggingSettings.console.level || 'info').toLowerCase();
+    // lowest SDK method level still shown for each Node-RED level
+    let minSdkLevel = { off: 5, fatal: 4, error: 4, warn: 3, info: 3 }[consoleLevel];
+    if(minSdkLevel !== undefined) {
+        // logger.disableAll() on the SDK's root logger is not enough: every
+        // child logger (FetchHttpApi, MatrixRTCSession, ...) resets itself to
+        // DEBUG when created. Wrap the method factory of the loglevel instance
+        // the SDK uses instead. Only the SDK's own "matrix" loggers are
+        // filtered: loglevel can be shared with other modules.
+        sdkPromise.then(function() {
+            const loglevel = require('module').createRequire(require.resolve('matrix-js-sdk'))('loglevel');
+            const methodLevels = { trace: 0, debug: 1, log: 2, info: 2, warn: 3, error: 4 };
+            const isSdkLogger = function(name) { return typeof name === 'string' && /^matrix(-|$)/.test(name); };
+            const originalFactory = loglevel.methodFactory;
+            const filteredFactory = function(methodName, level, loggerName) {
+                let method = originalFactory.apply(this, arguments);
+                let methodLevel = methodLevels[methodName] !== undefined ? methodLevels[methodName] : 2;
+                return (isSdkLogger(loggerName) && methodLevel < minSdkLevel) ? function() {} : method;
+            };
+            // new loggers copy the root factory; existing SDK loggers are
+            // switched over here (their children copy it from them)
+            loglevel.methodFactory = filteredFactory;
+            Object.entries(loglevel.getLoggers()).forEach(function([name, l]) {
+                if(isSdkLogger(name)) {
+                    l.methodFactory = filteredFactory;
+                    l.rebuild();
+                }
+            });
+        }).catch(function() { /* logging internals changed - leave SDK logging as is */ });
     }
 
     function MatrixFolderNameFromUserId(name) {
