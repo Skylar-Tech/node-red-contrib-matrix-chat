@@ -38,7 +38,9 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
-                node.warn("No matrix server selected");
+                msg.error = "No matrix server selected";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
             }
 
@@ -48,8 +50,10 @@ module.exports = function(RED) {
                 return;
             }
 
-            if(!msg.userId) {
-                node.error("msg.userId must be set to get user whois data", msg);
+            if(!msg.userId || typeof msg.userId !== 'string') {
+                msg.error = "msg.userId must be set to get user whois data";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
             }
 
@@ -62,13 +66,13 @@ module.exports = function(RED) {
                         { $userId: msg.userId.toLowerCase() },
                     ),
                     undefined,
-                    msg.payload,
+                    undefined, // GET requests cannot have a body
                     { prefix: '' }
                 ).then(function(e){
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error fetching user whois information " + e);
+                    node.error("Error fetching user whois information " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });
