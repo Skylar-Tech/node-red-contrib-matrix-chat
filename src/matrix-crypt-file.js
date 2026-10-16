@@ -37,11 +37,11 @@ module.exports = function(RED) {
                 let buffer = await downloadBufferWithFallback(got, msg.url, requestOptions);
                 msg.payload = Buffer.from(await decryptAttachment(buffer, msg.content.file));
 
-                // handle thumbnail decryption if necessary
+                // decrypt the thumbnail for any media type that ships an
+                // encrypted one (images, videos, etc), not just m.image
                 if(
-                    msg.type.toLowerCase() === 'm.image'
-                    && msg.thumbnail_url
-                    && msg.content.info.thumbnail_file
+                    msg.thumbnail_url
+                    && msg.content.info?.thumbnail_file
                 ) {
                     let thumb_buffer = await downloadBufferWithFallback(got, msg.thumbnail_url, requestOptions);
                     msg.thumbnail_payload = Buffer.from(await decryptAttachment(thumb_buffer, msg.content.info.thumbnail_file));

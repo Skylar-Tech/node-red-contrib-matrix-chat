@@ -88,23 +88,29 @@ module.exports = function(RED) {
                 }
             };
 
-            const setThumbnailUrls = (infoKey) => {
-                const thumbnailFile = msg.content.info?.[infoKey];
-                const thumbnailUrl = thumbnailFile?.url;
-                if (thumbnailUrl) {
-                    const authenticatedThumbnailUrl = node.server.matrixClient.mxcUrlToHttp(
-                        thumbnailUrl,
-                        undefined,
-                        undefined,
-                        undefined,
-                        false,
-                        true,
-                        true,
-                    );
-                    msg.thumbnail_url = authenticatedThumbnailUrl || node.server.matrixClient.mxcUrlToHttp(thumbnailUrl);
-                    msg.thumbnail_mxc_url = thumbnailUrl;
-                    setAuthHeaders();
-                }
+            const setThumbnailUrls = () => {
+                const info = msg.content.info;
+                if (!info) return;
+                // A thumbnail is either encrypted - info.thumbnail_file, an
+                // EncryptedFile object whose .url holds the mxc - or unencrypted
+                // - info.thumbnail_url, a plain mxc string. Detect by shape so
+                // both image/video and encrypted/unencrypted events resolve a
+                // thumbnail (the old code only ever read an object .url, so
+                // unencrypted thumbnails were silently dropped).
+                const thumbnailUrl = info.thumbnail_file?.url || info.thumbnail_url;
+                if (typeof thumbnailUrl !== 'string' || !thumbnailUrl) return;
+                const authenticatedThumbnailUrl = node.server.matrixClient.mxcUrlToHttp(
+                    thumbnailUrl,
+                    undefined,
+                    undefined,
+                    undefined,
+                    false,
+                    true,
+                    true,
+                );
+                msg.thumbnail_url = authenticatedThumbnailUrl || node.server.matrixClient.mxcUrlToHttp(thumbnailUrl);
+                msg.thumbnail_mxc_url = thumbnailUrl;
+                setAuthHeaders();
             };
 
             switch (msg.type) {
@@ -122,7 +128,7 @@ module.exports = function(RED) {
 
                 case 'm.sticker':
                     if (!node.acceptStickers) return;
-                    setThumbnailUrls('thumbnail_url');
+                    setThumbnailUrls();
                     setUrls('url', 'url');
                     break;
 
@@ -149,14 +155,14 @@ module.exports = function(RED) {
                     if (!node.acceptImages) return;
                     msg.filename = msg.content.filename || msg.content.body;
                     setUrls('url', 'file');
-                    setThumbnailUrls('thumbnail_file');
+                    setThumbnailUrls();
                     break;
 
                 case 'm.video':
                     if (!node.acceptVideos) return;
                     msg.filename = msg.content.filename || msg.content.body;
                     setUrls('url', 'file');
-                    setThumbnailUrls('thumbnail_file');
+                    setThumbnailUrls();
                     break;
 
                 case 'm.location': {
