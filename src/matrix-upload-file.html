@@ -82,12 +82,12 @@
                 style="width: auto; margin-left: 125px; vertical-align: top"
         />
         <label for="node-input-generateThumbnails" style="width: auto;max-width:50%;">
-            Generate m.video thumbnails using ffmpeg
+            Generate thumbnails for images and videos
         </label>
     </div>
 
     <div class="form-tips">
-        ffmpeg & ffprobe must be installed for thumbnail generation, calculating duration of video or audio file, and getting width & height for videos. This functionality is disabled otherwise.
+        Image thumbnails are always generated as PNG. ffmpeg & ffprobe must be installed for video thumbnails, calculating duration of video or audio file, and getting width & height for videos. This functionality is disabled otherwise.
     </div>
 
     <script type="text/javascript">
@@ -112,7 +112,7 @@
         <dt>msg.payload
             <span class="property-type">string | Buffer</span>
         </dt>
-        <dd> A path to the file (string) or a file buffer (Buffer) to upload. If a buffer is provided, you must specify the filename for accurate type detection.</dd>
+        <dd> A path to the file (string) or a file buffer (Buffer) to upload. Relative paths are resolved against the <code>fileWorkingDirectory</code> setting if it is set. If a buffer is provided, you must specify the filename (and ideally <code>msg.contentType</code>) for accurate type detection.</dd>
 
         <dt>msg.filename
             <span class="property-type">string</span>
@@ -122,22 +122,22 @@
         <dt>msg.body
             <span class="property-type">string | null</span>
         </dt>
-        <dd> The display name for the file when rendered in the chat. If left empty, the default display name is "Attachment".</dd>
+        <dd> The display name for the file when rendered in the chat. If left empty, the file name is used.</dd>
 
         <dt class="optional">msg.contentType
             <span class="property-type">string | null</span>
         </dt>
-        <dd> Optional MIME Type of the file. If not provided, the type will be auto-detected based on the filename or buffer. If the detection fails, it will default to "text/plain".</dd>
+        <dd> Optional MIME Type of the file. If not provided, the type will be auto-detected from the filename. If the detection fails, it will default to "text/plain". The content type also decides the message type (<code>m.image</code>, <code>m.video</code>, <code>m.audio</code> or <code>m.file</code>) unless <code>msg.msgtype</code> is set.</dd>
 
         <dt class="optional">msg.encrypted
             <span class="property-type">boolean</span>
         </dt>
-        <dd> Set to true if the file should be uploaded with encryption. The node handles encryption automatically if this is enabled.</dd>
+        <dd> Set to true if the file should be uploaded with encryption (required for encrypted rooms). The node handles encryption automatically if this is enabled. Encrypted files are uploaded as <code>application/octet-stream</code> without a filename, so the homeserver cannot see the real name or type.</dd>
 
         <dt class="optional">msg.generateThumbnails
             <span class="property-type">boolean</span>
         </dt>
-        <dd> Set to true to generate thumbnails for image or video uploads. Thumbnails are generated automatically for supported types.</dd>
+        <dd> Overrides the node's "Generate thumbnails" setting for this message: <code>true</code> generates a thumbnail for image or video uploads, <code>false</code> skips it.</dd>
     </dl>
 
     <h3>Outputs</h3>
@@ -145,10 +145,7 @@
         <li>Success
             <dl class="message-properties">
                 <dt>msg.payload <span class="property-type">object</span></dt>
-                <dd>An object containing details of the uploaded file, including the URL (mxc URI), the MIME type, size, and any generated thumbnail information.</dd>
-
-                <dt>msg.eventId <span class="property-type">string</span></dt>
-                <dd>The eventId of the uploaded file message.</dd>
+                <dd>The message content for the uploaded file (<code>msgtype</code>, <code>body</code>, <code>filename</code>, <code>url</code> or <code>file</code> for encrypted uploads, and <code>info</code> with the MIME type, size, dimensions, duration and any thumbnail). Pass it to a Send Message node to post the file to a room. This node does not send a message itself.</dd>
             </dl>
         </li>
         <li>Error

@@ -44,9 +44,8 @@ module.exports = function(RED) {
             try {
                 if(file) {
                     let type = Mime.getType(file);
-                    let ext = Mime.getExtension(file);
                     if(type) {
-                        return {ext: ext, mime: type};
+                        return {ext: Mime.getExtension(type), mime: type};
                     }
                 }
             } catch (error) {
@@ -66,8 +65,8 @@ module.exports = function(RED) {
                 }
                 return fs.readFileSync(data);
             } catch (error) {
-                node.error(`Error reading file buffer: ${error.message}`, msg);
-                throw error;
+                // the caller reports this (with msg), so Catch nodes fire once
+                throw new Error(`Error reading file buffer: ${error.message}`);
             }
         }
 
@@ -88,8 +87,7 @@ module.exports = function(RED) {
                     value = Number(property);
                 }
             } catch (error) {
-                node.error(`Error evaluating value for type ${type}: ${error.message}`);
-                throw new Error("Invalid value evaluation");
+                throw new Error(`Invalid value evaluation for type ${type}: ${error.message}`);
             }
             return value;
         }
@@ -98,7 +96,9 @@ module.exports = function(RED) {
         async function onInput(msg) {
             try {
                 if (!node.server || !node.server.matrixClient) {
-                    node.warn("No matrix server selected");
+                    node.error("No matrix server selected", msg);
+                    msg.error = "No matrix server selected";
+                    node.send([null, msg]);
                     return;
                 }
 
@@ -116,6 +116,14 @@ module.exports = function(RED) {
                     node.send([null, msg]);
                     return;
                 }
+                // Resolve a relative path once, so the size, dimension and
+                // ffprobe steps read the same file as the upload does.
+                if (typeof bufferOrPath === 'string' && RED.settings.fileWorkingDirectory && !path.isAbsolute(bufferOrPath)) {
+                    bufferOrPath = path.resolve(RED.settings.fileWorkingDirectory, bufferOrPath);
+                }
+                let generateThumbnails = (typeof msg.generateThumbnails === 'boolean')
+                    ? msg.generateThumbnails
+                    : node.generateThumbnails;
 
                 let filename = getToValue(msg, node.fileNameType, node.fileNameValue);
                 if (!filename || typeof filename !== 'string') {
@@ -139,6 +147,11 @@ module.exports = function(RED) {
                     node.warn("Content-type failed to detect, falling back to text/plain", msg);
                     contentType = 'text/plain';
                 }
+                // The final content type (msg.contentType / node setting /
+                // filename) decides the msgtype, so e.g. a buffer named
+                // "snapshot" with contentType image/png is still sent as m.image.
+                const Mime = (await import('mime')).default;
+                detectedFileType = { mime: contentType, ext: Mime.getExtension(contentType) || detectedFileType?.ext || 'bin' };
                 if (!msgtype) {
                     msgtype = autoDetectMatrixMessageType(detectedFileType);
                 }
@@ -153,17 +166,21 @@ module.exports = function(RED) {
                 try {
                     file = await node.server.matrixClient.uploadContent(
                         encryptedFile?.data || getFileBuffer(bufferOrPath, msg),
-                        {
-                            name: filename, // Name to give the file on the server.
-                            rawResponse: false, // Return the raw body, rather than parsing the JSON.
-                            type: contentType, // Content-type for the upload. Defaults to file.type, or applicaton/octet-stream.
-                            onlyContentUri: false // Just return the content URI, rather than the whole body. Defaults to false. Ignored if opts.rawResponse is true.
-                        });
+                        uploadOptions(filename, contentType, !!encryptedFile));
                 } catch (e) {
                     node.error("Upload content error " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                     return;
+                }
+
+                // Encrypted media is opaque to the homeserver: upload it as
+                // application/octet-stream without a filename (like Element),
+                // the real name and type only live in the encrypted event.
+                function uploadOptions(name, type, encrypted) {
+                    return encrypted
+                        ? { includeFilename: false, type: "application/octet-stream" }
+                        : { name: name, type: type };
                 }
 
                 // we call this method when we need a file and cannot use the buffer
@@ -215,24 +232,27 @@ module.exports = function(RED) {
                     }
                 }
 
-                async function addThumbnail(buffer) {
+                // Add a thumbnail to msg.payload.info. `thumbnailBuffer` is the
+                // plaintext thumbnail (used for dimension detection); `encrypted`
+                // is the {data, info} blob from encryptAttachment when the upload
+                // is encrypted, or null otherwise. We always size from the
+                // plaintext (imageSize/statSync can't read ciphertext) and upload
+                // the encrypted bytes when encrypting. AES-CTR preserves length,
+                // so the plaintext size matches the uploaded size.
+                async function addThumbnail(thumbnailBuffer, encrypted) {
                     try {
-                        let thumbSize = imageSize(Buffer.isBuffer(buffer) ? buffer : buffer.data);
+                        let thumbSize = imageSize(thumbnailBuffer);
                         msg.payload.info.thumbnail_info = {
                             w: thumbSize.width,
                             h: thumbSize.height,
-                            size: getFileSize(Buffer.isBuffer(buffer) ? buffer : buffer.data)
+                            mimetype: "image/png", // thumbnails are always rendered as PNG
+                            size: getFileSize(thumbnailBuffer)
                         }
                         let uploadedThumbnail = await node.server.matrixClient.uploadContent(
-                            Buffer.isBuffer(buffer) ? buffer : buffer.data,
-                            {
-                                name: "thumbnail.png", // Name to give the file on the server.
-                                rawResponse: false, // Return the raw body, rather than parsing the JSON.
-                                type: "image/png", // Content-type for the upload. Defaults to file.type, or applicaton/octet-stream.
-                                onlyContentUri: false // Just return the content URI, rather than the whole body. Defaults to false. Ignored if opts.rawResponse is true.
-                            });
-                        // delete local file
-                        if (msg.encrypted) {
+                            encrypted ? encrypted.data : thumbnailBuffer,
+                            uploadOptions("thumbnail.png", "image/png", !!encrypted));
+                        if (encrypted) {
+                            msg.payload.info.thumbnail_file = encrypted.info;
                             msg.payload.info.thumbnail_file.url = uploadedThumbnail.content_uri;
                         } else {
                             msg.payload.info.thumbnail_url = uploadedThumbnail.content_uri;
@@ -244,46 +264,62 @@ module.exports = function(RED) {
 
                 async function createImageThumbnail(bufferOrPath) {
                     try {
-                        if (Buffer.isBuffer(bufferOrPath)) {
-                            return sharp(bufferOrPath).resize({width: 320}).toBuffer();
-                        }
-                        return sharp(fs.readFileSync(bufferOrPath)).resize({width: 320}).toBuffer();
+                        // always PNG (it is uploaded as image/png), never upscaled
+                        let input = Buffer.isBuffer(bufferOrPath) ? bufferOrPath : fs.readFileSync(bufferOrPath);
+                        return sharp(input).resize({width: 320, withoutEnlargement: true}).png().toBuffer();
                     } catch (error) {
-                        node.error(`Error creating image thumbnail: ${error.message}`);
+                        node.error(`Error creating image thumbnail: ${error.message}`, msg);
                         throw error;
                     }
                 }
 
                 function _ffmpegVideoThumbnail(filepath) {
                     return new Promise((resolve, reject) => {
-                        let filename = `${msg._msgid}-screenshot.png`;
+                        // a private temp dir per upload: a shared name (it used
+                        // to be /tmp/<_msgid>-screenshot.png) collides when the
+                        // same msg is fanned out to two upload nodes
+                        let dir = tmp.dirSync({unsafeCleanup: true});
+                        let filename = 'screenshot.png';
+                        let cleanup = function() {
+                            try { dir.removeCallback(); } catch (e) { /* already gone */ }
+                        };
                         ffmpeg(filepath)
                             .on('end', async function () {
-                                let path = `/tmp/${filename}`;
-                                let buffer = getFileBuffer(path, msg);
-                                let encryptedThumbnail = null;
-                                if (msg.encrypted) {
-                                    encryptedThumbnail = await encryptAttachment(buffer);
-                                    msg.payload.info.thumbnail_file = encryptedFile.info;
-                                }
                                 try {
-                                    await addThumbnail(encryptedThumbnail || buffer);
-                                    fs.rmSync(path); // delete temporary thumbnail file
+                                    let buffer = getFileBuffer(path.join(dir.name, filename), msg);
+                                    let encryptedThumbnail = msg.encrypted
+                                        ? await encryptAttachment(buffer)
+                                        : null;
+                                    await addThumbnail(buffer, encryptedThumbnail);
                                     resolve();
                                 } catch (e) {
-                                    return reject(new Error("Thumbnail upload failure: " + e));
+                                    reject(new Error("Thumbnail upload failure: " + e));
+                                } finally {
+                                    cleanup();
                                 }
                             })
                             .on('error', function (err) {
-                                return reject(err);
+                                cleanup();
+                                reject(err);
                             })
                             .screenshots({
                                 timestamps: [0],
                                 filename: filename,
-                                folder: '/tmp',
+                                folder: dir.name,
                                 size: '320x?'
                             });
                     });
+                }
+
+                // ffprobe reports stream duration as "N/A" for some containers
+                // (WebM/MKV); fall back to the container duration. The spec
+                // wants integer milliseconds.
+                function durationMs(stream, metadata) {
+                    let seconds = parseFloat(stream && stream.duration);
+                    if (!Number.isFinite(seconds)) {
+                        seconds = parseFloat(metadata && metadata.format && metadata.format.duration);
+                    }
+                    return (Number.isFinite(seconds) && seconds > 0) ? Math.round(seconds * 1000) : undefined;
                 }
 
                 msg.payload = {};
@@ -310,14 +346,12 @@ module.exports = function(RED) {
                         msg.payload.info.w = dimensions.width;
 
                         // Generate thumbnail for image
-                        if (node.generateThumbnails) {
+                        if (generateThumbnails) {
                             let thumbnailBuffer = await createImageThumbnail(bufferOrPath);
-                            let encryptedThumbnail = null;
-                            if (msg.encrypted) {
-                                encryptedThumbnail = await encryptAttachment(thumbnailBuffer);
-                                msg.payload.info.thumbnail_file = encryptedThumbnail.info;
-                            }
-                            await addThumbnail(encryptedThumbnail || thumbnailBuffer);
+                            let encryptedThumbnail = msg.encrypted
+                                ? await encryptAttachment(thumbnailBuffer)
+                                : null;
+                            await addThumbnail(thumbnailBuffer, encryptedThumbnail);
                         }
                     } catch (e) {
                         node.error("thumbnail error: " + e, msg);
@@ -330,8 +364,9 @@ module.exports = function(RED) {
                         let audioStream = metadata?.streams.filter(function (stream) {
                             return stream.codec_type === "audio" || false;
                         })[0];
-                        if (audioStream?.duration) {
-                            msg.payload.info.duration = audioStream?.duration * 1000;
+                        let duration = durationMs(audioStream, metadata);
+                        if (duration) {
+                            msg.payload.info.duration = duration;
                         }
                     } catch (e) {
                         node.error(e, msg);
@@ -347,7 +382,10 @@ module.exports = function(RED) {
                             return stream.codec_type === "video" || false;
                         })[0];
                         if (videoStream) {
-                            msg.payload.info.duration = videoStream.duration * 1000;
+                            let duration = durationMs(videoStream, metadata);
+                            if (duration) {
+                                msg.payload.info.duration = duration;
+                            }
                             msg.payload.info.w = videoStream.width;
                             msg.payload.info.h = videoStream.height;
                         }
@@ -355,7 +393,7 @@ module.exports = function(RED) {
                         node.error("ffprobe error: " + e, msg);
                     }
 
-                    if (node.generateThumbnails) {
+                    if (generateThumbnails) {
                         try {
                             await _ffmpegVideoThumbnail(filepath);
                         } catch (e) {
@@ -365,10 +403,12 @@ module.exports = function(RED) {
                     deleteTempFile();
                 }
 
-                node.send(msg, null);
+                node.send([msg, null]);
             } catch (error) {
                 node.error(`Unhandled error: ${error.message}`, msg);
                 node.log(error, msg);
+                msg.error = error.message;
+                node.send([null, msg]);
             }
         }
 
