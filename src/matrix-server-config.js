@@ -570,6 +570,24 @@ module.exports = function(RED) {
                     node.context().global.set('matrixClient["'+node.userId+'"]', node.matrixClient);
                 }
 
+                // Plain copy of an SDK User for msg.user, without its private
+                // (underscore) fields. The live User must not be modified: it
+                // is an EventEmitter, and deleting its "_events" key used to
+                // strip the listeners the SDK attached to it, so the client
+                // stopped receiving that user's presence/display name updates.
+                function snapshotUser(user) {
+                    if(!user) {
+                        return null;
+                    }
+                    let copy = {};
+                    Object.keys(user).forEach(function(key) {
+                        if(!/^_/.test(key)) {
+                            copy[key] = user[key];
+                        }
+                    });
+                    return copy;
+                }
+
                 node.matrixClient.on(RoomEvent.Timeline, async function(event, room, toStartOfTimeline, removed, data) {
                     if (toStartOfTimeline) {
                         node.log("Ignoring" + (event.isEncrypted() ? ' encrypted' : '') +" timeline event [" + (event.getContent()['msgtype'] || event.getType()) + "]: (" + room.name + ") " + event.getId() + " for reason: paginated result");
@@ -616,18 +634,11 @@ module.exports = function(RED) {
                         isThread     : event.getContent()?.['m.relates_to']?.rel_type === RelationType.Thread,
                         mentions     : event.getContent()["m.mentions"] || null,
                         userId       : event.getSender(),
-                        user         : node.matrixClient.getUser(event.getSender()),
+                        user         : snapshotUser(node.matrixClient.getUser(event.getSender())),
                         topic        : event.getRoomId(),
                         eventId      : event.getId(),
                         event        : event,
                     };
-
-                    // remove keys from user property that start with an underscore
-                    Object.keys(msg.user).forEach(function (key) {
-                        if (/^_/.test(key)) {
-                            delete msg.user[key];
-                        }
-                    });
 
                     node.log(`Received ${msg.encrypted ? 'encrypted ' : ''}timeline event [${msg.type}]: (${room.name}) ${event.getSender()} :: ${msg.content.body} ${toStartOfTimeline ? ' [PAGINATED]' : ''}`);
                     node.emit("Room.timeline", event, room, toStartOfTimeline, removed, data, msg);

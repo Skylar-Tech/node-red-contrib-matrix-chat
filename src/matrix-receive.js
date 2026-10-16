@@ -49,11 +49,35 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
-        node.server.listen(node, "Room.timeline", async function(event, room, toStartOfTimeline, removed, data, msg) {
+        node.server.listen(node, "Room.timeline", async function(event, room, toStartOfTimeline, removed, data, sharedMsg) {
+            // This runs inside the SDK's event emission; an exception thrown
+            // here would become an unhandled rejection and can stop Node-RED.
+            try {
+                handleTimelineEvent(event, room, sharedMsg);
+            } catch(e) {
+                // a small msg for Catch nodes, so a Catch flow cannot modify the shared msg
+                node.error("Failed to process timeline event " + (event && event.getId ? event.getId() : "") + ": " + e, {
+                    topic: sharedMsg && sharedMsg.topic, eventId: sharedMsg && sharedMsg.eventId,
+                    userId: sharedMsg && sharedMsg.userId, type: sharedMsg && sharedMsg.type,
+                });
+            }
+        });
+
+        function handleTimelineEvent(event, room, sharedMsg) {
             // if node has a room ID set we only listen on that room
             if (node.roomIds.length && !node.roomIds.includes(room.roomId)) {
                 return;
             }
+
+            // Every receive node gets the same msg from the config node, so
+            // work on a private copy: otherwise one flow changing its msg (or
+            // this node setting msg.url/payload) leaks into every other
+            // receive node's flow, and into the SDK's own event content
+            // (#144). The live MatrixEvent stays shared; deep-cloning it would
+            // copy the client it references.
+            const { event: liveEvent, ...plain } = sharedMsg;
+            const msg = RED.util.cloneMessage(plain);
+            msg.event = liveEvent;
 
             if (!node.acceptOwnEvents && (!event.getSender() || event.getSender().toLowerCase() === node.server.matrixClient.getUserId().toLowerCase())) {
                 node.log(`Ignoring${msg.encrypted ? ' encrypted' : ''} timeline event [${msg.type}]: (${room.name}) ${event.getId()} for reason: own event`);
@@ -203,7 +227,7 @@ module.exports = function(RED) {
             }
 
             node.send(msg);
-        });
+        }
 
         node.on("close", function() {
             node.server.deregister(node);
