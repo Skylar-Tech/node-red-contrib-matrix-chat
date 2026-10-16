@@ -6,7 +6,9 @@ module.exports = function(RED) {
 
         this.name = n.name;
         this.server = RED.nodes.getNode(n.server);
-        this.roomId = n.roomId;
+        this.roomId = n.roomId; // legacy setting, superseded by the Room typed input
+        this.roomType = n.roomType;
+        this.roomValue = n.roomValue;
         this.rules = n.rules;
 
         if (!node.server) {
@@ -25,6 +27,18 @@ module.exports = function(RED) {
             node.status({ fill: "green", shape: "ring", text: "connected" });
         });
 
+        // Room from the editor's Room typed input (defaults to msg.topic).
+        // Older configs only have the legacy roomId setting.
+        function getRoomId(msg) {
+            if (node.roomType === 'str') {
+                return node.roomValue || msg.topic;
+            }
+            if (node.roomType) {
+                return RED.util.evaluateNodeProperty(node.roomValue, node.roomType, node, msg);
+            }
+            return node.roomId || msg.topic;
+        }
+
         node.on("input", async function (msg) {
             if (! node.server || ! node.server.matrixClient) {
                 msg.error = "No matrix server selected";
@@ -40,7 +54,11 @@ module.exports = function(RED) {
                 return;
             }
 
-            msg.topic = node.roomId || msg.topic;
+            try {
+                msg.topic = getRoomId(msg);
+            } catch(e) {
+                msg.topic = null;
+            }
             if(!msg.topic) {
                 msg.error = "Room must be specified in msg.topic or in configuration";
                 node.error(msg.error, msg);
@@ -53,10 +71,11 @@ module.exports = function(RED) {
 
             if(!Array.isArray(node.rules) || !node.rules.length) {
                 node.warn("No rules configured, skipping", msg);
-                return msg;
+                node.send([msg, null]);
+                return;
             }
 
-            function getToValue(msg, rule) {
+            async function getToValue(msg, rule) {
                 var value = rule.to;
                 if (rule.tot === 'json') {
                     try {
@@ -82,12 +101,21 @@ module.exports = function(RED) {
                 } else if (rule.tot === 'date') {
                     value = Date.now();
                 } else if (rule.tot === 'jsonata') {
+                    let expr;
                     try {
-                        value = RED.util.evaluateJSONataExpression(rule.to,msg);
+                        expr = RED.util.prepareJSONataExpression(rule.to, node);
                     } catch(e3) {
-                        throw new Error("Invalid expression");
+                        throw new Error("Invalid expression: " + e3.message);
                     }
-                    return;
+                    value = await new Promise(function(resolve, reject) {
+                        RED.util.evaluateJSONataExpression(expr, msg, function(err, result) {
+                            if (err) {
+                                reject(new Error("Invalid expression: " + err.message));
+                            } else {
+                                resolve(result);
+                            }
+                        });
+                    });
                 }
                 return value;
             }
@@ -114,6 +142,7 @@ module.exports = function(RED) {
                 }
             }
 
+            let cachedGetters = {};
             for(let rule of node.rules) {
                 // [
                 //     {
@@ -124,11 +153,10 @@ module.exports = function(RED) {
                 //     }, ...
                 // ]
 
-                let cachedGetters = {};
                 if(rule.t === 'set') {
                     let value;
                     try {
-                        value = getToValue(msg, rule);
+                        value = await getToValue(msg, rule);
                         switch(rule.p) {
                             case "m.room.name":
                                 await node.server.matrixClient.sendStateEvent(
@@ -184,11 +212,11 @@ module.exports = function(RED) {
                                 if (typeof value !== 'object') {
                                     setterErrors[rule.p] = "m.space.parent content must be object";
                                 } else if (!msg.state_key) {
-                                    setterErrors[rule.p] = "m.space.parent required msg.state_key input to be set to the child roomId";
+                                    setterErrors[rule.p] = "m.space.parent required msg.state_key input to be set to the parent (space) roomId";
                                 }else {
                                     await node.server.matrixClient.sendStateEvent(
                                         msg.topic,
-                                        "m.room.power_levels",
+                                        "m.space.parent",
                                         value,
                                         msg.state_key);
                                 }
@@ -197,11 +225,11 @@ module.exports = function(RED) {
                                 if (typeof value !== 'object') {
                                     setterErrors[rule.p] = "m.space.child content must be object";
                                 } else if (!msg.state_key) {
-                                    setterErrors[rule.p] = "m.space.child required msg.state_key input to be set to the parent roomId";
+                                    setterErrors[rule.p] = "m.space.child required msg.state_key input to be set to the child roomId";
                                 }else {
                                     await node.server.matrixClient.sendStateEvent(
                                         msg.topic,
-                                        "m.room.power_levels",
+                                        "m.space.child",
                                         value,
                                         msg.state_key);
                                 }
@@ -230,44 +258,53 @@ module.exports = function(RED) {
                     } catch(e) {
                         setterErrors[rule.p] = e.message;
                     }
+                    // a later getter must not return what was cached before this set
+                    cachedGetters = {};
                 } else if(rule.t === 'get') {
-                    let value;
-                    if(cachedGetters.hasOwnProperty(rule.p)) {
-                        value = cachedGetters[rule.p];
+                    let value,
+                        // only the space events are keyed by another room;
+                        // every other state event uses an empty state key
+                        stateKey = (rule.p === 'm.space.parent' || rule.p === 'm.space.child') ? (msg.state_key || "") : "",
+                        cacheKey = rule.p + "|" + stateKey;
+                    if(cachedGetters.hasOwnProperty(cacheKey)) {
+                        value = cachedGetters[cacheKey];
+                        setToValue(value, rule);
                     } else {
                         try {
                             if(rule.ls) {
                                 // we opted to lookup from local storage, will fallback to server if necessary
                                 let room = node.server.matrixClient.getRoom(msg.topic);
-                                if(room) {
-                                    value = await room.getLiveTimeline().getState("f").getStateEvents(rule.p, "");
+                                let stateEvent = room ? room.getLiveTimeline().getState("f").getStateEvents(rule.p, stateKey) : null;
+                                if(stateEvent) {
+                                    // the content, like the server lookup below (not the SDK's MatrixEvent)
+                                    value = stateEvent.getContent();
                                 }
                             }
                             if(!value) {
                                 // fetch the latest state event by type from server
-                                value = await node.server.matrixClient.getStateEvent(msg.topic, rule.p, "");
-                                if(value) {
-                                    // normalize some simpler events for easier access
-                                    switch(rule.p) {
-                                        case "m.room.name":
-                                            value = value?.name
-                                            break;
-                                        case "m.room.topic":
-                                            value = value?.topic
-                                            break;
-                                        case "m.room.avatar":
-                                            value = value?.url
-                                            break;
-                                        case "m.room.guest_access":
-                                            value = value?.guest_access;
-                                            break;
-                                    }
+                                value = await node.server.matrixClient.getStateEvent(msg.topic, rule.p, stateKey);
+                            }
+                            if(value) {
+                                // normalize some simpler events for easier access
+                                switch(rule.p) {
+                                    case "m.room.name":
+                                        value = value?.name
+                                        break;
+                                    case "m.room.topic":
+                                        value = value?.topic
+                                        break;
+                                    case "m.room.avatar":
+                                        value = value?.url
+                                        break;
+                                    case "m.room.guest_access":
+                                        value = value?.guest_access;
+                                        break;
                                 }
                             }
                             setToValue(value, rule);
-                            cachedGetters[rule.p] = value;
+                            cachedGetters[cacheKey] = value;
                         } catch(e) {
-                            getterErrors[rule.p] = e;
+                            getterErrors[rule.p] = (e && e.message) || String(e);
                         }
                     }
 
