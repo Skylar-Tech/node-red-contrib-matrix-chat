@@ -75,7 +75,7 @@
 
 <script type="text/html" data-help-name="matrix-send-file">
     <h3>Details</h3>
-    <p>This node will send a file to a Matrix chat room. Supports direct linking to a File In node.</p>
+    <p>This node will send a file to a Matrix chat room. Supports direct linking to a File In node. The file name, MIME type and size are included in the message so clients can name and open the download. The file is uploaded unencrypted; to send encrypted media into an encrypted room use the Upload File node (with <code>msg.encrypted</code>) followed by Send Message.</p>
 
     <h3>Inputs</h3>
     <dl class="message-properties">
@@ -97,17 +97,17 @@
         <dt class="optional">msg.body
             <span class="property-type">string | null</span>
         </dt>
-        <dd> this will be the display name the client will see when rendered in their chat client. If this is left empty it will just display as "Attachment".</dd>
+        <dd> this will be the display name (caption) the client will see when rendered in their chat client. If this is left empty the file name is used. The file name is always sent as the download name.</dd>
 
         <dt class="optional">msg.contentType
             <span class="property-type">string | null</span>
         </dt>
-        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. Optional but highly recommended (so the client receiving knows what type of file it is).</dd>
+        <dd> Content <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" target="_blank">MIME Type</a>. Overridden if configured on the node. If neither is set it is detected from <code>msg.filename</code>.</dd>
 
         <dt class="optional">msg.content
             <span class="property-type">object | null</span>
         </dt>
-        <dd> craft your own msg.content to send to the server. If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
+        <dd> craft your own msg.content to send to the server (used only when <code>msg.type</code> is <code>m.file</code>). If defined then <code>msg.filename</code>, <code>msg.contentType</code>, <code>msg.body</code>, and <code>msg.payload</code> aren't required since the file already exists.</dd>
     </dl>
 
     <h3>Outputs</h3>
