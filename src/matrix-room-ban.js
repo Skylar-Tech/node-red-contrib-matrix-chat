@@ -27,11 +27,14 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -39,12 +42,16 @@ module.exports = function(RED) {
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
+                msg.error = "Room must be specified in msg.topic or in configuration";
                 node.error("Room must be specified in msg.topic or in configuration", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!msg.userId) {
+                msg.error = "msg.userId was not set.";
                 node.error("msg.userId was not set.", msg);
+                node.send([null, msg]);
                 return;
             }
 

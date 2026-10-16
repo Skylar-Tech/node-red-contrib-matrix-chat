@@ -44,7 +44,9 @@ module.exports = function(RED) {
 
         node.on("input", async function(msg) {
             if (!node.server || !node.server.matrixClient) {
-                node.error("No matrix server selected", msg);
+                msg.error = "No matrix server selected";
+                node.error(msg.error, msg);
+                node.send([null, msg]);
                 return;
             }
 

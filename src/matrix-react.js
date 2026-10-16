@@ -28,10 +28,13 @@ module.exports = function(RED) {
         node.on("input", function (msg) {
             if (!node.server || !node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
+                msg.error = "No matrix server selected";
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -40,18 +43,24 @@ module.exports = function(RED) {
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
                 node.error("Room must be specified in msg.topic or in configuration", msg);
+                msg.error = "Room must be specified in msg.topic or in configuration";
+                node.send([null, msg]);
                 return;
             }
 
             let payload = n.reaction || msg.payload;
             if(!payload) {
                 node.error('msg.payload must be defined or the reaction configured on the node.', msg);
+                msg.error = 'msg.payload must be defined or the reaction configured on the node.';
+                node.send([null, msg]);
                 return;
             }
 
             let eventId = msg.referenceEventId || msg.eventId;
             if(!eventId) {
                 node.error('Either msg.referenceEventId or msg.eventId must be defined to react to a message.', msg);
+                msg.error = 'Either msg.referenceEventId or msg.eventId must be defined to react to a message.';
+                node.send([null, msg]);
                 return;
             }
 
@@ -73,6 +82,7 @@ module.exports = function(RED) {
                     node.send([msg, null]);
                 })
                 .catch(function(e){
+                    node.error("Error sending reaction: " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });

@@ -113,11 +113,13 @@ module.exports = function(RED) {
 
         node.on("input", async function(msg) {
             if (!node.server || !node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
                 node.send([null, msg]);
                 return;
             }
             if (!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -125,6 +127,7 @@ module.exports = function(RED) {
 
             msg.topic = node.roomId || msg.topic;
             if (!msg.topic) {
+                msg.error = "Room must be specified in msg.topic or in configuration";
                 node.error("Room must be specified in msg.topic or in configuration", msg);
                 node.send([null, msg]);
                 return;
@@ -155,6 +158,7 @@ module.exports = function(RED) {
                 const lat = parseFloat(rawLat);
                 const lng = parseFloat(rawLng);
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    msg.error = "Latitude and longitude (numbers) - or a geo_uri - are required";
                     node.error("Latitude and longitude (numbers) - or a geo_uri - are required", msg);
                     node.send([null, msg]);
                     return;
@@ -173,6 +177,7 @@ module.exports = function(RED) {
                 if (!isEmpty(rawAlt)) {
                     const alt = parseFloat(rawAlt);
                     if (!Number.isFinite(alt)) {
+                        msg.error = "Altitude must be a number when provided";
                         node.error("Altitude must be a number when provided", msg);
                         node.send([null, msg]);
                         return;

@@ -13,21 +13,29 @@ module.exports = function(RED) {
 
             if(!msg.type) {
                 node.error('msg.type is required.', msg);
+                msg.error = 'msg.type is required.';
+                node.send([null, msg]);
                 return;
             }
 
             if(!msg.content) {
                 node.error('msg.content is required.', msg);
+                msg.error = 'msg.content is required.';
+                node.send([null, msg]);
                 return;
             }
 
             if(!msg.content.file) {
                 node.error('msg.content.file is required.', msg);
+                msg.error = 'msg.content.file is required.';
+                node.send([null, msg]);
                 return;
             }
 
             if(!msg.url) {
                 node.error('msg.url is required.', msg);
+                msg.error = 'msg.url is required.';
+                node.send([null, msg]);
                 return;
             }
 
@@ -47,7 +55,7 @@ module.exports = function(RED) {
                     msg.thumbnail_payload = Buffer.from(await decryptAttachment(thumb_buffer, msg.content.info.thumbnail_file));
                 }
             } catch(error){
-                node.error(error);
+                node.error("Error decrypting file: " + error, msg);
                 msg.error = error;
                 node.send([null, msg]);
                 return;

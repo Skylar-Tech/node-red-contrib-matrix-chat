@@ -38,11 +38,14 @@ module.exports = function(RED) {
 
         node.on("input", function (msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
@@ -50,7 +53,16 @@ module.exports = function(RED) {
 
             msg.topic = node.roomId || msg.topic;
             if(!msg.topic) {
+                msg.error = "room must be defined in either msg.topic or in node config";
                 node.error("room must be defined in either msg.topic or in node config", msg);
+                node.send([null, msg]);
+                return;
+            }
+
+            if(!msg.userId) {
+                node.error("msg.userId was not set.", msg);
+                msg.error = "msg.userId was not set.";
+                node.send([null, msg]);
                 return;
             }
 
@@ -62,7 +74,7 @@ module.exports = function(RED) {
                     msg.payload = e;
                     node.send([msg, null]);
                 }).catch(function(e){
-                    node.warn("Error inviting to room " + e);
+                    node.error("Error inviting " + msg.userId + " to room " + msg.topic + ": " + e, msg);
                     msg.error = e;
                     node.send([null, msg]);
                 });

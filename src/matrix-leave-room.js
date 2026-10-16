@@ -26,16 +26,21 @@ module.exports = function(RED) {
 
         node.on('input', function(msg) {
             if (! node.server || ! node.server.matrixClient) {
+                msg.error = "No matrix server selected";
                 node.error("No matrix server selected", msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!msg.topic) {
+                msg.error = 'No room provided in msg.topic';
                 node.error('No room provided in msg.topic', msg);
+                node.send([null, msg]);
                 return;
             }
 
             if(!node.server.isConnected()) {
+                msg.error = "Matrix server connection is currently closed";
                 node.error("Matrix server connection is currently closed", msg);
                 node.send([null, msg]);
                 return;
