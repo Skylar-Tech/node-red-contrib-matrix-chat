@@ -41,9 +41,22 @@ module.exports = function(RED) {
             }
 
             node.server.matrixClient.joinRoom(msg.topic, msg.joinOpts || {})
-                .then(function(e) {
-                    msg.payload = e;
-                    msg.topic = e.roomId;
+                .then(function(room) {
+                    // Plain data only: the SDK Room object references the whole
+                    // client, so Node-RED cloning the msg (an output wired to
+                    // more than one node) failed with "Maximum call stack size
+                    // exceeded".
+                    // After a fresh join the SDK returns a room without state
+                    // (its name is the room ID and membership "leave") until
+                    // the next sync, so only report the details it really has.
+                    let synced = room.getMyMembership() === "join";
+                    msg.payload = {
+                        roomId: room.roomId,
+                        name: synced ? (room.name || null) : null,
+                        canonicalAlias: synced ? room.getCanonicalAlias() : null,
+                        membership: "join",
+                    };
+                    msg.topic = room.roomId;
                     node.log("Successfully joined room " + msg.topic);
                     node.send([msg, null]);
                 })
