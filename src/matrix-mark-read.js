@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const sdkPromise = import("matrix-js-sdk");
 
 module.exports = function(RED) {
     function MatrixMarkRead(n) {
@@ -30,6 +30,15 @@ module.exports = function(RED) {
         node.on("input", async function (msg) {
             if (!node.server || !node.server.matrixClient) {
                 node.error("No matrix server selected", msg);
+                msg.error = "No matrix server selected";
+                node.send([null, msg]);
+                return;
+            }
+
+            if (!node.server.isConnected()) {
+                node.error("Matrix server connection is currently closed", msg);
+                msg.error = "Matrix server connection is currently closed";
+                node.send([null, msg]);
                 return;
             }
 
@@ -60,15 +69,25 @@ module.exports = function(RED) {
                     throw new Error(`Room ${roomId} not found.`);
                 }
 
-                const event = room.findEventById(eventId);
+                // findEventById only searches the loaded timeline; fetch older
+                // (or not yet synced) events from the server instead of
+                // failing with "not found".
+                let event = room.findEventById(eventId);
                 if (!event) {
-                    throw new Error(`Event ${eventId} not found in room ${roomId}.`);
+                    let raw;
+                    try {
+                        raw = await node.server.matrixClient.fetchRoomEvent(roomId, eventId);
+                    } catch (e) {
+                        throw new Error(`Event ${eventId} not found in room ${roomId}: ${e}`);
+                    }
+                    const { MatrixEvent } = await sdkPromise;
+                    event = new MatrixEvent(raw);
                 }
 
                 await node.server.matrixClient.sendReceipt(event, "m.read");
                 node.send([msg, null]);
             } catch (e) {
-                msg.error = `Room pagination error: ${e}`;
+                msg.error = `Mark read error: ${e}`;
                 node.error(msg.error, msg);
                 node.send([null, msg]);
             }
