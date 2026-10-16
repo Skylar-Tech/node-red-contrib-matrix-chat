@@ -1076,11 +1076,17 @@ module.exports = function(RED) {
                                 if(closing) {
                                     return;
                                 }
-                                // if the error isn't authentication related retry in a little bit
-                                if(err.code !== "M_UNKNOWN_TOKEN") {
-                                    retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
-                                    node.error("Auth check failed: " + err);
+                                // An invalid or logged-out token will never work, so
+                                // report it and stop. (This used to check err.code,
+                                // which the SDK never sets - it is err.errcode - so
+                                // a bad token was retried every 15s forever.)
+                                if(err && err.errcode === "M_UNKNOWN_TOKEN") {
+                                    node.error("Matrix connection failed: the access token is invalid or has been logged out (M_UNKNOWN_TOKEN). Log in again to get a new access token.");
+                                    return;
                                 }
+                                // anything else (network, server down) - retry in a little bit
+                                retryStartTimeout = setTimeout(checkAuthTokenThenStart, 15000);
+                                node.error("Auth check failed: " + err);
                             }
                         )
                 })();
