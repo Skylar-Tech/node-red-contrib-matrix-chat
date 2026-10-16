@@ -68,14 +68,23 @@ module.exports = function(RED) {
 
                 if(!roomId) {
                     node.error('No room provided in msg.topic', msg);
+                    msg.error = 'No room provided in msg.topic';
+                    node.send([null, msg]);
                     return;
                 }
+
+                // The SDK treats any truthy value as "typing", so the string
+                // "false" (e.g. from a msg property) used to start typing.
+                if (typeof typing === 'string') {
+                    typing = typing.trim().toLowerCase() === 'true';
+                }
+                typing = !!typing;
 
                 await node.server.matrixClient.sendTyping(roomId, typing, timeoutMs);
                 node.send([msg, null]);
             } catch(e) {
                 node.error("Failed to send typing event " + msg.topic + ": " + e, msg);
-                msg.payload = e;
+                msg.error = e;
                 node.send([null, msg]);
             }
         });
