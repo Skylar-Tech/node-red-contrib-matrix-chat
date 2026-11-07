@@ -61,9 +61,13 @@ function txDone(tx) {
  *
  * Must be called before MatrixClient.initRustCrypto().
  *
+ * @param {string} filePath snapshot file to read.
+ * @param {string} [dbNamePrefix] only restore databases whose name starts
+ *   with this prefix (older snapshots could also contain other accounts'
+ *   databases).
  * @returns {Promise<boolean>} true if at least one database was restored.
  */
-async function restoreCryptoStore(filePath) {
+async function restoreCryptoStore(filePath, dbNamePrefix) {
     ensureIndexedDBShim();
 
     if (!filePath || !fs.pathExistsSync(filePath)) {
@@ -85,6 +89,9 @@ async function restoreCryptoStore(filePath) {
     let restored = 0;
 
     for (const dbSpec of databases) {
+        if (dbNamePrefix && !(typeof dbSpec.name === 'string' && dbSpec.name.startsWith(dbNamePrefix))) {
+            continue; // belongs to another account
+        }
         if (existing.has(dbSpec.name)) {
             continue; // already live in memory - don't overwrite
         }

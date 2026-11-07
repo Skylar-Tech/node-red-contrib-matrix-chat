@@ -212,6 +212,10 @@ module.exports = function(RED) {
         // account gets its own IndexedDB name prefix and on-disk snapshot so
         // multiple server-config nodes never collide.
         let cryptoDbPrefix = 'mxjssdk-' + MatrixFolderNameFromUserId(this.userId),
+            // The SDK names this account's databases "<prefix>::matrix-sdk-crypto"
+            // and "<prefix>::matrix-sdk-crypto-meta". Match on the separator too,
+            // otherwise "@bot:example.co" would also pick up "@bot:example.com".
+            cryptoDbNamePrefix = cryptoDbPrefix + '::',
             cryptoSnapshotPath = null,
             cryptoSnapshotInterval = null,
             // Set once the encryption data has been cleared via the admin
@@ -305,7 +309,7 @@ module.exports = function(RED) {
                     return;
                 }
                 try {
-                    await snapshotCryptoStore(cryptoSnapshotPath, cryptoDbPrefix);
+                    await snapshotCryptoStore(cryptoSnapshotPath, cryptoDbNamePrefix);
                 } catch(e) {
                     node.error("Failed to persist Matrix crypto store: " + e);
                 }
@@ -342,7 +346,7 @@ module.exports = function(RED) {
                     if(globalThis.indexedDB && typeof indexedDB.databases === 'function') {
                         let dbs = await indexedDB.databases();
                         for(let db of dbs) {
-                            if(db.name && db.name.indexOf(cryptoDbPrefix) === 0) {
+                            if(db.name && db.name.indexOf(cryptoDbNamePrefix) === 0) {
                                 // Wait for the delete to actually finish. While
                                 // a connection is open the request only fires
                                 // "blocked" and completes once it closes, so
@@ -983,7 +987,7 @@ module.exports = function(RED) {
                                 node.warn(`Device ID changed (${storedDeviceId} -> ${effectiveDeviceId}); discarding the encryption store from the old device.`);
                                 await discardCryptoStore();
                             } else {
-                                await restoreCryptoStore(cryptoSnapshotPath);
+                                await restoreCryptoStore(cryptoSnapshotPath, cryptoDbNamePrefix);
                             }
                             try {
                                 await node.matrixClient.initRustCrypto({
