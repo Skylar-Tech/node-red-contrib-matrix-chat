@@ -1100,7 +1100,7 @@ module.exports = function(RED) {
         credentials: {
             deviceLabel: { type: "text", required: false },
             userId: { type: "text", required: true },
-            accessToken: { type: "text", required: true },
+            accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: false },
             url: { type: "text", required: true },
             password: { type: "password", required: false }
