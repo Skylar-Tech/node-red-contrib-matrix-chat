@@ -146,6 +146,7 @@ module.exports = function(RED) {
                 rawTimestamp = getToValue(msg, node.timestampType,    node.timestampValue);
                 text         = getToValue(msg, node.textType,         node.textValue);
             } catch (e) {
+                msg.error = e.message;
                 node.error(e.message, msg);
                 node.send([null, msg]);
                 return;
@@ -164,12 +165,14 @@ module.exports = function(RED) {
                     return;
                 }
                 if (lat < -90 || lat > 90) {
-                    node.error("Latitude (" + lat + ") is out of range; must be between -90 and 90", msg);
+                    msg.error = "Latitude (" + lat + ") is out of range; must be between -90 and 90";
+                    node.error(msg.error, msg);
                     node.send([null, msg]);
                     return;
                 }
                 if (lng < -180 || lng > 180) {
-                    node.error("Longitude (" + lng + ") is out of range; must be between -180 and 180", msg);
+                    msg.error = "Longitude (" + lng + ") is out of range; must be between -180 and 180";
+                    node.error(msg.error, msg);
                     node.send([null, msg]);
                     return;
                 }
@@ -191,7 +194,8 @@ module.exports = function(RED) {
                 assetType = "m.self";
             }
             if (VALID_ASSET_TYPES.indexOf(assetType) === -1) {
-                node.error('Invalid asset type "' + assetType + '"; must be "m.self" or "m.pin"', msg);
+                msg.error = 'Invalid asset type "' + assetType + '"; must be "m.self" or "m.pin"';
+                node.error(msg.error, msg);
                 node.send([null, msg]);
                 return;
             }
