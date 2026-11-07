@@ -13,7 +13,7 @@
     "isomorphic-webcrypto": "^2.3.8",
     "linkifyjs": "^4.3.3",
     "lodash.escape": "^4.0.1",
-    "matrix-js-sdk": "^41.5.0",
+    "matrix-js-sdk": "^45.0.0",
     "mime": "^4.1.0",
     "node-fetch": "^3.3.0",
     "node-localstorage": "^3.0.5",
