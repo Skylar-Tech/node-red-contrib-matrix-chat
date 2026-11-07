@@ -1,4 +1,4 @@
-const crypto = require("isomorphic-webcrypto");
+const crypto = require("crypto").webcrypto;
 const ffmpeg = require('fluent-ffmpeg');
 const sharp = require('sharp');
 const { imageSize } = require('image-size');

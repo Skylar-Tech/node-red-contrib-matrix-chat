@@ -1,5 +1,5 @@
 module.exports = function(RED) {
-    const crypto = require('isomorphic-webcrypto');
+    const crypto = require('crypto').webcrypto;
 
     function MatrixDecryptFile(n) {
         RED.nodes.createNode(this, n);

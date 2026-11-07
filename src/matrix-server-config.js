@@ -15,15 +15,6 @@ const {
     snapshotCryptoStore,
     patchLocalStorageCryptoStoreForRustMigration,
 } = require('./matrix-crypto-store');
-require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
-if (!globalThis.fetch) {
-    // polyfill fetch if we don't have it
-    if (!globalThis.fetch) {
-        import('node-fetch').then(({ default: fetch, Headers, Request, Response }) => {
-            Object.assign(globalThis, { fetch, Headers, Request, Response })
-        })
-    }
-}
 
 /**
  * Resolve the real homeserver base URL for a configured server name / URL.
