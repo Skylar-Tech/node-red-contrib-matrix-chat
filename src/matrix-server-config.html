@@ -882,10 +882,6 @@
 
             // --- Login: fetch a fresh access token & device id ---
             $("#matrix-login-btn").on("click", function() {
-                function prettyPrintJson(json) {
-                    try { return typeof json === 'object' ? JSON.stringify(json, null, 2) : json; }
-                    catch (error) { return json; }
-                }
                 let userId = $("#node-config-input-userId").val(),
                     userPassword = $("#node-config-input-password").val(),
                     serverUrl = $("#node-config-input-url").val();
@@ -916,9 +912,12 @@
                             $("#node-config-input-deviceId").val(data.device_id);
                         } else if (data.result && data.result === 'error') {
                             $("#matrix-chat-login-success").hide();
-                            $("#matrix-chat-login-error")
-                                .html(data.message ? ('Failed to login: <br />' + prettyPrintJson(data.message)) : 'Failed to login')
-                                .show();
+                            // data.message comes from the homeserver: insert it as text, not HTML
+                            const $loginError = $("#matrix-chat-login-error").empty().text('Failed to login');
+                            if (data.message) {
+                                $loginError.append(':', $('<br />'), $('<span />').text(String(data.message)));
+                            }
+                            $loginError.show();
                         }
                         $("#matrix-login-btn").show();
                         $("#matrix-access-token-loader").hide();

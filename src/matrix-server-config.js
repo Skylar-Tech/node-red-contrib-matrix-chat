@@ -1149,17 +1149,33 @@ module.exports = function(RED) {
                         function(err) {
                             res.json({
                                 'result': 'error',
-                                'message': err
+                                'message': loginErrorMessage(err)
                             });
                         }
                     );
             } catch(err) {
                 res.json({
                     'result': 'error',
-                    'message': err
+                    'message': loginErrorMessage(err)
                 });
             }
         });
+
+    // Readable text for a failed login. Serializing the error object itself
+    // gave "{}" for network errors, which have no enumerable fields.
+    function loginErrorMessage(err) {
+        if(!err) {
+            return 'Unknown error';
+        }
+        const serverError = err.data && err.data.error;
+        if(serverError) {
+            return err.errcode ? `${serverError} (${err.errcode})` : serverError;
+        }
+        if(err.name === 'ConnectionError') {
+            return 'Could not reach the homeserver. Check the server URL and that Node-RED can connect to it.';
+        }
+        return err.message || String(err);
+    }
 
     /**
      * Interactive Secure Secret Storage (4S) / cross-signing setup for the
