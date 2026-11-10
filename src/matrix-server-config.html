@@ -32,6 +32,8 @@
             deviceId: { type: "text", required: false },
             url: { type: "text", required: true },
             password: { type: "password", required: false },
+            refreshToken: { type: "password", required: false },
+            oauthClientId: { type: "text", required: false },
         },
         defaults: {
             name: { value: null },
@@ -881,6 +883,84 @@
             });
 
             // --- Login: fetch a fresh access token & device id ---
+            var oauthPollTimer = null;
+            function stopOauthPolling() {
+                if (oauthPollTimer) { clearTimeout(oauthPollTimer); oauthPollTimer = null; }
+            }
+            function oauthFailed(message) {
+                stopOauthPolling();
+                $("#matrix-oauth-panel").hide();
+                $("#matrix-chat-login-success").hide();
+                // the message can come from the homeserver: insert it as text
+                var $err = $("#matrix-chat-login-error").empty().text('OAuth login failed');
+                if (message) { $err.append(':', $('<br />'), $('<span />').text(String(message))); }
+                $err.show();
+                $("#matrix-login-btn, #matrix-oauth-btn").show();
+            }
+            $("#matrix-oauth-cancel").on("click", function(e) {
+                e.preventDefault();
+                stopOauthPolling();
+                $("#matrix-oauth-panel").hide();
+                $("#matrix-login-btn, #matrix-oauth-btn").show();
+            });
+            $("#matrix-oauth-btn").on("click", function(e) {
+                e.preventDefault();
+                var serverUrl = $("#node-config-input-url").val();
+                if (!serverUrl) { alert("Server URL is required to log in."); return; }
+                stopOauthPolling();
+                $("#matrix-login-btn, #matrix-oauth-btn, #matrix-chat-login-error, #matrix-chat-login-success").hide();
+                $("#matrix-access-token-loader").show();
+                $.ajax({
+                    type: 'POST',
+                    url: 'matrix-chat/oauth/start',
+                    dataType: 'json',
+                    data: { baseUrl: serverUrl, displayName: $("#node-config-input-deviceLabel").val() || 'Node-RED' }
+                }).then(function(data) {
+                    $("#matrix-access-token-loader").hide();
+                    if (!data || data.result !== 'ok') {
+                        oauthFailed(data && data.message);
+                        return;
+                    }
+                    var link = data.verificationUriComplete || data.verificationUri;
+                    $("#matrix-oauth-link").attr("href", link).text(data.verificationUri);
+                    $("#matrix-oauth-code").text(data.userCode);
+                    $("#matrix-oauth-status").html("Waiting for you to approve the login&hellip;");
+                    $("#matrix-oauth-panel").show();
+                    function poll() {
+                        // the editor was closed: stop asking
+                        if (!$("#matrix-oauth-panel").is(":visible")) {
+                            stopOauthPolling();
+                            return;
+                        }
+                        $.ajax({ type: 'POST', url: 'matrix-chat/oauth/poll', dataType: 'json', data: { id: data.id } })
+                            .then(function(state) {
+                                if (state.status === 'pending') {
+                                    oauthPollTimer = setTimeout(poll, 3000);
+                                } else if (state.status === 'done') {
+                                    stopOauthPolling();
+                                    var r = state.result;
+                                    $("#node-config-input-userId").val(r.userId);
+                                    $("#node-config-input-accessToken").val(r.accessToken);
+                                    $("#node-config-input-deviceId").val(r.deviceId);
+                                    $("#node-config-input-refreshToken").val(r.refreshToken);
+                                    $("#node-config-input-oauthClientId").val(r.oauthClientId);
+                                    $("#matrix-oauth-panel").hide();
+                                    $("#matrix-chat-login-success").text("Logged in as " + r.userId + ". Click Update and Deploy to use the new session.").show();
+                                    $("#matrix-login-btn, #matrix-oauth-btn").show();
+                                } else {
+                                    oauthFailed(state.error);
+                                }
+                            }, function() {
+                                oauthFailed("Node-RED did not answer. Try again.");
+                            });
+                    }
+                    oauthPollTimer = setTimeout(poll, 3000);
+                }, function() {
+                    $("#matrix-access-token-loader").hide();
+                    oauthFailed("Node-RED did not answer. Try again.");
+                });
+            });
+
             $("#matrix-login-btn").on("click", function() {
                 let userId = $("#node-config-input-userId").val(),
                     userPassword = $("#node-config-input-password").val(),
@@ -910,6 +990,9 @@
                                 .show();
                             $("#node-config-input-accessToken").val(data.token);
                             $("#node-config-input-deviceId").val(data.device_id);
+                            // a password login has no refresh token
+                            $("#node-config-input-refreshToken").val("");
+                            $("#node-config-input-oauthClientId").val("");
                         } else if (data.result && data.result === 'error') {
                             $("#matrix-chat-login-success").hide();
                             // data.message comes from the homeserver: insert it as text, not HTML
@@ -970,7 +1053,22 @@
     <pre class="form-tips" id="matrix-chat-login-error" style="color: #721c24;background-color: #f8d7da;border-color: #f5c6cb;margin-bottom: 12px;display:none;"></pre>
     <pre class="form-tips" id="matrix-chat-login-success" style="color: #155724;background-color: #d4edda;border-color: #c3e6cb;margin-bottom: 12px;display:none;"></pre>
     <button class="ui-button ui-corner-all ui-widget primary" id="matrix-login-btn">Update Access Token</button>
+    <button class="ui-button ui-corner-all ui-widget" id="matrix-oauth-btn" style="margin-left: 6px;">Log in with OAuth</button>
     <div class="matrix-loader" id="matrix-access-token-loader" style="display:none;"></div>
+    <div class="form-tips" id="matrix-oauth-panel" style="display:none; margin-top: 12px; margin-bottom: 12px;">
+        <div>Open <a id="matrix-oauth-link" href="#" target="_blank" rel="noopener noreferrer"></a> in a browser, sign in as the bot and enter this code:</div>
+        <div id="matrix-oauth-code" style="font-size: 1.6em; font-family: monospace; letter-spacing: 0.15em; margin: 8px 0;"></div>
+        <div id="matrix-oauth-status">Waiting for you to approve the login&hellip;</div>
+        <button class="ui-button ui-corner-all ui-widget" id="matrix-oauth-cancel" style="margin-top: 6px;">Cancel</button>
+    </div>
+    <div class="form-tips" style="margin-top: 8px; margin-bottom: 12px;">
+        <b>Log in with OAuth</b> is for homeservers that sign in through a separate login service (for example
+        Matrix Authentication Service), where password login is turned off. It does not need the password: you approve
+        the login in a browser and the tokens are filled in below. The access token is renewed automatically while
+        Node-RED runs.
+    </div>
+    <input type="hidden" id="node-config-input-refreshToken">
+    <input type="hidden" id="node-config-input-oauthClientId">
 
     <div class="form-row">
         <label for="node-config-input-accessToken"><i class="fa fa-key"></i> Access Token</label>
@@ -1099,6 +1197,25 @@
         <p>If you have access to the server directly you can use Shared Secret Registration as described <a href="https://github.com/Skylar-Tech/node-red-contrib-matrix-chat/tree/master/examples#create-user-with-shared-secret-registration" target="_blank" style="text-decoration: underline;">here</a>.</p>
         <p>If this is a server you do not administrate/have access to follow these instructions:</p>
         <ol><li>In a private/incognito browser window, open Element.</li><li>Log in to the account you want to get the access token for, such as the bot's account.</li><li>Click on the bot's name in the top left corner then "Settings".</li><li>(Optional) Set your bot's display name and avatar.</li><li>Click the "Help &amp; About" tab (left side of the dialog).</li><li>Scroll to the bottom and click the <code>&lt;click to reveal&gt;</code> part of <code>Access Token: &lt;click to reveal&gt;</code>.</li><li>Copy your access token to a safe place, like the bot's configuration file.</li><li><strong>Do not log out.</strong> Instead, just close the window. If you used a private browsing session, you should be able to still use Element for your own account. Logging out deletes the access token from the server, making the bot unable to use it.</li></ol>
+    </div>
+
+    <h3>Logging in with OAuth</h3>
+    <div>
+        <p>
+            Homeservers that use a separate login service (OAuth 2.0, for example Matrix Authentication Service) often
+            turn password login off, so <strong>Update Access Token</strong> fails there. Use
+            <strong>Log in with OAuth</strong> instead: Node-RED shows a short code and a link, you open the link in any
+            browser, sign in as the bot and enter the code, and the user ID, access token and device ID are filled in.
+            Then click <strong>Update</strong> and <strong>Deploy</strong>.
+        </p>
+        <p>
+            These logins use short-lived access tokens that are renewed automatically. Renewed tokens are saved in the
+            bot's folder in <code>matrix-client-storage</code>, so keep that folder (it also holds the encryption keys).
+            If it is lost after the first renewal, log in again.
+        </p>
+        <p>
+            Needs a homeserver that supports logging in with a code (the OAuth 2.0 device authorization grant).
+        </p>
     </div>
 
     <h3>Cross-signing &amp; secure backup</h3>

@@ -15,6 +15,7 @@ const {
     snapshotCryptoStore,
     patchLocalStorageCryptoStoreForRustMigration,
 } = require('./matrix-crypto-store');
+const oauthLogin = require('./matrix-oauth');
 
 /**
  * Resolve the real homeserver base URL for a configured server name / URL.
@@ -666,9 +667,16 @@ module.exports = function(RED) {
                     node.log(`Discovered homeserver ${baseUrl} for ${node.url} via .well-known`);
                 }
 
+                // A login through the homeserver's OAuth service comes with a
+                // refresh token: the SDK renews the short-lived access token
+                // itself and we keep the renewed tokens across restarts.
+                const tokens = oauthLogin.loadTokens(localStorage, node.credentials);
+                if(tokens.restored) {
+                    node.debug("Using the access token saved after the last token refresh");
+                }
                 let clientOpts = {
                     baseUrl: baseUrl,
-                    accessToken: node.credentials.accessToken,
+                    accessToken: tokens.accessToken,
                     store: new MemoryStore({
                         localStorage: localStorage,
                     }),
@@ -693,6 +701,20 @@ module.exports = function(RED) {
                         },
                     },
                 };
+                if(tokens.refreshToken && node.credentials.oauthClientId) {
+                    clientOpts.refreshToken = tokens.refreshToken;
+                    clientOpts.oauthClientId = node.credentials.oauthClientId;
+                    let currentRefreshToken = tokens.refreshToken;
+                    clientOpts.onTokenRefresh = function(newTokens) {
+                        try {
+                            oauthLogin.saveTokens(localStorage, node.credentials, newTokens, currentRefreshToken);
+                            currentRefreshToken = newTokens.refreshToken || currentRefreshToken;
+                            node.debug("Access token refreshed");
+                        } catch(e) {
+                            node.warn("Could not save the refreshed access token: " + e);
+                        }
+                    };
+                }
                 if(node.e2ee) {
                     // Provide the legacy (pre-v37 libolm) crypto store so that
                     // initRustCrypto() can perform a one-time migration of any
@@ -1107,9 +1129,40 @@ module.exports = function(RED) {
             accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: false },
             url: { type: "text", required: true },
-            password: { type: "password", required: false }
+            password: { type: "password", required: false },
+            // set by "Log in with OAuth"
+            refreshToken: { type: "password", required: false },
+            oauthClientId: { type: "text", required: false }
         }
     });
+
+    // OAuth device login for the config editor: start shows the code to enter
+    // in a browser, poll returns the tokens once the user has approved it.
+    RED.httpAdmin.post(
+        "/matrix-chat/oauth/start",
+        RED.auth.needsPermission('flows.write'),
+        async function(req, res) {
+            try {
+                const sdk = await sdkPromise;
+                if(!req.body.baseUrl) {
+                    res.json({ result: 'error', message: 'Enter the Server URL first.' });
+                    return;
+                }
+                const baseUrl = await resolveHomeserverUrl(sdk, req.body.baseUrl);
+                const started = await oauthLogin.startDeviceLogin(sdk, baseUrl, req.body.displayName || "Node-RED");
+                res.json({ result: 'ok', ...started });
+            } catch(e) {
+                res.json({ result: 'error', message: loginErrorMessage(e) });
+            }
+        });
+
+    RED.httpAdmin.post(
+        "/matrix-chat/oauth/poll",
+        RED.auth.needsPermission('flows.write'),
+        function(req, res) {
+            const state = oauthLogin.pollDeviceLogin(String(req.body.id || ''));
+            res.json({ result: 'ok', ...state });
+        });
 
     RED.httpAdmin.post(
         "/matrix-chat/login",
