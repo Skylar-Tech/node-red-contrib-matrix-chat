@@ -34,6 +34,7 @@ Supported functionality in this package includes:
 - **Room aliases**: resolve, create, delete and list room aliases
 - **Room directory**: search public rooms and publish or unpublish rooms
 - **Room summary**: preview a room (name, topic, members, join rule) before joining
+- **Spaces**: list the rooms and subspaces in a space
 - **Report content**: report events, rooms or users to the homeserver admins
 
 These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).

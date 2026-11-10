@@ -1,0 +1,90 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-space-hierarchy',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            roomId: { value: null },
+            maxDepth: { value: "", validate: RED.validators.number(true) },
+            limit: { value: 100, validate: RED.validators.number(true) },
+            suggestedOnly: { value: false }
+        },
+        label: function() {
+            return this.name || "Space Hierarchy";
+        },
+        paletteLabel: 'Space Hierarchy'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-space-hierarchy">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-sitemap"></i> Space ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-maxDepth"><i class="fa fa-level-down"></i> Max depth</label>
+        <input type="text" id="node-input-maxDepth" placeholder="server default">
+    </div>
+    <div class="form-row">
+        <label for="node-input-limit"><i class="fa fa-list-ol"></i> Max rooms</label>
+        <input type="text" id="node-input-limit" placeholder="100">
+    </div>
+    <div class="form-row">
+        <input type="checkbox" id="node-input-suggestedOnly" style="width: auto; margin-left: 105px; vertical-align: top">
+        <label for="node-input-suggestedOnly" style="width: auto;">Only rooms marked as suggested</label>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-space-hierarchy">
+    <h3>Details</h3>
+    <p>
+        Lists the rooms and subspaces in a space, walking down into subspaces. The space itself is the first entry.
+        Rooms the bot cannot see (private rooms it is not in) are left out by the server.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#get_matrixclientv1roomsroomidhierarchy" target="_blank">Matrix specification: space hierarchy</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic <span class="property-type">string</span></dt>
+        <dd> the space's room ID. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.limit <span class="property-type">number</span></dt>
+        <dd> the most rooms to return. Overrides <i>Max rooms</i>.</dd>
+
+        <dt class="optional">msg.nextBatch <span class="property-type">string</span></dt>
+        <dd> continue from where a previous call stopped.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">array</span></dt>
+                <dd>the rooms, each with <code>room_id</code>, <code>name</code>, <code>topic</code>, <code>canonical_alias</code>,
+                    <code>num_joined_members</code>, <code>join_rule</code>, <code>room_type</code> (<code>"m.space"</code> for subspaces)
+                    and <code>children_state</code> (the <code>m.space.child</code> events linking to its children).</dd>
+                <dt>msg.nextBatch <span class="property-type">string | null</span></dt>
+                <dd>set when <i>Max rooms</i> was reached before the end; pass it back in to get more.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

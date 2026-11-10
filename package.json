@@ -59,7 +59,8 @@
       "matrix-knock-room": "src/matrix-knock-room.js",
       "matrix-room-alias": "src/matrix-room-alias.js",
       "matrix-room-directory": "src/matrix-room-directory.js",
-      "matrix-room-summary": "src/matrix-room-summary.js"
+      "matrix-room-summary": "src/matrix-room-summary.js",
+      "matrix-space-hierarchy": "src/matrix-space-hierarchy.js"
     }
   },
   "engines": {
