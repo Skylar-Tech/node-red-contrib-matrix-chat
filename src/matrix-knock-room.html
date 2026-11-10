@@ -1,0 +1,83 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-knock-room',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            roomId: { value: null },
+            reason: { value: null }
+        },
+        label: function() {
+            return this.name || "Knock Room";
+        },
+        paletteLabel: 'Knock Room'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-knock-room">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic (room ID or alias)">
+    </div>
+    <div class="form-row">
+        <label for="node-input-reason"><i class="fa fa-comment"></i> Reason</label>
+        <input type="text" id="node-input-reason" placeholder="msg.reason">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-knock-room">
+    <h3>Details</h3>
+    <p>
+        Asks to join a room whose join rule is <code>knock</code> (or <code>knock_restricted</code>).
+        The room's moderators see the request and can let the bot in by inviting it; once invited, the bot
+        joins like any other invite (automatically if <i>Auto-accept room invites</i> is on in the server config).
+    </p>
+    <p>
+        To handle knocks on rooms the bot moderates, tick <i>Membership changes</i> on a Receive node: knocks arrive
+        with <code>msg.membershipChange</code> set to <code>knock</code>.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#knocking-on-rooms" target="_blank">Matrix specification: knocking on rooms</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic <span class="property-type">string</span></dt>
+        <dd> the room ID or alias to knock on. Ignored if a room is configured on the node.</dd>
+
+        <dt class="optional">msg.reason <span class="property-type">string</span></dt>
+        <dd> a message for the room's moderators. A reason configured on the node takes priority.</dd>
+
+        <dt class="optional">msg.viaServers <span class="property-type">string | array</span></dt>
+        <dd> servers to knock through when the bot's server is not in the room yet (the first 3 are used).</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.topic <span class="property-type">string</span></dt>
+                <dd>the room ID.</dd>
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd><code>{ roomId, membership: "knock" }</code></dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

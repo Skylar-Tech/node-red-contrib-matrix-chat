@@ -55,7 +55,8 @@
       "matrix-verification-action": "src/matrix-verification-action.js",
       "matrix-send-location": "src/matrix-send-location.js",
       "matrix-report": "src/matrix-report.js",
-      "matrix-room-unban": "src/matrix-room-unban.js"
+      "matrix-room-unban": "src/matrix-room-unban.js",
+      "matrix-knock-room": "src/matrix-knock-room.js"
     }
   },
   "engines": {
