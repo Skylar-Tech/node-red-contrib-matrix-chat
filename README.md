@@ -15,7 +15,7 @@ Supported functionality in this package includes:
 - **Cross-signing & secure backup**: interactive setup from the server config node so the bot's own device shows as verified
 - **Device verification**: interactive SAS (emoji) verification, either from the server config node or with the `matrix-verification` flow nodes
 - **Session management**: review, verify, rename, or remove the account's sessions from the server config node (Element-style)
-- **Receive events** from rooms (encrypted or unencrypted): messages, reactions, emotes, notices, stickers, images, video, audio, locations, files
+- **Receive events** from rooms (encrypted or unencrypted): messages, reactions, emotes, notices, stickers, images, video, audio, locations, files, plus optional membership changes (joins, leaves, kicks, bans, knocks), other state changes, redactions and custom event types
 - **Fetch/modify room state**: Update room settings
 - **Paginate room history**
 - **Send files** to rooms, encrypted or unencrypted

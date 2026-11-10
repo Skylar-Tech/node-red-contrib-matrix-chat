@@ -11,6 +11,30 @@ function parseGeoUri(uri) {
     return result;
 }
 
+// Work out what a membership event did, from the old and new membership and
+// whether the user changed their own membership or someone else did it.
+// https://spec.matrix.org/latest/client-server-api/#mroommember
+function describeMembershipChange(membership, prevMembership, sender, target) {
+    const self = sender === target;
+    switch (membership) {
+        case "join":
+            return prevMembership === "join" ? "profile_change" : "join";
+        case "invite":
+            return "invite";
+        case "knock":
+            return "knock";
+        case "ban":
+            return "ban";
+        case "leave":
+            if (prevMembership === "ban") return "unban";
+            if (prevMembership === "invite") return self ? "invite_rejected" : "invite_revoked";
+            if (prevMembership === "knock") return self ? "knock_retracted" : "knock_rejected";
+            return self ? "leave" : "kick";
+        default:
+            return membership || null;
+    }
+}
+
 module.exports = function(RED) {
     function MatrixReceiveMessage(n) {
         RED.nodes.createNode(this, n);
@@ -30,6 +54,12 @@ module.exports = function(RED) {
         this.acceptImages = n.acceptImages;
         this.acceptVideos = n.acceptVideos;
         this.acceptLocations = n.acceptLocations;
+        // Non-message events. Off for nodes saved before these existed.
+        this.acceptMembership = n.acceptMembership === true;
+        this.acceptState = n.acceptState === true;
+        this.acceptRedactions = n.acceptRedactions === true;
+        this.acceptOther = n.acceptOther === true;
+        this.otherEventTypes = (n.otherEventTypes || "").split(",").map(s => s.trim()).filter(Boolean);
         this.roomId = n.roomId;
         this.roomIds = this.roomId ? this.roomId.split(',').map(s => s.trim()) : [];
 
@@ -229,10 +259,66 @@ module.exports = function(RED) {
                 }
 
                 default:
-                    return;
+                    if (!handleOtherEvent(event, msg)) return;
+                    break;
             }
 
             node.send(msg);
+        }
+
+        // Events that are not message types handled above: membership and
+        // other state changes, redactions, and anything else (custom events,
+        // unknown msgtypes). Returns false when the event should be dropped.
+        function handleOtherEvent(event, msg) {
+            const eventType = event.getType();
+
+            if (eventType === "m.room.member") {
+                if (!node.acceptMembership) return false;
+                const content = event.getContent() || {};
+                const prevMembership = event.getPrevContent().membership || null;
+                msg.type = "m.room.member";
+                msg.membership = content.membership || null;
+                msg.prevMembership = prevMembership;
+                msg.membershipChange = describeMembershipChange(msg.membership, prevMembership, event.getSender(), event.getStateKey());
+                msg.targetUserId = event.getStateKey() || null;
+                msg.displayName = content.displayname || null;
+                msg.reason = content.reason || null;
+                msg.stateKey = event.getStateKey();
+                msg.prevContent = event.getPrevContent();
+                msg.payload = msg.membershipChange;
+                return true;
+            }
+
+            if (eventType === "m.room.redaction") {
+                if (!node.acceptRedactions) return false;
+                const content = event.getContent() || {};
+                msg.type = "m.room.redaction";
+                // room v11 moved "redacts" into the content
+                msg.redacts = content.redacts || event.event.redacts || null;
+                msg.reason = content.reason || null;
+                msg.payload = msg.redacts;
+                return true;
+            }
+
+            if (event.isState()) {
+                if (!node.acceptState) return false;
+                msg.type = eventType;
+                msg.stateKey = event.getStateKey();
+                msg.prevContent = event.getPrevContent();
+                msg.payload = event.getContent();
+                return true;
+            }
+
+            // An event that could not be decrypted has no usable content.
+            if (eventType === "m.room.encrypted") return false;
+
+            if (!node.acceptOther) return false;
+            // msg.type is the msgtype for m.room.message, otherwise the event type
+            if (node.otherEventTypes.length && !node.otherEventTypes.includes(eventType) && !node.otherEventTypes.includes(msg.type)) {
+                return false;
+            }
+            msg.eventType = eventType;
+            return true;
         }
 
         node.on("close", function() {
