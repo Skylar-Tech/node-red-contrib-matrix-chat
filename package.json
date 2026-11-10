@@ -63,7 +63,8 @@
       "matrix-space-hierarchy": "src/matrix-space-hierarchy.js",
       "matrix-account-data": "src/matrix-account-data.js",
       "matrix-room-tags": "src/matrix-room-tags.js",
-      "matrix-ignore-users": "src/matrix-ignore-users.js"
+      "matrix-ignore-users": "src/matrix-ignore-users.js",
+      "matrix-user-directory": "src/matrix-user-directory.js"
     }
   },
   "engines": {
