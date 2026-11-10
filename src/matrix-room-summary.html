@@ -1,0 +1,74 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-summary',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            roomId: { value: null }
+        },
+        label: function() {
+            return this.name || "Room Summary";
+        },
+        paletteLabel: 'Room Summary'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-summary">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic (room ID or alias)">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-summary">
+    <h3>Details</h3>
+    <p>
+        Previews a room before joining it: its name, topic, member count, join rule, whether it is encrypted and so on.
+        This works for rooms the bot is not in, as long as the room is public, the bot is invited, or the bot is allowed to
+        knock or join. Needs a homeserver that supports room summaries (Matrix 1.15, or Synapse's earlier version of it).
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#get_matrixclientv1room_summaryroomidoralias" target="_blank">Matrix specification: room summary</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic <span class="property-type">string</span></dt>
+        <dd> the room ID or alias. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.viaServers <span class="property-type">string | array</span></dt>
+        <dd> servers to ask when the bot's server is not in the room.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>the summary: <code>room_id</code>, <code>name</code>, <code>topic</code>, <code>avatar_url</code>, <code>canonical_alias</code>,
+                    <code>num_joined_members</code>, <code>join_rule</code>, <code>guest_can_join</code>, <code>world_readable</code>,
+                    <code>room_type</code> (<code>"m.space"</code> for spaces), <code>room_version</code>, <code>encryption</code>
+                    and <code>membership</code> (the bot's membership, if any). Fields the room does not have are left out.</dd>
+                <dt>msg.topic <span class="property-type">string</span></dt>
+                <dd>the room ID (also when the input was an alias).</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred, for example when the room does not exist or the bot may not see it.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>
