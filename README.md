@@ -20,6 +20,7 @@ Supported functionality in this package includes:
 - **Paginate room history**
 - **Send files** to rooms, encrypted or unencrypted
 - **Send & modify messages** (plain text, Markdown, and HTML formats)
+- **Replies & mentions**: answer a message as a reply and notify specific users or the whole room (`m.mentions`)
 - **Send location messages**: produce `m.location` events that match Element's *"Share my location"* wire format
 - **Send typing notifications**
 - **Delete events** (messages, reactions, etc.)

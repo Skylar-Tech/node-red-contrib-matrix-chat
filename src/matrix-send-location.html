@@ -21,7 +21,14 @@
             timestampType:    { value: "msg" },
             timestampValue:   { value: "timestamp" },
             textType:         { value: "msg" },
-            textValue:        { value: "payload" }
+            textValue:        { value: "payload" },
+            replyToType:      { value: "msg" },
+            replyToValue:     { value: "replyTo" },
+            notifyReplySender:{ value: true },
+            mentionUsersType: { value: "msg" },
+            mentionUsersValue:{ value: "mentionUsers" },
+            mentionRoomType:  { value: "msg" },
+            mentionRoomValue: { value: "mentionRoom" }
         },
         inputs: 1,
         outputs: 2,
@@ -85,6 +92,21 @@
             $("#node-input-textValue").typedInput({
                 typeField: "#node-input-textType",
                 types: strTypes,
+                default: "msg"
+            });
+            $("#node-input-replyToValue").typedInput({
+                typeField: "#node-input-replyToType",
+                types: ["msg", "flow", "global", "bool", "str"],
+                default: "msg"
+            });
+            $("#node-input-mentionUsersValue").typedInput({
+                typeField: "#node-input-mentionUsersType",
+                types: ["msg", "flow", "global", "str", "json"],
+                default: "msg"
+            });
+            $("#node-input-mentionRoomValue").typedInput({
+                typeField: "#node-input-mentionRoomType",
+                types: ["msg", "flow", "global", "bool"],
                 default: "msg"
             });
         }
@@ -169,6 +191,29 @@
     <div class="form-tips">
         Optional. Override the auto-generated text fallback used in <code>body</code> and <code>m.text</code> for clients that can't render the map.
     </div>
+
+    <div class="form-row">
+        <label for="node-input-replyToValue"><i class="fa fa-reply"></i> Reply To</label>
+        <input type="hidden" id="node-input-replyToType">
+        <input type="text" id="node-input-replyToValue" style="width:70%">
+    </div>
+    <div class="form-row">
+        <input type="checkbox" id="node-input-notifyReplySender" style="width: auto; margin-left: 105px; vertical-align: top">
+        <label for="node-input-notifyReplySender" style="width: auto;max-width:50%;">Notify the sender of the message being replied to</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-mentionUsersValue"><i class="fa fa-at"></i> Mention Users</label>
+        <input type="hidden" id="node-input-mentionUsersType">
+        <input type="text" id="node-input-mentionUsersValue" style="width:70%">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mentionRoomValue"><i class="fa fa-bullhorn"></i> Mention Room</label>
+        <input type="hidden" id="node-input-mentionRoomType">
+        <input type="text" id="node-input-mentionRoomValue" style="width:70%">
+    </div>
+    <div class="form-tips">
+        Optional. Works like the Send Message node: <code>true</code> replies to <code>msg.eventId</code>, or give an event ID; mention users by ID or <code>@room</code>.
+    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-send-location">
@@ -239,6 +284,15 @@
 
         <dt>Body / text <span class="property-type">string, optional</span></dt>
         <dd>Override the auto-generated text fallback used in <code>body</code> and <code>m.text</code>. If left empty, a sensible default like <code>User Location "Eiffel Tower" geo:48.85,2.35 at 2026-05-23T04:44:41Z</code> is generated. Default source: <code>msg.payload</code> (matches what the Receive node sets for incoming events).</dd>
+
+        <dt>Reply To <span class="property-type">boolean | string, optional</span></dt>
+        <dd><code>true</code> sends the location as a reply to <code>msg.eventId</code>; an event ID (starting with <code>$</code>) replies to that event. The sender of that message is notified unless <i>Notify the sender</i> is unticked. Default source: <code>msg.replyTo</code>.</dd>
+
+        <dt>Mention Users <span class="property-type">string | array, optional</span></dt>
+        <dd>User IDs to notify (one ID, a comma separated list, or an array), sent as <code>m.mentions</code>. Default source: <code>msg.mentionUsers</code>.</dd>
+
+        <dt>Mention Room <span class="property-type">boolean, optional</span></dt>
+        <dd><code>true</code> notifies everyone in the room (<code>@room</code>). Default source: <code>msg.mentionRoom</code>.</dd>
     </dl>
 
     <h4>Inputs</h4>

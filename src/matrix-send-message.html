@@ -17,6 +17,13 @@
             replaceMessage : { value: false },
             threadReplyType: { value: "msg" },
             threadReplyValue: { value: "isThread" },
+            replyToType: { value: "msg" },
+            replyToValue: { value: "replyTo" },
+            notifyReplySender: { value: true },
+            mentionUsersType: { value: "msg" },
+            mentionUsersValue: { value: "mentionUsers" },
+            mentionRoomType: { value: "msg" },
+            mentionRoomValue: { value: "mentionRoom" },
         },
         label: function() {
             return this.name || "Send Message";
@@ -27,10 +34,31 @@
             })
                 .typedInput('value', this.threadReplyValue || "isThread")
                 .typedInput('type', this.threadReplyType || "msg");
+            $("#node-input-replyTo").typedInput({
+                types:['msg','flow','global','bool','str'],
+            })
+                .typedInput('value', this.replyToValue || "replyTo")
+                .typedInput('type', this.replyToType || "msg");
+            $("#node-input-mentionUsers").typedInput({
+                types:['msg','flow','global','str','json'],
+            })
+                .typedInput('value', this.mentionUsersValue || "mentionUsers")
+                .typedInput('type', this.mentionUsersType || "msg");
+            $("#node-input-mentionRoom").typedInput({
+                types:['msg','flow','global','bool'],
+            })
+                .typedInput('value', this.mentionRoomValue || "mentionRoom")
+                .typedInput('type', this.mentionRoomType || "msg");
         },
         oneditsave: function() {
             this.threadReplyType = $("#node-input-threadReply").typedInput('type');
             this.threadReplyValue = $("#node-input-threadReply").typedInput('value');
+            this.replyToType = $("#node-input-replyTo").typedInput('type');
+            this.replyToValue = $("#node-input-replyTo").typedInput('value');
+            this.mentionUsersType = $("#node-input-mentionUsers").typedInput('type');
+            this.mentionUsersValue = $("#node-input-mentionUsers").typedInput('value');
+            this.mentionRoomType = $("#node-input-mentionRoom").typedInput('type');
+            this.mentionRoomValue = $("#node-input-mentionRoom").typedInput('value');
         },
     });
 </script>
@@ -94,6 +122,36 @@
     </div>
 
     <div class="form-row">
+        <label for="node-input-replyTo"><i class="fa fa-reply"></i> Reply To</label>
+        <input type="text" id="node-input-replyTo">
+    </div>
+    <div class="form-row form-tips">
+        <code>true</code> replies to <code>msg.eventId</code> (the message from a Receive node), an event ID (starting with <code>$</code>) replies to that event, anything else sends a normal message.
+    </div>
+    <div class="form-row">
+        <input
+                type="checkbox"
+                id="node-input-notifyReplySender"
+                style="width: auto; margin-left: 105px; vertical-align: top"
+        />
+        <label for="node-input-notifyReplySender" style="width: auto;max-width:50%;">
+            Notify the sender of the message being replied to
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-mentionUsers"><i class="fa fa-at"></i> Mention Users</label>
+        <input type="text" id="node-input-mentionUsers">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mentionRoom"><i class="fa fa-bullhorn"></i> Mention Room</label>
+        <input type="text" id="node-input-mentionRoom">
+    </div>
+    <div class="form-row form-tips">
+        Users to notify (a user ID, a comma separated list, or an array), and whether to notify the whole room (<code>@room</code>). Mentions only control who gets notified; write the names in the message text yourself.
+    </div>
+
+    <div class="form-row">
         <label for="node-input-messageFormat">
             Message Format
         </label>
@@ -143,6 +201,21 @@
         </dt>
         <dd> the formatted HTML message (uses <code>msg.payload</code> if not defined). This only affects messages sent in <strong>HTML</strong> format &mdash; in Markdown mode the formatted body is generated from the markdown source.</dd>
 
+        <dt class="optional">msg.replyTo
+            <span class="property-type">boolean | string</span>
+        </dt>
+        <dd> (default "Reply To" setting) <code>true</code> sends the message as a reply to <code>msg.eventId</code>; an event ID sends it as a reply to that event. When the node is also set to reply in a thread, the message is a reply inside the thread. Ignored when updating an existing message.</dd>
+
+        <dt class="optional">msg.mentionUsers
+            <span class="property-type">string | array</span>
+        </dt>
+        <dd> (default "Mention Users" setting) user IDs to notify, as a single ID, a comma separated list or an array, for example <code>["@alice:example.org"]</code>. Sent as <code>m.mentions</code>, so only these users (and the sender of a replied-to message) are notified, even if the text contains other names.</dd>
+
+        <dt class="optional">msg.mentionRoom
+            <span class="property-type">boolean</span>
+        </dt>
+        <dd> (default "Mention Room" setting) <code>true</code> notifies everyone in the room, like <code>@room</code>. The bot needs permission to notify the room.</dd>
+
         <dt class="optional">msg.type
             <span class="property-type">string | null</span>
         </dt>
@@ -181,6 +254,18 @@
         <dt>msg.format input</dt>
         <dd>Set <code>msg.format</code> at runtime to one of the options above (<code>null</code>, <code>'markdown'</code>, or <code>'html'</code>).</dd>
     </dl>
+
+    <h4>Replies and mentions</h4>
+    <p>
+        Wire a Receive node straight into this node and set <b>Reply To</b> to <code>true</code> to answer
+        each message as a reply. The sender of the original message is notified unless you untick
+        <i>Notify the sender</i>. Replies, mentions and full content objects in <code>msg.payload</code>
+        (for example from an Upload File node) can be combined; keys already in the content object are kept.
+    </p>
+    <p>
+        The Receive node's <code>msg.mentions</code> describes who the <i>incoming</i> message mentioned and is
+        not used here, so replying never repeats someone else's <code>@room</code>.
+    </p>
 
     <h3>Outputs</h3>
     <ol class="node-ports">
