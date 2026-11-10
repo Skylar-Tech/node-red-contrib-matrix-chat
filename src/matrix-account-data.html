@@ -1,0 +1,126 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-account-data',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            action: { value: "get" },
+            scope: { value: "global" },
+            dataType: { value: "" },
+            roomId: { value: null }
+        },
+        label: function() {
+            if (this.name) return this.name;
+            var verb = this.action === "set" ? "Set " : (this.action === "get" ? "Get " : "");
+            return verb + (this.dataType || "Account Data");
+        },
+        paletteLabel: 'Account Data',
+        oneditprepare: function() {
+            $("#node-input-scope").on("change", function() {
+                $(".matrix-account-data-room-row").toggle($(this).val() === "room");
+            }).trigger("change");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-account-data">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-cog"></i> Action</label>
+        <select id="node-input-action">
+            <option value="get">Get</option>
+            <option value="set">Set (content from msg.payload)</option>
+            <option value="msg.action">From msg.action</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-scope"><i class="fa fa-globe"></i> Scope</label>
+        <select id="node-input-scope">
+            <option value="global">Account (all rooms)</option>
+            <option value="room">One room</option>
+        </select>
+    </div>
+    <div class="form-row matrix-account-data-room-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dataType"><i class="fa fa-database"></i> Type</label>
+        <input type="text" id="node-input-dataType" placeholder="msg.dataType, e.g. com.example.settings" list="matrix-account-data-types">
+        <datalist id="matrix-account-data-types">
+            <option value="m.direct">
+            <option value="m.invite_permission_config">
+            <option value="m.ignored_user_list">
+            <option value="m.marked_unread">
+            <option value="m.fully_read">
+        </datalist>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-account-data">
+    <h3>Details</h3>
+    <p>
+        Reads or writes the bot account's private account data: small JSON documents stored on the homeserver,
+        either for the whole account or for one room. Only the bot can see them. They are a handy place to keep
+        bot settings that should survive a reinstall (use your own type name such as <code>com.example.settings</code>),
+        and several Matrix features are configured through them.
+    </p>
+    <h4>Useful types</h4>
+    <dl class="message-properties">
+        <dt>m.invite_permission_config <span class="property-type">account</span></dt>
+        <dd>Set <code>{"default_action": "block"}</code> to have the homeserver reject all room invites to the bot, and set <code>{}</code> to allow them again (Matrix 1.18, the homeserver must support it).</dd>
+        <dt>m.direct <span class="property-type">account</span></dt>
+        <dd>Which rooms are direct chats, as <code>{"@user:server": ["!roomid:server"]}</code>.</dd>
+        <dt>m.marked_unread <span class="property-type">room</span></dt>
+        <dd>Set <code>{"unread": true}</code> to mark a room as unread for the bot's account (Matrix 1.12).</dd>
+        <dt>m.ignored_user_list <span class="property-type">account</span></dt>
+        <dd>Ignored users. The Ignore Users node is easier to use for this.</dd>
+    </dl>
+    <p>Room tags are stored separately; use the Room Tags node for those.</p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#client-config" target="_blank">Matrix specification: client config (account data)</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.payload <span class="property-type">object</span></dt>
+        <dd> <b>set</b>: the content to store. It replaces what was there.</dd>
+
+        <dt class="optional">msg.dataType <span class="property-type">string</span></dt>
+        <dd> the account data type. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.topic <span class="property-type">string</span></dt>
+        <dd> the room, when the scope is <i>One room</i>. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.action <span class="property-type">string</span></dt>
+        <dd> <code>get</code> or <code>set</code>. Only used when the node is set to <i>From msg.action</i>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object | null</span></dt>
+                <dd><b>get</b>: the stored content, or <code>null</code> if nothing has been stored. <b>set</b>: the content that was stored.</dd>
+                <dt>msg.dataType <span class="property-type">string</span></dt>
+                <dd>the account data type.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>
