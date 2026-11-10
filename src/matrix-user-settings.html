@@ -36,7 +36,8 @@
         <b>Presence</b> is <code>online</code>, <code>unavailable</code> (away) or <code>offline</code>.
         The <b>status message</b> is the short text clients show next to the user, such as "Back at 9am".
         Setting one keeps the other. The chosen presence lasts until Node-RED restarts (the bot is
-        <code>online</code> again after that), so set it from a flow that runs on startup if you want it to stay.
+        <code>online</code> again after that), so set it from a flow that runs on startup if you want it to stay. Another session of the bot's account that is
+        online (for example Element signed in as the bot) can also show it as online again.
         Homeservers limit how often presence can change (Synapse allows once every 10 seconds), and some turn
         presence off; failures are reported in <code>msg.setter_errors</code> or <code>msg.getter_errors</code>.
     </p>
