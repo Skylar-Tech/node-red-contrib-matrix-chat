@@ -57,7 +57,8 @@
       "matrix-report": "src/matrix-report.js",
       "matrix-room-unban": "src/matrix-room-unban.js",
       "matrix-knock-room": "src/matrix-knock-room.js",
-      "matrix-room-alias": "src/matrix-room-alias.js"
+      "matrix-room-alias": "src/matrix-room-alias.js",
+      "matrix-room-directory": "src/matrix-room-directory.js"
     }
   },
   "engines": {

@@ -32,6 +32,7 @@ Supported functionality in this package includes:
   - Force-add users to rooms
 - **Room management**: Invite, kick, ban, unban, join, knock on, create, and leave rooms
 - **Room aliases**: resolve, create, delete and list room aliases
+- **Room directory**: search public rooms and publish or unpublish rooms
 - **Report content**: report events, rooms or users to the homeserver admins
 
 These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).
