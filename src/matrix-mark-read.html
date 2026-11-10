@@ -12,7 +12,9 @@
             roomType: { value: "msg" },
             roomValue: { value: "topic" },
             eventIdType: { value: "msg" },
-            eventIdValue: { value: "eventId" }
+            eventIdValue: { value: "eventId" },
+            receiptType: { value: "m.read" },
+            threaded: { value: false }
         },
         label: function() {
             return this.name || "Mark Read";
@@ -61,6 +63,19 @@
         <label for="node-input-eventId"><i class="fa fa-comments"></i> Event Id</label>
         <input type="text" id="node-input-eventId">
     </div>
+
+    <div class="form-row">
+        <label for="node-input-receiptType"><i class="fa fa-eye"></i> Receipt</label>
+        <select id="node-input-receiptType">
+            <option value="m.read">Public (others see the bot has read it)</option>
+            <option value="m.read.private">Private (only the bot's account knows)</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <input type="checkbox" id="node-input-threaded" style="width: auto; margin-left: 105px; vertical-align: top">
+        <label for="node-input-threaded" style="width: auto;">Only mark the event's thread as read</label>
+    </div>
 </script>
 
 <script type="text/html" data-help-name="matrix-mark-read">
@@ -78,6 +93,18 @@
             </dl>
         </li>
     </ul>
+
+    <h3>Options</h3>
+    <dl class="message-properties">
+        <dt>Receipt</dt>
+        <dd><b>Public</b> receipts show other users that the bot has read up to the event. <b>Private</b> receipts
+            (<code>m.read.private</code>) only clear the bot's own unread count, so nobody sees what it has read.</dd>
+
+        <dt>Only mark the event's thread as read</dt>
+        <dd>Off: everything in the room up to the event is marked read, threads included. On: a threaded receipt
+            marks only the thread the event is in (or only the main timeline for an event outside a thread) and
+            <code>msg.threadId</code> is set to that thread's root event ID, or <code>"main"</code>.</dd>
+    </dl>
 
     <h3>Outputs</h3>
     <ul class="node-ports">
