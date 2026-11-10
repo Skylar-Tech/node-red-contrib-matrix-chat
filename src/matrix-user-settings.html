@@ -30,7 +30,15 @@
 <script type="text/html" data-help-name="matrix-user-settings">
     <h3>Details</h3>
     <p>
-        Set and get the current user's display name or avatar.
+        Set and get the current user's display name, avatar, presence or status message.
+    </p>
+    <p>
+        <b>Presence</b> is <code>online</code>, <code>unavailable</code> (away) or <code>offline</code>.
+        The <b>status message</b> is the short text clients show next to the user, such as "Back at 9am".
+        Setting one keeps the other. The chosen presence lasts until Node-RED restarts (the bot is
+        <code>online</code> again after that), so set it from a flow that runs on startup if you want it to stay.
+        Homeservers limit how often presence can change (Synapse allows once every 10 seconds), and some turn
+        presence off; failures are reported in <code>msg.setter_errors</code> or <code>msg.getter_errors</code>.
     </p>
 
     <h3>Inputs</h3>
@@ -69,6 +77,8 @@
         var userSettingOptions = [
             { value: "display_name", label: "Display name" },
             { value: "avatar_url", label: "Avatar URL" },
+            { value: "presence", label: "Presence" },
+            { value: "status_msg", label: "Status message" },
         ];
         var defaultRules = [{
             t: "set",

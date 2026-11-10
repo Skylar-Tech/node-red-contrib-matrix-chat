@@ -39,6 +39,7 @@ Supported functionality in this package includes:
 - **Room tags**: tag rooms (favourite, low priority or your own tags)
 - **Ignore users**: stop receiving messages and invites from chosen users
 - **User directory**: search for users by name
+- **Presence**: set the bot's presence (online, away, offline) and status message
 - **Report content**: report events, rooms or users to the homeserver admins
 
 These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).
