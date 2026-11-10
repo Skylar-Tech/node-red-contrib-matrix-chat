@@ -1,0 +1,131 @@
+[
+  {
+    "id": "291620985636dcac",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Have the homeserver reject all invites to the bot",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "49c42bd7eef6d7bf",
+      "a314eb758385ca7b",
+      "b013f569001eb02a",
+      "cd306e9060246ec2",
+      "c2fd06a3189eb4b8"
+    ],
+    "x": 64,
+    "y": 74,
+    "w": 729,
+    "h": 132
+  },
+  {
+    "id": "49c42bd7eef6d7bf",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "291620985636dcac",
+    "name": "block invites",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"default_action\":\"block\"}",
+    "payloadType": "json",
+    "x": 180,
+    "y": 115,
+    "wires": [
+      [
+        "b013f569001eb02a"
+      ]
+    ]
+  },
+  {
+    "id": "a314eb758385ca7b",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "291620985636dcac",
+    "name": "allow invites",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{}",
+    "payloadType": "json",
+    "x": 180,
+    "y": 165,
+    "wires": [
+      [
+        "b013f569001eb02a"
+      ]
+    ]
+  },
+  {
+    "id": "b013f569001eb02a",
+    "type": "matrix-account-data",
+    "z": "f025a8b9fbd1b054",
+    "g": "291620985636dcac",
+    "name": "",
+    "action": "set",
+    "scope": "global",
+    "dataType": "m.invite_permission_config",
+    "roomId": null,
+    "x": 453,
+    "y": 140,
+    "wires": [
+      [
+        "cd306e9060246ec2"
+      ],
+      [
+        "c2fd06a3189eb4b8"
+      ]
+    ]
+  },
+  {
+    "id": "cd306e9060246ec2",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "291620985636dcac",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 697,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "c2fd06a3189eb4b8",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "291620985636dcac",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 697,
+    "y": 165,
+    "wires": []
+  }
+]

@@ -1,0 +1,127 @@
+[
+  {
+    "id": "ad0a98b6cd451676",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "List the rooms in a space",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "817e0565d74f13aa",
+      "73cdd7274c24bcaa",
+      "189d3b7fe44fba5e",
+      "bedbf4566d6b683a",
+      "86cf427387e2d64f"
+    ],
+    "x": 74,
+    "y": 74,
+    "w": 772,
+    "h": 132
+  },
+  {
+    "id": "817e0565d74f13aa",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "ad0a98b6cd451676",
+    "name": "my space",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!space:example.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "73cdd7274c24bcaa"
+      ]
+    ]
+  },
+  {
+    "id": "73cdd7274c24bcaa",
+    "type": "matrix-space-hierarchy",
+    "z": "f025a8b9fbd1b054",
+    "g": "ad0a98b6cd451676",
+    "name": "",
+    "roomId": null,
+    "maxDepth": "",
+    "limit": 100,
+    "suggestedOnly": false,
+    "x": 377,
+    "y": 140,
+    "wires": [
+      [
+        "189d3b7fe44fba5e"
+      ],
+      [
+        "bedbf4566d6b683a"
+      ]
+    ]
+  },
+  {
+    "id": "189d3b7fe44fba5e",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "g": "ad0a98b6cd451676",
+    "name": "rooms only",
+    "func": "// skip the space itself and any subspaces\nmsg.payload = msg.payload\n    .filter(r => r.room_type !== 'm.space')\n    .map(r => ({ roomId: r.room_id, name: r.name, members: r.num_joined_members }));\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 582,
+    "y": 115,
+    "wires": [
+      [
+        "86cf427387e2d64f"
+      ]
+    ]
+  },
+  {
+    "id": "86cf427387e2d64f",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "ad0a98b6cd451676",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "bedbf4566d6b683a",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "ad0a98b6cd451676",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 582,
+    "y": 165,
+    "wires": []
+  }
+]

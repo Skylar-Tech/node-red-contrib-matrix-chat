@@ -1,0 +1,237 @@
+[
+  {
+    "id": "5acb927ff62492a6",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Tag a room as \"u.support\" when someone types !support",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "d8cc831f6a0e9f67",
+      "214cc607d66302d6",
+      "44a608200ec915bd",
+      "8f1242489e2f277e",
+      "74d911b34d5b2f9f"
+    ],
+    "x": 74,
+    "y": 74,
+    "w": 886,
+    "h": 132
+  },
+  {
+    "id": "eec2fd69203f7834",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Get a room's tags",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "17d3ed1dc08c15fc",
+      "3de8c7882236a93c",
+      "83a0557c0d98794d",
+      "7405fc4680bd990f"
+    ],
+    "x": 64,
+    "y": 224,
+    "w": 603,
+    "h": 132
+  },
+  {
+    "id": "d8cc831f6a0e9f67",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "g": "5acb927ff62492a6",
+    "name": "",
+    "roomId": "",
+    "acceptOwnEvents": false,
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptNotices": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptAudio": true,
+    "acceptImages": true,
+    "acceptVideos": true,
+    "acceptLocations": true,
+    "acceptMembership": false,
+    "acceptState": false,
+    "acceptRedactions": false,
+    "acceptOther": false,
+    "otherEventTypes": "",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "214cc607d66302d6"
+      ]
+    ]
+  },
+  {
+    "id": "214cc607d66302d6",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "g": "5acb927ff62492a6",
+    "name": "msg.payload == \"!support\"",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "!support",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 438,
+    "y": 140,
+    "wires": [
+      [
+        "44a608200ec915bd"
+      ]
+    ]
+  },
+  {
+    "id": "44a608200ec915bd",
+    "type": "matrix-room-tags",
+    "z": "f025a8b9fbd1b054",
+    "g": "5acb927ff62492a6",
+    "name": "",
+    "action": "add",
+    "roomId": null,
+    "tag": "u.support",
+    "x": 688,
+    "y": 140,
+    "wires": [
+      [
+        "8f1242489e2f277e"
+      ],
+      [
+        "74d911b34d5b2f9f"
+      ]
+    ]
+  },
+  {
+    "id": "8f1242489e2f277e",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "5acb927ff62492a6",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 864,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "74d911b34d5b2f9f",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "5acb927ff62492a6",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 864,
+    "y": 165,
+    "wires": []
+  },
+  {
+    "id": "17d3ed1dc08c15fc",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "eec2fd69203f7834",
+    "name": "tags of a room",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 290,
+    "wires": [
+      [
+        "3de8c7882236a93c"
+      ]
+    ]
+  },
+  {
+    "id": "3de8c7882236a93c",
+    "type": "matrix-room-tags",
+    "z": "f025a8b9fbd1b054",
+    "g": "eec2fd69203f7834",
+    "name": "",
+    "action": "get",
+    "roomId": null,
+    "tag": "",
+    "x": 392,
+    "y": 290,
+    "wires": [
+      [
+        "83a0557c0d98794d"
+      ],
+      [
+        "7405fc4680bd990f"
+      ]
+    ]
+  },
+  {
+    "id": "83a0557c0d98794d",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "eec2fd69203f7834",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 571,
+    "y": 265,
+    "wires": []
+  },
+  {
+    "id": "7405fc4680bd990f",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "eec2fd69203f7834",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 571,
+    "y": 315,
+    "wires": []
+  }
+]

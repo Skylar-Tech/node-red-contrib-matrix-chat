@@ -1,0 +1,164 @@
+[
+  {
+    "id": "557b1f861cce8e2f",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Only join a room if it is public",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "4e5696f47c6deb4e",
+      "b3a15fa60e1ee620",
+      "9c2f1af42b862d51",
+      "455ac44ac2a65eaf",
+      "d8f595d9f548f043",
+      "1fe91c3aefd9c496"
+    ],
+    "x": 44,
+    "y": 74,
+    "w": 1033,
+    "h": 132
+  },
+  {
+    "id": "4e5696f47c6deb4e",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "557b1f861cce8e2f",
+    "name": "#matrix:matrix.org",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "#matrix:matrix.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "b3a15fa60e1ee620"
+      ]
+    ]
+  },
+  {
+    "id": "b3a15fa60e1ee620",
+    "type": "matrix-room-summary",
+    "z": "f025a8b9fbd1b054",
+    "g": "557b1f861cce8e2f",
+    "name": "",
+    "roomId": null,
+    "x": 404,
+    "y": 140,
+    "wires": [
+      [
+        "9c2f1af42b862d51"
+      ],
+      [
+        "dac5ea9e83a78e63"
+      ]
+    ]
+  },
+  {
+    "id": "9c2f1af42b862d51",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "g": "557b1f861cce8e2f",
+    "name": "anyone can join",
+    "property": "payload.join_rule",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "public",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 616,
+    "y": 140,
+    "wires": [
+      [
+        "455ac44ac2a65eaf"
+      ]
+    ]
+  },
+  {
+    "id": "455ac44ac2a65eaf",
+    "type": "matrix-join-room",
+    "z": "f025a8b9fbd1b054",
+    "g": "557b1f861cce8e2f",
+    "name": "",
+    "x": 817,
+    "y": 140,
+    "wires": [
+      [
+        "d8f595d9f548f043"
+      ],
+      [
+        "1fe91c3aefd9c496"
+      ]
+    ]
+  },
+  {
+    "id": "d8f595d9f548f043",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "557b1f861cce8e2f",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 981,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "1fe91c3aefd9c496",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "557b1f861cce8e2f",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 981,
+    "y": 165,
+    "wires": []
+  },
+  {
+    "id": "dac5ea9e83a78e63",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 616,
+    "y": 190,
+    "wires": []
+  }
+]

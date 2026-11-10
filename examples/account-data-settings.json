@@ -1,0 +1,153 @@
+[
+  {
+    "id": "4879c02b6851c3d6",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Keep the bot's settings on the homeserver",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "b6210c6373f92a47",
+      "6ba013ec739d0b99",
+      "78d877b8179df43e",
+      "3c3b35131d38d5ef",
+      "d4cbbeba9c796853",
+      "2064751d0e31ad76"
+    ],
+    "x": 64,
+    "y": 84,
+    "w": 645,
+    "h": 132
+  },
+  {
+    "id": "b6210c6373f92a47",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "4879c02b6851c3d6",
+    "name": "save settings",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"greeting\":\"Hello!\",\"quietHours\":[22,7]}",
+    "payloadType": "json",
+    "x": 180,
+    "y": 125,
+    "wires": [
+      [
+        "78d877b8179df43e"
+      ]
+    ]
+  },
+  {
+    "id": "78d877b8179df43e",
+    "type": "matrix-account-data",
+    "z": "f025a8b9fbd1b054",
+    "g": "4879c02b6851c3d6",
+    "name": "",
+    "action": "set",
+    "scope": "global",
+    "dataType": "com.example.bot",
+    "roomId": null,
+    "x": 411,
+    "y": 125,
+    "wires": [
+      [
+        "d4cbbeba9c796853"
+      ],
+      [
+        "2064751d0e31ad76"
+      ]
+    ]
+  },
+  {
+    "id": "6ba013ec739d0b99",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "4879c02b6851c3d6",
+    "name": "load settings",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 175,
+    "wires": [
+      [
+        "3c3b35131d38d5ef"
+      ]
+    ]
+  },
+  {
+    "id": "3c3b35131d38d5ef",
+    "type": "matrix-account-data",
+    "z": "f025a8b9fbd1b054",
+    "g": "4879c02b6851c3d6",
+    "name": "",
+    "action": "get",
+    "scope": "global",
+    "dataType": "com.example.bot",
+    "roomId": null,
+    "x": 411,
+    "y": 175,
+    "wires": [
+      [
+        "d4cbbeba9c796853"
+      ],
+      [
+        "2064751d0e31ad76"
+      ]
+    ]
+  },
+  {
+    "id": "d4cbbeba9c796853",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "4879c02b6851c3d6",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 613,
+    "y": 125,
+    "wires": []
+  },
+  {
+    "id": "2064751d0e31ad76",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "4879c02b6851c3d6",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 613,
+    "y": 175,
+    "wires": []
+  }
+]

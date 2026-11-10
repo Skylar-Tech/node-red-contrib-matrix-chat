@@ -1,0 +1,101 @@
+[
+  {
+    "id": "15275292aab3a2b7",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Find users by name",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "0c96d3278907d592",
+      "47c401a6dc96a289",
+      "67900de463b9be33",
+      "ee636210d71d0d3d"
+    ],
+    "x": 64,
+    "y": 74,
+    "w": 611,
+    "h": 132
+  },
+  {
+    "id": "0c96d3278907d592",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "15275292aab3a2b7",
+    "name": "search \"alice\"",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "alice",
+    "payloadType": "str",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "47c401a6dc96a289"
+      ]
+    ]
+  },
+  {
+    "id": "47c401a6dc96a289",
+    "type": "matrix-user-directory",
+    "z": "f025a8b9fbd1b054",
+    "g": "15275292aab3a2b7",
+    "name": "",
+    "limit": 10,
+    "x": 396,
+    "y": 140,
+    "wires": [
+      [
+        "67900de463b9be33"
+      ],
+      [
+        "ee636210d71d0d3d"
+      ]
+    ]
+  },
+  {
+    "id": "67900de463b9be33",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "15275292aab3a2b7",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 579,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "ee636210d71d0d3d",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "15275292aab3a2b7",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 579,
+    "y": 165,
+    "wires": []
+  }
+]

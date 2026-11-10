@@ -122,6 +122,17 @@ If you send "force_join @test:example.com !320j90mf0394f:example.com", the bot w
 
 </details>
 
+<details>
+<summary>Set the bot's presence and status message</summary>
+
+[View JSON](set-presence.json)
+
+Shows the bot as online with a status message when Node-RED starts, or as away. The chosen presence lasts until Node-RED restarts, which is why the first Inject node runs on startup.
+
+![set-presence.png](set-presence.png)
+
+</details>
+
 ### Message Handling
 
 <details>
@@ -196,6 +207,28 @@ Update the `Send Location` node's Room ID to your own room before deploying. The
 
 </details>
 
+<details>
+<summary>Reply to messages and mention the sender</summary>
+
+[View JSON](reply-to-messages.json)
+
+Answers "hello" with a reply to the original message. **Reply To** is set to `true` on the Send Message node, so it replies to `msg.eventId` from the Receive node and notifies the sender.
+
+![reply-to-messages.png](reply-to-messages.png)
+
+</details>
+
+<details>
+<summary>Send a message that mentions users</summary>
+
+[View JSON](mention-users.json)
+
+Notifies specific users with `msg.mentionUsers`, or everyone in the room with `msg.mentionRoom`. Mentions decide who gets a notification; the text can say anything.
+
+![mention-users.png](mention-users.png)
+
+</details>
+
 ### Event Handling
 
 <details>
@@ -265,6 +298,28 @@ If you would rather have it output one massive list at the end of pagination use
 - Inject the payload and you should see the result contain a list of related events for the given eventId
 
 ![fetch-event-relations.png](fetch-event-relations.png)
+
+</details>
+
+<details>
+<summary>Welcome new members</summary>
+
+[View JSON](welcome-new-members.json)
+
+Turns on **Membership changes** in the Receive node and greets everyone who joins, mentioning them by user ID.
+
+![welcome-new-members.png](welcome-new-members.png)
+
+</details>
+
+<details>
+<summary>Log deleted messages and room changes</summary>
+
+[View JSON](log-room-changes.json)
+
+Turns on **Other state changes** and **Redactions** in the Receive node. Deleted messages (`msg.redacts` is the removed event) and changes such as a new room name or topic go to separate debug nodes.
+
+![log-room-changes.png](log-room-changes.png)
 
 </details>
 
@@ -343,6 +398,83 @@ When someone sends "joinroom &lt;room_id_or_alias&gt;", the bot will join the me
 
 </details>
 
+<details>
+<summary>Knock on a room and approve knocks</summary>
+
+[View JSON](knock-room.json)
+
+The first flow asks to join a room whose join rule is "knock". The second lets in everyone who knocks on a room the bot moderates: knocks arrive from the Receive node with `msg.membershipChange` set to `knock`, and the Invite node invites `msg.targetUserId`.
+
+![knock-room.png](knock-room.png)
+
+</details>
+
+<details>
+<summary>Unban a user</summary>
+
+[View JSON](unban-user.json)
+
+Lifts a ban with the Room Unban node, with an optional reason.
+
+![unban-user.png](unban-user.png)
+
+</details>
+
+<details>
+<summary>Resolve, create and delete room aliases</summary>
+
+[View JSON](room-aliases.json)
+
+Joins a room by its alias, and creates, deletes or lists a room's aliases with the Room Alias node.
+
+![room-aliases.png](room-aliases.png)
+
+</details>
+
+<details>
+<summary>Search and publish to the room directory</summary>
+
+[View JSON](room-directory.json)
+
+Searches the public room directory, and lists a room in it or removes it. Some homeservers only let admins publish rooms.
+
+![room-directory.png](room-directory.png)
+
+</details>
+
+<details>
+<summary>Preview a room before joining</summary>
+
+[View JSON](room-summary.json)
+
+Looks up a room with the Room Summary node and only joins it if its join rule is `public`.
+
+![room-summary.png](room-summary.png)
+
+</details>
+
+<details>
+<summary>List the rooms in a space</summary>
+
+[View JSON](space-hierarchy.json)
+
+Lists the rooms in a space (and its subspaces) with the Space Hierarchy node, then keeps just the room IDs, names and member counts.
+
+![space-hierarchy.png](space-hierarchy.png)
+
+</details>
+
+<details>
+<summary>Tag rooms</summary>
+
+[View JSON](room-tags.json)
+
+Tags a room as `u.support` when someone types `!support`, and gets a room's tags. Tags are private to the bot's account, so they are a simple way to group the rooms a bot handles.
+
+![room-tags.png](room-tags.png)
+
+</details>
+
 ### User Information
 
 <details>
@@ -407,6 +539,17 @@ Lists the users participating in the current room.
 
 </details>
 
+<details>
+<summary>Search for users</summary>
+
+[View JSON](user-directory.json)
+
+Finds users by name with the User Directory node.
+
+![user-directory.png](user-directory.png)
+
+</details>
+
 ### Advanced Features
 
 <details>
@@ -441,6 +584,39 @@ Downloads received files/images. If the file is encrypted, it will decrypt it fo
 - Ensure that Node-RED has permission to write to the specified directory.
 
 ![Download & Store Received Files](store-received-files.png)
+
+</details>
+
+<details>
+<summary>Report and ignore spammers</summary>
+
+[View JSON](report-and-ignore-spam.json)
+
+Reports messages that look like spam to the homeserver admins with the Report node, and adds the sender to the bot's ignore list so the bot stops receiving their messages.
+
+![report-and-ignore-spam.png](report-and-ignore-spam.png)
+
+</details>
+
+<details>
+<summary>Store bot settings in account data</summary>
+
+[View JSON](account-data-settings.json)
+
+Saves the bot's settings as account data on the homeserver and loads them again, so they survive a Node-RED reinstall.
+
+![account-data-settings.png](account-data-settings.png)
+
+</details>
+
+<details>
+<summary>Block or allow room invites</summary>
+
+[View JSON](block-invites.json)
+
+Sets `m.invite_permission_config` account data so the homeserver rejects every invite to the bot (Matrix 1.18; the homeserver must support it). Inject `{}` to allow invites again.
+
+![block-invites.png](block-invites.png)
 
 </details>
 

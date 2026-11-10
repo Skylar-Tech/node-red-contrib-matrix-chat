@@ -1,0 +1,113 @@
+[
+  {
+    "id": "b82f21743a9ae93a",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Unban a user",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "c31136e9007577da",
+      "15c7c1d51e7c91c7",
+      "36b76964ec577116",
+      "c39e55e778d16b5e"
+    ],
+    "x": 64,
+    "y": 74,
+    "w": 574,
+    "h": 132
+  },
+  {
+    "id": "c31136e9007577da",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "b82f21743a9ae93a",
+    "name": "unban @alice",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "userId",
+        "v": "@alice:example.org",
+        "vt": "str"
+      },
+      {
+        "p": "reason",
+        "v": "Ban expired",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "15c7c1d51e7c91c7"
+      ]
+    ]
+  },
+  {
+    "id": "15c7c1d51e7c91c7",
+    "type": "matrix-room-unban",
+    "z": "f025a8b9fbd1b054",
+    "g": "b82f21743a9ae93a",
+    "name": "",
+    "roomId": null,
+    "reason": null,
+    "x": 374,
+    "y": 140,
+    "wires": [
+      [
+        "36b76964ec577116"
+      ],
+      [
+        "c39e55e778d16b5e"
+      ]
+    ]
+  },
+  {
+    "id": "36b76964ec577116",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "b82f21743a9ae93a",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 542,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "c39e55e778d16b5e",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "b82f21743a9ae93a",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 542,
+    "y": 165,
+    "wires": []
+  }
+]
