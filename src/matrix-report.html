@@ -1,0 +1,101 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-report',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            reportType: { value: "event" },
+            roomId: { value: null },
+            reason: { value: null }
+        },
+        label: function() {
+            return this.name || "Report";
+        },
+        paletteLabel: 'Report',
+        oneditprepare: function() {
+            $("#node-input-reportType").on("change", function() {
+                $(".matrix-report-room-row").toggle($(this).val() !== "user");
+            }).trigger("change");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-report">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-reportType"><i class="fa fa-flag"></i> Report</label>
+        <select id="node-input-reportType">
+            <option value="event">An event (message)</option>
+            <option value="room">A room</option>
+            <option value="user">A user</option>
+            <option value="msg.reportType">From msg.reportType</option>
+        </select>
+    </div>
+    <div class="form-row matrix-report-room-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-reason"><i class="fa fa-comment"></i> Reason</label>
+        <input type="text" id="node-input-reason" placeholder="msg.reason">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-report">
+    <h3>Details</h3>
+    <p>
+        Reports an event, a room or a user to the homeserver administrators, for example from a moderation flow.
+        Reporting rooms needs a server that supports Matrix 1.13 and reporting users Matrix 1.14.
+    </p>
+    <p>
+        Servers may accept a report without saying whether the target exists, so a successful report does not
+        prove the event, room or user is real.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#reporting-content" target="_blank">Matrix specification: reporting content</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic <span class="property-type">string</span></dt>
+        <dd> the room the event is in, or the room to report. Ignored if a room is configured on the node. Not used when reporting a user.</dd>
+
+        <dt>msg.eventId <span class="property-type">string</span></dt>
+        <dd> the event to report, when reporting an event. A Receive node sets this for every message.</dd>
+
+        <dt>msg.userId <span class="property-type">string</span></dt>
+        <dd> the user to report, when reporting a user.</dd>
+
+        <dt class="optional">msg.reason <span class="property-type">string</span></dt>
+        <dd> why the content is being reported. A reason configured on the node takes priority.</dd>
+
+        <dt class="optional">msg.reportType <span class="property-type">string</span></dt>
+        <dd> <code>event</code>, <code>room</code> or <code>user</code>. Only used when the node is set to <i>From msg.reportType</i>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg <span class="property-type">object</span></dt>
+                <dd>the input message, unchanged.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

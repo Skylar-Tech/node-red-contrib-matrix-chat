@@ -53,7 +53,8 @@
       "matrix-event-relations": "src/matrix-event-relations.js",
       "matrix-verification": "src/matrix-verification.js",
       "matrix-verification-action": "src/matrix-verification-action.js",
-      "matrix-send-location": "src/matrix-send-location.js"
+      "matrix-send-location": "src/matrix-send-location.js",
+      "matrix-report": "src/matrix-report.js"
     }
   },
   "engines": {

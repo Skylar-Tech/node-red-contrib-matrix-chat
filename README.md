@@ -31,6 +31,7 @@ Supported functionality in this package includes:
   - Manage users, including listing, adding, editing, deactivating (Synapse API)
   - Force-add users to rooms
 - **Room management**: Invite, kick, ban, join, create, and leave rooms
+- **Report content**: report events, rooms or users to the homeserver admins
 
 These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).
 
