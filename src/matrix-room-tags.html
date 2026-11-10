@@ -1,0 +1,103 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-tags',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            action: { value: "get" },
+            roomId: { value: null },
+            tag: { value: "" }
+        },
+        label: function() {
+            if (this.name) return this.name;
+            var labels = { get: "Get Room Tags", add: "Add Room Tag", remove: "Remove Room Tag" };
+            return labels[this.action] || "Room Tags";
+        },
+        paletteLabel: 'Room Tags',
+        oneditprepare: function() {
+            $("#node-input-action").on("change", function() {
+                $(".matrix-room-tags-tag-row").toggle($(this).val() !== "get");
+            }).trigger("change");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-tags">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-cog"></i> Action</label>
+        <select id="node-input-action">
+            <option value="get">Get tags</option>
+            <option value="add">Add tag</option>
+            <option value="remove">Remove tag</option>
+            <option value="msg.action">From msg.action</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+    <div class="form-row matrix-room-tags-tag-row">
+        <label for="node-input-tag"><i class="fa fa-tags"></i> Tag</label>
+        <input type="text" id="node-input-tag" placeholder="msg.tag" list="matrix-room-tag-names">
+        <datalist id="matrix-room-tag-names">
+            <option value="m.favourite">
+            <option value="m.lowpriority">
+            <option value="m.server_notice">
+        </datalist>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-tags">
+    <h3>Details</h3>
+    <p>
+        Gets, adds or removes tags on a room for the bot's account, the same tags clients use for
+        favourites (<code>m.favourite</code>) and low priority (<code>m.lowpriority</code>). Your own tags should start
+        with <code>u.</code>, for example <code>u.support</code>, and are a simple way to group the rooms a bot handles.
+        Tags are private to the bot's account.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#room-tagging" target="_blank">Matrix specification: room tagging</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.topic <span class="property-type">string</span></dt>
+        <dd> the room. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.tag <span class="property-type">string</span></dt>
+        <dd> the tag to add or remove. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.order <span class="property-type">number</span></dt>
+        <dd> <b>add</b>: where to sort the room among rooms with the same tag, from 0 (first) to 1 (last).</dd>
+
+        <dt class="optional">msg.action <span class="property-type">string</span></dt>
+        <dd> <code>get</code>, <code>add</code> or <code>remove</code>. Only used when the node is set to <i>From msg.action</i>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>the room's tags after the change, for example <code>{"m.favourite": {"order": 0.5}, "u.support": {}}</code>.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

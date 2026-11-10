@@ -61,7 +61,8 @@
       "matrix-room-directory": "src/matrix-room-directory.js",
       "matrix-room-summary": "src/matrix-room-summary.js",
       "matrix-space-hierarchy": "src/matrix-space-hierarchy.js",
-      "matrix-account-data": "src/matrix-account-data.js"
+      "matrix-account-data": "src/matrix-account-data.js",
+      "matrix-room-tags": "src/matrix-room-tags.js"
     }
   },
   "engines": {
