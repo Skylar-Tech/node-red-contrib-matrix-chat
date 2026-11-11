@@ -2,6 +2,11 @@
   "name": "node-red-contrib-matrix-chat",
   "version": "1.1.0",
   "description": "Matrix chat server client for Node-RED",
+  "files": [
+    "src",
+    "examples",
+    "example.png"
+  ],
   "scripts": {
     "test": "mocha \"test/*.test.js\"",
     "test:live": "mocha --timeout 60000 \"test/live/*.test.js\""
