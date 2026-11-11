@@ -116,6 +116,37 @@ module.exports = function(RED) {
                 }
             }
 
+            // Presence and the status message are one setting on the server,
+            // which rate limits changes to it, so a node that sets both sends
+            // them in one request. The part not being set is kept (the server
+            // clears a missing status message).
+            async function setPresence(changes) {
+                const client = node.server.matrixClient;
+                const current = await client.getPresence(client.getUserId()).catch(function() { return {}; });
+                const opts = {
+                    presence: current.presence || "online",
+                    status_msg: current.status_msg || undefined,
+                };
+                if ("presence" in changes) {
+                    if (!["online", "unavailable", "offline"].includes(changes.presence)) {
+                        throw new Error(`presence must be "online", "unavailable" or "offline", got ${JSON.stringify(changes.presence)}`);
+                    }
+                    opts.presence = changes.presence;
+                }
+                if ("status_msg" in changes) {
+                    const value = changes.status_msg;
+                    opts.status_msg = (value === undefined || value === null || value === false) ? "" : String(value);
+                }
+                await client.setPresence(opts);
+                // A running client's /sync reports the bot as online and would
+                // undo "unavailable" or "offline" within seconds, so have it
+                // report the chosen presence instead.
+                if (typeof client.setSyncPresence === "function") {
+                    await client.setSyncPresence(opts.presence);
+                }
+            }
+            let presenceRulesDone = new Set();
+
             let cachedGetters = {};
             for(let rule of node.rules) {
                 // [
@@ -138,6 +169,36 @@ module.exports = function(RED) {
                             case "avatar_url":
                                 await node.server.matrixClient.setAvatarUrl(typeof value === "string" ? value : "");
                                 break;
+                            case "presence":
+                            case "status_msg": {
+                                if (presenceRulesDone.has(rule)) {
+                                    break; // already sent with the other one
+                                }
+                                // pick up a later rule setting the other half
+                                const other = rule.p === "presence" ? "status_msg" : "presence";
+                                const otherRule = node.rules.find(function(r) {
+                                    return r.t === "set" && r.p === other && !presenceRulesDone.has(r) && node.rules.indexOf(r) > node.rules.indexOf(rule);
+                                });
+                                const changes = { [rule.p]: value };
+                                if (otherRule) {
+                                    presenceRulesDone.add(otherRule);
+                                    try {
+                                        changes[other] = await getToValue(msg, otherRule);
+                                    } catch(e) {
+                                        setterErrors[other] = e.message;
+                                        delete changes[other];
+                                    }
+                                }
+                                try {
+                                    await setPresence(changes);
+                                } catch(e) {
+                                    if (otherRule && other in changes) {
+                                        setterErrors[other] = e.message;
+                                    }
+                                    throw e;
+                                }
+                                break;
+                            }
                         }
                     } catch(e) {
                         setterErrors[rule.p] = e.message;
@@ -158,6 +219,12 @@ module.exports = function(RED) {
                                     break;
                                 case "avatar_url":
                                     value = (await node.server.matrixClient.getProfileInfo(node.server.matrixClient.getUserId(), 'avatar_url')).avatar_url || false;
+                                    break;
+                                case "presence":
+                                    value = (await node.server.matrixClient.getPresence(node.server.matrixClient.getUserId())).presence || false;
+                                    break;
+                                case "status_msg":
+                                    value = (await node.server.matrixClient.getPresence(node.server.matrixClient.getUserId())).status_msg || false;
                                     break;
                             }
                             setToValue(value, rule);

@@ -1,0 +1,159 @@
+[
+  {
+    "id": "d0b2713f0a42d356",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Notify users with m.mentions",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "1becadc62f1309e0",
+      "8ec035c03619e7de",
+      "473c4023a2b5f935",
+      "97a9905100554f32",
+      "1141b457bf1229c0"
+    ],
+    "x": 44,
+    "y": 74,
+    "w": 628,
+    "h": 132
+  },
+  {
+    "id": "1becadc62f1309e0",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "d0b2713f0a42d356",
+    "name": "mention two users",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "mentionUsers",
+        "v": "[\"@alice:example.org\",\"@bob:example.org\"]",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "Maintenance starts in 10 minutes",
+    "payloadType": "str",
+    "x": 180,
+    "y": 115,
+    "wires": [
+      [
+        "473c4023a2b5f935"
+      ]
+    ]
+  },
+  {
+    "id": "8ec035c03619e7de",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "d0b2713f0a42d356",
+    "name": "mention @room",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "mentionRoom",
+        "v": "true",
+        "vt": "bool"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "Maintenance is starting now",
+    "payloadType": "str",
+    "x": 180,
+    "y": 165,
+    "wires": [
+      [
+        "473c4023a2b5f935"
+      ]
+    ]
+  },
+  {
+    "id": "473c4023a2b5f935",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "g": "d0b2713f0a42d356",
+    "name": "",
+    "roomId": null,
+    "message": null,
+    "messageType": "m.text",
+    "messageFormat": "",
+    "replaceMessage": false,
+    "threadReplyType": "msg",
+    "threadReplyValue": "isThread",
+    "replyToType": "msg",
+    "replyToValue": "replyTo",
+    "notifyReplySender": true,
+    "mentionUsersType": "msg",
+    "mentionUsersValue": "mentionUsers",
+    "mentionRoomType": "msg",
+    "mentionRoomValue": "mentionRoom",
+    "x": 400,
+    "y": 140,
+    "wires": [
+      [
+        "97a9905100554f32"
+      ],
+      [
+        "1141b457bf1229c0"
+      ]
+    ]
+  },
+  {
+    "id": "97a9905100554f32",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "d0b2713f0a42d356",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 576,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "1141b457bf1229c0",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "d0b2713f0a42d356",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 576,
+    "y": 165,
+    "wires": []
+  }
+]

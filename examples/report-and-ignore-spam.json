@@ -1,0 +1,194 @@
+[
+  {
+    "id": "ec9ffa265b500351",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Report spam to the server admins and stop seeing the sender",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "3cb9ffc7e6b871fc",
+      "f1b47d796ecea443",
+      "17ddf883e658520f",
+      "d06b5eb72e8f5450",
+      "bd74fdc63ed1d39a",
+      "6c047bc97930f566",
+      "f22a925d2d54b588",
+      "240d65ee3a82f2c6"
+    ],
+    "x": 74,
+    "y": 69,
+    "w": 802,
+    "h": 202
+  },
+  {
+    "id": "3cb9ffc7e6b871fc",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "roomId": "",
+    "acceptOwnEvents": false,
+    "acceptText": true,
+    "acceptEmotes": true,
+    "acceptNotices": true,
+    "acceptStickers": true,
+    "acceptReactions": true,
+    "acceptFiles": true,
+    "acceptAudio": true,
+    "acceptImages": true,
+    "acceptVideos": true,
+    "acceptLocations": true,
+    "acceptMembership": false,
+    "acceptState": false,
+    "acceptRedactions": false,
+    "acceptOther": false,
+    "otherEventTypes": "",
+    "x": 180,
+    "y": 160,
+    "wires": [
+      [
+        "f1b47d796ecea443"
+      ]
+    ]
+  },
+  {
+    "id": "f1b47d796ecea443",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "looks like spam",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "regex",
+        "v": "free crypto|giveaway",
+        "vt": "str",
+        "case": true
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 400,
+    "y": 160,
+    "wires": [
+      [
+        "17ddf883e658520f",
+        "d06b5eb72e8f5450"
+      ]
+    ]
+  },
+  {
+    "id": "17ddf883e658520f",
+    "type": "matrix-report",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "reportType": "event",
+    "roomId": null,
+    "reason": "Spam",
+    "x": 608,
+    "y": 130,
+    "wires": [
+      [
+        "bd74fdc63ed1d39a"
+      ],
+      [
+        "6c047bc97930f566"
+      ]
+    ]
+  },
+  {
+    "id": "d06b5eb72e8f5450",
+    "type": "matrix-ignore-users",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "action": "ignore",
+    "x": 608,
+    "y": 210,
+    "wires": [
+      [
+        "f22a925d2d54b588"
+      ],
+      [
+        "240d65ee3a82f2c6"
+      ]
+    ]
+  },
+  {
+    "id": "bd74fdc63ed1d39a",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 780,
+    "y": 110,
+    "wires": []
+  },
+  {
+    "id": "6c047bc97930f566",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 780,
+    "y": 150,
+    "wires": []
+  },
+  {
+    "id": "f22a925d2d54b588",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 780,
+    "y": 190,
+    "wires": []
+  },
+  {
+    "id": "240d65ee3a82f2c6",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "ec9ffa265b500351",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 780,
+    "y": 230,
+    "wires": []
+  }
+]

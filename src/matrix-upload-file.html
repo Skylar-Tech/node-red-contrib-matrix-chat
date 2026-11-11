@@ -161,6 +161,7 @@
         <li>The node supports generating thumbnails for images and video files if configured. For videos, the thumbnail is generated from the first frame.</li>
         <li>Encrypted uploads require no additional configuration beyond setting msg.encrypted to true. The node handles encryption and returns the necessary decryption information.</li>
         <li>The file type is auto-detected based on the filename or the content buffer. You can override this by setting the msg.contentType manually.</li>
+        <li>If the dimensions, duration or thumbnail of a file cannot be worked out (for example, ffmpeg is not installed or the file is damaged), the node logs a warning and still uploads the file without that information. Only a failed upload goes to the error output and Catch nodes.</li>
     </ul>
 
     <h3>References</h3>

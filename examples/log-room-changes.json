@@ -1,0 +1,120 @@
+[
+  {
+    "id": "02029b92ed72f420",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Log deleted messages and changes to rooms",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "51b874b525128582",
+      "6ae5c34837896041",
+      "eb722bd9a77e1cb8",
+      "e74a43ead8806e4f"
+    ],
+    "x": 74,
+    "y": 74,
+    "w": 663,
+    "h": 132
+  },
+  {
+    "id": "51b874b525128582",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "g": "02029b92ed72f420",
+    "name": "",
+    "roomId": "",
+    "acceptOwnEvents": false,
+    "acceptText": false,
+    "acceptEmotes": false,
+    "acceptNotices": false,
+    "acceptStickers": false,
+    "acceptReactions": false,
+    "acceptFiles": false,
+    "acceptAudio": false,
+    "acceptImages": false,
+    "acceptVideos": false,
+    "acceptLocations": false,
+    "acceptMembership": false,
+    "acceptState": true,
+    "acceptRedactions": true,
+    "acceptOther": false,
+    "otherEventTypes": "",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "6ae5c34837896041"
+      ]
+    ]
+  },
+  {
+    "id": "6ae5c34837896041",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "g": "02029b92ed72f420",
+    "name": "what changed",
+    "property": "type",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "m.room.redaction",
+        "vt": "str"
+      },
+      {
+        "t": "else"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 388,
+    "y": 140,
+    "wires": [
+      [
+        "eb722bd9a77e1cb8"
+      ],
+      [
+        "e74a43ead8806e4f"
+      ]
+    ]
+  },
+  {
+    "id": "eb722bd9a77e1cb8",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "02029b92ed72f420",
+    "name": "message deleted",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 601,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "e74a43ead8806e4f",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "02029b92ed72f420",
+    "name": "room changed",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 601,
+    "y": 165,
+    "wires": []
+  }
+]

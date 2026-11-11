@@ -1,0 +1,175 @@
+[
+  {
+    "id": "c2ec1252fc16f15f",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Show the bot as online or away, with a status message",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "33508622111990d3",
+      "e4f973b3fc36f61b",
+      "b63943f3f44e7431",
+      "05c7acc1a7bff8da",
+      "eaaf588e0a922c4c",
+      "2c8eea8a087dca6e"
+    ],
+    "x": 64,
+    "y": 84,
+    "w": 588,
+    "h": 132
+  },
+  {
+    "id": "33508622111990d3",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "c2ec1252fc16f15f",
+    "name": "on startup",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "Ask me anything",
+    "payloadType": "str",
+    "x": 180,
+    "y": 125,
+    "wires": [
+      [
+        "b63943f3f44e7431"
+      ]
+    ]
+  },
+  {
+    "id": "b63943f3f44e7431",
+    "type": "matrix-user-settings",
+    "z": "f025a8b9fbd1b054",
+    "g": "c2ec1252fc16f15f",
+    "name": "",
+    "roomId": null,
+    "rules": [
+      {
+        "t": "set",
+        "p": "presence",
+        "to": "online",
+        "tot": "str"
+      },
+      {
+        "t": "set",
+        "p": "status_msg",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "x": 377,
+    "y": 125,
+    "wires": [
+      [
+        "eaaf588e0a922c4c"
+      ],
+      [
+        "2c8eea8a087dca6e"
+      ]
+    ]
+  },
+  {
+    "id": "e4f973b3fc36f61b",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "c2ec1252fc16f15f",
+    "name": "away",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "Back at 9am",
+    "payloadType": "str",
+    "x": 180,
+    "y": 175,
+    "wires": [
+      [
+        "05c7acc1a7bff8da"
+      ]
+    ]
+  },
+  {
+    "id": "05c7acc1a7bff8da",
+    "type": "matrix-user-settings",
+    "z": "f025a8b9fbd1b054",
+    "g": "c2ec1252fc16f15f",
+    "name": "",
+    "roomId": null,
+    "rules": [
+      {
+        "t": "set",
+        "p": "presence",
+        "to": "unavailable",
+        "tot": "str"
+      },
+      {
+        "t": "set",
+        "p": "status_msg",
+        "to": "payload",
+        "tot": "msg"
+      }
+    ],
+    "x": 377,
+    "y": 175,
+    "wires": [
+      [
+        "eaaf588e0a922c4c"
+      ],
+      [
+        "2c8eea8a087dca6e"
+      ]
+    ]
+  },
+  {
+    "id": "eaaf588e0a922c4c",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "c2ec1252fc16f15f",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 556,
+    "y": 125,
+    "wires": []
+  },
+  {
+    "id": "2c8eea8a087dca6e",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "c2ec1252fc16f15f",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 556,
+    "y": 175,
+    "wires": []
+  }
+]

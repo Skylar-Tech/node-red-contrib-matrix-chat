@@ -1,0 +1,70 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-user-directory',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            limit: { value: 10, validate: RED.validators.number(true) }
+        },
+        label: function() {
+            return this.name || "User Directory";
+        },
+        paletteLabel: 'User Directory'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-user-directory">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-limit"><i class="fa fa-list-ol"></i> Limit</label>
+        <input type="text" id="node-input-limit" placeholder="10">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-user-directory">
+    <h3>Details</h3>
+    <p>
+        Searches for users by name or user ID. Which users can be found depends on the homeserver: usually users who
+        share a room with the bot, users in public rooms, and on some servers every local user.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#post_matrixclientv3user_directorysearch" target="_blank">Matrix specification: user directory</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.payload <span class="property-type">string</span></dt>
+        <dd> the text to search for, for example part of a display name.</dd>
+
+        <dt class="optional">msg.limit <span class="property-type">number</span></dt>
+        <dd> the most results to return. Overrides the node's limit.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">array</span></dt>
+                <dd>the users found, each <code>{ userId, displayName, avatarUrl }</code>.</dd>
+                <dt>msg.limited <span class="property-type">boolean</span></dt>
+                <dd><code>true</code> when there were more results than the limit.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

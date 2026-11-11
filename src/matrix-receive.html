@@ -21,6 +21,11 @@
             acceptImages: {"value": true},
             acceptVideos: {"value": true},
             acceptLocations: {"value": true},
+            acceptMembership: {"value": false},
+            acceptState: {"value": false},
+            acceptRedactions: {"value": false},
+            acceptOther: {"value": false},
+            otherEventTypes: {"value": ""},
         },
         label: function() {
             return this.name || "Matrix Receive";
@@ -157,6 +162,44 @@
             Accept locations <code style="text-transform: none;">m.location</code>
         </label>
     </div>
+    <div class="form-row" style="margin-left: 100px;margin-top:10px;font-weight:bold;">
+        Room events
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-acceptMembership" style="width: auto; margin-left: 125px; vertical-align: top" />
+        <label for="node-input-acceptMembership" style="width: auto">
+            Membership changes <code style="text-transform: none;">m.room.member</code>
+        </label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-acceptState" style="width: auto; margin-left: 125px; vertical-align: top" />
+        <label for="node-input-acceptState" style="width: auto">
+            Other state changes (name, topic, power levels, ...)
+        </label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-acceptRedactions" style="width: auto; margin-left: 125px; vertical-align: top" />
+        <label for="node-input-acceptRedactions" style="width: auto">
+            Redactions <code style="text-transform: none;">m.room.redaction</code>
+        </label>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+        <input type="checkbox" id="node-input-acceptOther" style="width: auto; margin-left: 125px; vertical-align: top" />
+        <label for="node-input-acceptOther" style="width: auto">
+            Other events (custom event types and message types)
+        </label>
+    </div>
+    <div class="form-row" id="node-input-otherEventTypes-row">
+        <label for="node-input-otherEventTypes" style="margin-left: 125px; width: auto;">Only types</label>
+        <input type="text" id="node-input-otherEventTypes" placeholder="all, or e.g. com.example.ping, m.call.invite" style="width: 50%;">
+    </div>
+    <script type="text/javascript">
+        $(function(){
+            $("#node-input-acceptOther").on("change", function() {
+                $("#node-input-otherEventTypes-row").toggle($(this).is(":checked"));
+            }).trigger("change");
+        });
+    </script>
     <script type="text/javascript">
         $(function(){
             $("#node-input-roomId").on("keyup", function() {
@@ -388,6 +431,65 @@
                 <dt>msg.payload <span class="property-type">string</span></dt>
                 <dd>The event's <code>body</code> &mdash; a human-readable text fallback for clients that cannot render the map snippet.</dd>
             </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.room.member</strong>' (when <i>Membership changes</i> is ticked)
+            <dl class="message-properties">
+                <dt>msg.payload / msg.membershipChange <span class="property-type">string</span></dt>
+                <dd>what happened: <code>join</code>, <code>leave</code>, <code>kick</code>, <code>ban</code>, <code>unban</code>,
+                    <code>invite</code>, <code>invite_rejected</code>, <code>invite_revoked</code>, <code>knock</code>,
+                    <code>knock_retracted</code>, <code>knock_rejected</code> or <code>profile_change</code> (display name or avatar changed).</dd>
+                <dt>msg.targetUserId <span class="property-type">string</span></dt>
+                <dd>the user whose membership changed. <code>msg.userId</code> is who made the change, for example the moderator who kicked them.</dd>
+                <dt>msg.membership / msg.prevMembership <span class="property-type">string</span></dt>
+                <dd>the new and previous membership (<code>join</code>, <code>leave</code>, <code>invite</code>, <code>knock</code>, <code>ban</code>, or <code>null</code>).</dd>
+                <dt>msg.reason <span class="property-type">string | null</span></dt>
+                <dd>the reason given, for example for a kick, ban or knock.</dd>
+                <dt>msg.displayName <span class="property-type">string | null</span></dt>
+                <dd>the user's display name in the room.</dd>
+                <dt>msg.prevContent <span class="property-type">object</span></dt>
+                <dd>the previous member event content.</dd>
+            </dl>
+            <div class="form-tips" style="margin-bottom: 12px;">
+                To approve a knock, send the msg to an Invite node with <code>msg.userId</code> set to <code>msg.targetUserId</code>; to deny it, use a Kick node.
+            </div>
+        </li>
+
+        <li>Other state events (when <i>Other state changes</i> is ticked), for example <code>m.room.name</code>, <code>m.room.topic</code>, <code>m.room.power_levels</code>
+            <dl class="message-properties">
+                <dt>msg.type <span class="property-type">string</span></dt>
+                <dd>the state event type.</dd>
+                <dt>msg.payload <span class="property-type">object</span></dt>
+                <dd>the new state content.</dd>
+                <dt>msg.prevContent <span class="property-type">object</span></dt>
+                <dd>the previous state content (empty if there was none).</dd>
+                <dt>msg.stateKey <span class="property-type">string</span></dt>
+                <dd>the state key (usually empty).</dd>
+            </dl>
+        </li>
+
+        <li><code>msg.type</code> == '<strong>m.room.redaction</strong>' (when <i>Redactions</i> is ticked)
+            <dl class="message-properties">
+                <dt>msg.payload / msg.redacts <span class="property-type">string</span></dt>
+                <dd>the ID of the event that was removed.</dd>
+                <dt>msg.reason <span class="property-type">string | null</span></dt>
+                <dd>the reason given for removing it.</dd>
+            </dl>
+        </li>
+
+        <li>Other events (when <i>Other events</i> is ticked): custom event types, and messages with a <code>msgtype</code> not listed above
+            <dl class="message-properties">
+                <dt>msg.type <span class="property-type">string</span></dt>
+                <dd>the <code>msgtype</code> for messages, otherwise the event type.</dd>
+                <dt>msg.eventType <span class="property-type">string</span></dt>
+                <dd>the event type, for example <code>m.room.message</code> or <code>com.example.ping</code>.</dd>
+                <dt>msg.payload <span class="property-type">string | object</span></dt>
+                <dd>the content's <code>body</code> if it has one, otherwise the whole content.</dd>
+            </dl>
+            <div class="form-tips" style="margin-bottom: 12px;">
+                Fill in <i>Only types</i> with a comma separated list of event types or message types to receive just those.
+                Events that could not be decrypted are never sent.
+            </div>
         </li>
     </ul>
 </script>

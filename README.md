@@ -11,15 +11,17 @@ Join our public Matrix room for help: [#node-red-contrib-matrix-chat:skylar.tech
 
 Supported functionality in this package includes:
 
+- **OAuth 2.0 login**: log in on homeservers that use a separate login service (such as Matrix Authentication Service) by approving a code in a browser; tokens renew automatically
 - **End-to-end encryption (E2EE)**: send and receive encrypted messages (see the [encryption notes](#end-to-end-encryption-notes))
 - **Cross-signing & secure backup**: interactive setup from the server config node so the bot's own device shows as verified
 - **Device verification**: interactive SAS (emoji) verification, either from the server config node or with the `matrix-verification` flow nodes
 - **Session management**: review, verify, rename, or remove the account's sessions from the server config node (Element-style)
-- **Receive events** from rooms (encrypted or unencrypted): messages, reactions, emotes, notices, stickers, images, video, audio, locations, files
+- **Receive events** from rooms (encrypted or unencrypted): messages, reactions, emotes, notices, stickers, images, video, audio, locations, files, plus optional membership changes (joins, leaves, kicks, bans, knocks), other state changes, redactions and custom event types
 - **Fetch/modify room state**: Update room settings
 - **Paginate room history**
 - **Send files** to rooms, encrypted or unencrypted
 - **Send & modify messages** (plain text, Markdown, and HTML formats)
+- **Replies & mentions**: answer a message as a reply and notify specific users or the whole room (`m.mentions`)
 - **Send location messages**: produce `m.location` events that match Element's *"Share my location"* wire format
 - **Send typing notifications**
 - **Delete events** (messages, reactions, etc.)
@@ -29,9 +31,23 @@ Supported functionality in this package includes:
   - Register users on closed Synapse servers (`registration_shared_secret`)
   - Manage users, including listing, adding, editing, deactivating (Synapse API)
   - Force-add users to rooms
-- **Room management**: Invite, kick, ban, join, create, and leave rooms
+- **Room management**: Invite, kick, ban, unban, join, knock on, create, and leave rooms
+- **Room aliases**: resolve, create, delete and list room aliases
+- **Room directory**: search public rooms and publish or unpublish rooms
+- **Room summary**: preview a room (name, topic, members, join rule) before joining
+- **Spaces**: list the rooms and subspaces in a space
+- **Account data**: store bot settings on the homeserver, block invites, mark rooms unread
+- **Room tags**: tag rooms (favourite, low priority or your own tags)
+- **Ignore users**: stop receiving messages and invites from chosen users
+- **User directory**: search for users by name
+- **Presence**: set the bot's presence (online, away, offline) and status message
+- **Report content**: report events, rooms or users to the homeserver admins
 
 These features allow you to easily build bots, set up chat relays, or even administrate your Matrix server directly from [Node-RED](https://nodered.org/).
+
+### Logging in
+
+In the server config node, either click **Update Access Token** to log in with the bot's password, paste an access token, or click **Log in with OAuth** for homeservers that sign in through a separate login service such as Matrix Authentication Service (OAuth 2.0). With OAuth you approve the login in a browser with a short code, and Node-RED renews the access token on its own.
 
 ### Installing
 

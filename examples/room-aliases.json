@@ -1,0 +1,329 @@
+[
+  {
+    "id": "37aea1b692008ed2",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Join a room by its alias",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "07fd932b54ef062c",
+      "d95db512e71dee7e",
+      "d3acdcf370bd87ca",
+      "af1ec2f150972a91",
+      "d4a6703c5e544d96"
+    ],
+    "x": 34,
+    "y": 74,
+    "w": 834,
+    "h": 132
+  },
+  {
+    "id": "e70128a10d0b8db8",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Manage a room's aliases",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "15b9cdb5e72bb3b7",
+      "38f655cf49e88d64",
+      "cea1eb90e8198740",
+      "4ab80a8dcff9d8c4",
+      "d1cc67da1766a99e",
+      "cf38799682ba66a4",
+      "7a6fbcf2fb3ebb19",
+      "317e62e290e381f7"
+    ],
+    "x": 64,
+    "y": 259,
+    "w": 588,
+    "h": 182
+  },
+  {
+    "id": "07fd932b54ef062c",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "37aea1b692008ed2",
+    "name": "#support:example.org",
+    "props": [
+      {
+        "p": "alias",
+        "v": "#support:example.org",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "d95db512e71dee7e"
+      ]
+    ]
+  },
+  {
+    "id": "d95db512e71dee7e",
+    "type": "matrix-room-alias",
+    "z": "f025a8b9fbd1b054",
+    "g": "37aea1b692008ed2",
+    "name": "",
+    "action": "resolve",
+    "alias": null,
+    "roomId": null,
+    "x": 415,
+    "y": 140,
+    "wires": [
+      [
+        "d3acdcf370bd87ca"
+      ],
+      [
+        "d4a6703c5e544d96"
+      ]
+    ]
+  },
+  {
+    "id": "d3acdcf370bd87ca",
+    "type": "matrix-join-room",
+    "z": "f025a8b9fbd1b054",
+    "g": "37aea1b692008ed2",
+    "name": "",
+    "x": 608,
+    "y": 140,
+    "wires": [
+      [
+        "af1ec2f150972a91"
+      ],
+      [
+        "d4a6703c5e544d96"
+      ]
+    ]
+  },
+  {
+    "id": "af1ec2f150972a91",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "37aea1b692008ed2",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 772,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "d4a6703c5e544d96",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "37aea1b692008ed2",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 772,
+    "y": 165,
+    "wires": []
+  },
+  {
+    "id": "15b9cdb5e72bb3b7",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "create alias",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "alias",
+        "v": "#support:example.org",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 300,
+    "wires": [
+      [
+        "4ab80a8dcff9d8c4"
+      ]
+    ]
+  },
+  {
+    "id": "4ab80a8dcff9d8c4",
+    "type": "matrix-room-alias",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "",
+    "action": "create",
+    "alias": null,
+    "roomId": null,
+    "x": 381,
+    "y": 300,
+    "wires": [
+      [
+        "7a6fbcf2fb3ebb19"
+      ],
+      [
+        "317e62e290e381f7"
+      ]
+    ]
+  },
+  {
+    "id": "38f655cf49e88d64",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "delete alias",
+    "props": [
+      {
+        "p": "alias",
+        "v": "#support:example.org",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 350,
+    "wires": [
+      [
+        "d1cc67da1766a99e"
+      ]
+    ]
+  },
+  {
+    "id": "d1cc67da1766a99e",
+    "type": "matrix-room-alias",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "",
+    "action": "delete",
+    "alias": null,
+    "roomId": null,
+    "x": 381,
+    "y": 350,
+    "wires": [
+      [
+        "7a6fbcf2fb3ebb19"
+      ],
+      [
+        "317e62e290e381f7"
+      ]
+    ]
+  },
+  {
+    "id": "cea1eb90e8198740",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "list aliases",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 400,
+    "wires": [
+      [
+        "cf38799682ba66a4"
+      ]
+    ]
+  },
+  {
+    "id": "cf38799682ba66a4",
+    "type": "matrix-room-alias",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "",
+    "action": "list",
+    "alias": null,
+    "roomId": null,
+    "x": 381,
+    "y": 400,
+    "wires": [
+      [
+        "7a6fbcf2fb3ebb19"
+      ],
+      [
+        "317e62e290e381f7"
+      ]
+    ]
+  },
+  {
+    "id": "7a6fbcf2fb3ebb19",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 556,
+    "y": 325,
+    "wires": []
+  },
+  {
+    "id": "317e62e290e381f7",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "e70128a10d0b8db8",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 556,
+    "y": 375,
+    "wires": []
+  }
+]

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "4fde94f155fcc705",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Welcome people who join a room",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "4340b3e94544629e",
+      "a265749ae30caeba",
+      "946d9be354595283",
+      "3ae4d4c2ff28cfe3",
+      "29bb5e859c440bc7",
+      "f57b060d34ce1516"
+    ],
+    "x": 74,
+    "y": 74,
+    "w": 1026,
+    "h": 132
+  },
+  {
+    "id": "4340b3e94544629e",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "g": "4fde94f155fcc705",
+    "name": "",
+    "roomId": "",
+    "acceptOwnEvents": false,
+    "acceptText": false,
+    "acceptEmotes": false,
+    "acceptNotices": false,
+    "acceptStickers": false,
+    "acceptReactions": false,
+    "acceptFiles": false,
+    "acceptAudio": false,
+    "acceptImages": false,
+    "acceptVideos": false,
+    "acceptLocations": false,
+    "acceptMembership": true,
+    "acceptState": false,
+    "acceptRedactions": false,
+    "acceptOther": false,
+    "otherEventTypes": "",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "a265749ae30caeba"
+      ]
+    ]
+  },
+  {
+    "id": "a265749ae30caeba",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "g": "4fde94f155fcc705",
+    "name": "someone joined",
+    "property": "membershipChange",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "join",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 396,
+    "y": 140,
+    "wires": [
+      [
+        "946d9be354595283"
+      ]
+    ]
+  },
+  {
+    "id": "946d9be354595283",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "g": "4fde94f155fcc705",
+    "name": "welcome message",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "\"Welcome, \" & (displayName ? displayName : targetUserId) & \"!\"",
+        "tot": "jsonata"
+      },
+      {
+        "t": "set",
+        "p": "mentionUsers",
+        "pt": "msg",
+        "to": "targetUserId",
+        "tot": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 616,
+    "y": 140,
+    "wires": [
+      [
+        "3ae4d4c2ff28cfe3"
+      ]
+    ]
+  },
+  {
+    "id": "3ae4d4c2ff28cfe3",
+    "type": "matrix-send-message",
+    "z": "f025a8b9fbd1b054",
+    "g": "4fde94f155fcc705",
+    "name": "",
+    "roomId": null,
+    "message": null,
+    "messageType": "m.text",
+    "messageFormat": "",
+    "replaceMessage": false,
+    "threadReplyType": "msg",
+    "threadReplyValue": "isThread",
+    "replyToType": "msg",
+    "replyToValue": "replyTo",
+    "notifyReplySender": true,
+    "mentionUsersType": "msg",
+    "mentionUsersValue": "mentionUsers",
+    "mentionRoomType": "msg",
+    "mentionRoomValue": "mentionRoom",
+    "x": 828,
+    "y": 140,
+    "wires": [
+      [
+        "29bb5e859c440bc7"
+      ],
+      [
+        "f57b060d34ce1516"
+      ]
+    ]
+  },
+  {
+    "id": "29bb5e859c440bc7",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "4fde94f155fcc705",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1004,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "f57b060d34ce1516",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "4fde94f155fcc705",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1004,
+    "y": 165,
+    "wires": []
+  }
+]

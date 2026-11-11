@@ -1,0 +1,106 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-alias',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            action: { value: "resolve" },
+            alias: { value: null },
+            roomId: { value: null }
+        },
+        label: function() {
+            if (this.name) return this.name;
+            var labels = { resolve: "Resolve Alias", create: "Create Alias", delete: "Delete Alias", list: "List Aliases" };
+            return labels[this.action] || "Room Alias";
+        },
+        paletteLabel: 'Room Alias',
+        oneditprepare: function() {
+            $("#node-input-action").on("change", function() {
+                var action = $(this).val();
+                $(".matrix-alias-alias-row").toggle(action !== "list");
+                $(".matrix-alias-room-row").toggle(action === "create" || action === "list" || action === "msg.action");
+            }).trigger("change");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-alias">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-cog"></i> Action</label>
+        <select id="node-input-action">
+            <option value="resolve">Resolve alias to room ID</option>
+            <option value="create">Create alias for a room</option>
+            <option value="delete">Delete alias</option>
+            <option value="list">List a room's local aliases</option>
+            <option value="msg.action">From msg.action</option>
+        </select>
+    </div>
+    <div class="form-row matrix-alias-alias-row">
+        <label for="node-input-alias"><i class="fa fa-hashtag"></i> Alias</label>
+        <input type="text" id="node-input-alias" placeholder="msg.alias, e.g. #room:example.org">
+    </div>
+    <div class="form-row matrix-alias-room-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-alias">
+    <h3>Details</h3>
+    <p>
+        Works with room aliases (addresses like <code>#support:example.org</code>): look up the room an alias points to,
+        add or remove an alias, or list the aliases a room has on the bot's homeserver.
+    </p>
+    <p>
+        Creating an alias does not make it the room's main address; set <code>m.room.canonical_alias</code> with the Room
+        State Events node for that. Deleting an alias needs the bot to have created it, or permission to change the
+        room's canonical alias.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#room-aliases" target="_blank">Matrix specification: room aliases</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.alias <span class="property-type">string</span></dt>
+        <dd> the alias to resolve, create or delete, for example <code>#support:example.org</code>. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.topic <span class="property-type">string</span></dt>
+        <dd> the room to create the alias for, or to list aliases of. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.action <span class="property-type">string</span></dt>
+        <dd> <code>resolve</code>, <code>create</code>, <code>delete</code> or <code>list</code>. Only used when the node is set to <i>From msg.action</i>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">object | array</span></dt>
+                <dd>
+                    <b>resolve</b>: <code>{ alias, roomId, servers }</code>, and <code>msg.topic</code> is set to the room ID so the msg can go straight to a Join Room or Send Message node.<br>
+                    <b>create</b>: <code>{ alias, roomId }</code><br>
+                    <b>delete</b>: <code>{ alias }</code><br>
+                    <b>list</b>: an array of aliases.
+                </dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred, for example when the alias does not exist or is already taken.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

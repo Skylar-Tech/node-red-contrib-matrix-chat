@@ -1,0 +1,76 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-ignore-users',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            action: { value: "get" }
+        },
+        label: function() {
+            if (this.name) return this.name;
+            var labels = { get: "Ignored Users", ignore: "Ignore User", unignore: "Unignore User" };
+            return labels[this.action] || "Ignore Users";
+        },
+        paletteLabel: 'Ignore Users'
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-ignore-users">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-cog"></i> Action</label>
+        <select id="node-input-action">
+            <option value="get">List ignored users</option>
+            <option value="ignore">Ignore user(s)</option>
+            <option value="unignore">Stop ignoring user(s)</option>
+            <option value="msg.action">From msg.action</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-ignore-users">
+    <h3>Details</h3>
+    <p>
+        Lists, adds to or removes from the bot's ignore list. The homeserver stops sending the bot messages and
+        invites from ignored users, in every room, so Receive nodes never see them. This is a quick way to stop
+        a bot answering someone who abuses it.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#ignoring-users" target="_blank">Matrix specification: ignoring users</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg.userId <span class="property-type">string | array</span></dt>
+        <dd> <b>ignore, unignore</b>: the user ID, or an array of user IDs. A Receive node sets this to the sender.</dd>
+
+        <dt class="optional">msg.action <span class="property-type">string</span></dt>
+        <dd> <code>get</code>, <code>ignore</code> or <code>unignore</code>. Only used when the node is set to <i>From msg.action</i>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">array</span></dt>
+                <dd>the user IDs on the ignore list after the change.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

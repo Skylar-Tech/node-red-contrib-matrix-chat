@@ -1,0 +1,113 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matrix-room-directory',{
+        category: 'matrix',
+        color: '#00b7ca',
+        icon: "matrix.png",
+        outputLabels: ["success", "error"],
+        inputs:1,
+        outputs:2,
+        defaults: {
+            name: { value: null },
+            server: { type: "matrix-server-config" },
+            action: { value: "search" },
+            roomId: { value: null },
+            limit: { value: 20, validate: RED.validators.number(true) }
+        },
+        label: function() {
+            if (this.name) return this.name;
+            var labels = { search: "Search Directory", visibility: "Directory Visibility", publish: "Publish Room", unpublish: "Unpublish Room" };
+            return labels[this.action] || "Room Directory";
+        },
+        paletteLabel: 'Room Directory',
+        oneditprepare: function() {
+            $("#node-input-action").on("change", function() {
+                var action = $(this).val();
+                $(".matrix-directory-limit-row").toggle(action === "search" || action === "msg.action");
+                $(".matrix-directory-room-row").toggle(action !== "search");
+            }).trigger("change");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matrix-room-directory">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-user"></i> Matrix Server Config</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-cog"></i> Action</label>
+        <select id="node-input-action">
+            <option value="search">Search public rooms</option>
+            <option value="visibility">Get a room's visibility</option>
+            <option value="publish">Publish a room</option>
+            <option value="unpublish">Unpublish a room</option>
+            <option value="msg.action">From msg.action</option>
+        </select>
+    </div>
+    <div class="form-row matrix-directory-limit-row">
+        <label for="node-input-limit"><i class="fa fa-list-ol"></i> Limit</label>
+        <input type="text" id="node-input-limit" placeholder="20">
+    </div>
+    <div class="form-row matrix-directory-room-row">
+        <label for="node-input-roomId"><i class="fa fa-comments"></i> Room ID</label>
+        <input type="text" id="node-input-roomId" placeholder="msg.topic">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="matrix-room-directory">
+    <h3>Details</h3>
+    <p>
+        Searches a homeserver's public room directory, or controls whether a room is listed in the bot's homeserver
+        directory. Publishing usually needs the bot to be a room moderator, and some servers only let admins publish.
+    </p>
+    <a href="https://spec.matrix.org/latest/client-server-api/#listing-rooms" target="_blank">Matrix specification: listing rooms</a>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt class="optional">msg.payload <span class="property-type">string</span></dt>
+        <dd> <b>search</b>: text to search room names, topics and aliases for. Anything that is not a string lists all rooms.</dd>
+
+        <dt class="optional">msg.since <span class="property-type">string</span></dt>
+        <dd> <b>search</b>: <code>msg.nextBatch</code> from a previous search, to get the next page.</dd>
+
+        <dt class="optional">msg.server <span class="property-type">string</span></dt>
+        <dd> <b>search</b>: another homeserver's directory to search, for example <code>matrix.org</code>.</dd>
+
+        <dt class="optional">msg.limit <span class="property-type">number</span></dt>
+        <dd> <b>search</b>: how many rooms to return. Overrides the node's limit.</dd>
+
+        <dt class="optional">msg.topic <span class="property-type">string</span></dt>
+        <dd> <b>visibility, publish, unpublish</b>: the room. Ignored if configured on the node.</dd>
+
+        <dt class="optional">msg.action <span class="property-type">string</span></dt>
+        <dd> <code>search</code>, <code>visibility</code>, <code>publish</code> or <code>unpublish</code>. Only used when the node is set to <i>From msg.action</i>.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Success
+            <dl class="message-properties">
+                <dt>msg.payload <span class="property-type">array | string</span></dt>
+                <dd>
+                    <b>search</b>: an array of rooms as the server returns them (<code>room_id</code>, <code>name</code>, <code>topic</code>,
+                    <code>canonical_alias</code>, <code>num_joined_members</code>, <code>join_rule</code>, <code>room_type</code> and so on).<br>
+                    <b>visibility, publish, unpublish</b>: <code>"public"</code> (listed) or <code>"private"</code> (not listed).
+                </dd>
+                <dt>msg.nextBatch <span class="property-type">string | null</span></dt>
+                <dd><b>search</b>: pass back as <code>msg.since</code> to get the next page, or <code>null</code> on the last page.</dd>
+                <dt>msg.totalRoomCountEstimate <span class="property-type">number | null</span></dt>
+                <dd><b>search</b>: the server's estimate of how many rooms match.</dd>
+            </dl>
+        </li>
+        <li>Error
+            <dl class="message-properties">
+                <dt>msg.error <span class="property-type">string</span></dt>
+                <dd>the error that occurred.</dd>
+            </dl>
+        </li>
+    </ol>
+</script>

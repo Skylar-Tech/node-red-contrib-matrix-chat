@@ -15,15 +15,7 @@ const {
     snapshotCryptoStore,
     patchLocalStorageCryptoStoreForRustMigration,
 } = require('./matrix-crypto-store');
-require("abort-controller/polyfill"); // polyfill abort-controller if we don't have it
-if (!globalThis.fetch) {
-    // polyfill fetch if we don't have it
-    if (!globalThis.fetch) {
-        import('node-fetch').then(({ default: fetch, Headers, Request, Response }) => {
-            Object.assign(globalThis, { fetch, Headers, Request, Response })
-        })
-    }
-}
+const oauthLogin = require('./matrix-oauth');
 
 /**
  * Resolve the real homeserver base URL for a configured server name / URL.
@@ -221,6 +213,10 @@ module.exports = function(RED) {
         // account gets its own IndexedDB name prefix and on-disk snapshot so
         // multiple server-config nodes never collide.
         let cryptoDbPrefix = 'mxjssdk-' + MatrixFolderNameFromUserId(this.userId),
+            // The SDK names this account's databases "<prefix>::matrix-sdk-crypto"
+            // and "<prefix>::matrix-sdk-crypto-meta". Match on the separator too,
+            // otherwise "@bot:example.co" would also pick up "@bot:example.com".
+            cryptoDbNamePrefix = cryptoDbPrefix + '::',
             cryptoSnapshotPath = null,
             cryptoSnapshotInterval = null,
             // Set once the encryption data has been cleared via the admin
@@ -314,7 +310,7 @@ module.exports = function(RED) {
                     return;
                 }
                 try {
-                    await snapshotCryptoStore(cryptoSnapshotPath, cryptoDbPrefix);
+                    await snapshotCryptoStore(cryptoSnapshotPath, cryptoDbNamePrefix);
                 } catch(e) {
                     node.error("Failed to persist Matrix crypto store: " + e);
                 }
@@ -351,7 +347,7 @@ module.exports = function(RED) {
                     if(globalThis.indexedDB && typeof indexedDB.databases === 'function') {
                         let dbs = await indexedDB.databases();
                         for(let db of dbs) {
-                            if(db.name && db.name.indexOf(cryptoDbPrefix) === 0) {
+                            if(db.name && db.name.indexOf(cryptoDbNamePrefix) === 0) {
                                 // Wait for the delete to actually finish. While
                                 // a connection is open the request only fires
                                 // "blocked" and completes once it closes, so
@@ -671,9 +667,16 @@ module.exports = function(RED) {
                     node.log(`Discovered homeserver ${baseUrl} for ${node.url} via .well-known`);
                 }
 
+                // A login through the homeserver's OAuth service comes with a
+                // refresh token: the SDK renews the short-lived access token
+                // itself and we keep the renewed tokens across restarts.
+                const tokens = oauthLogin.loadTokens(localStorage, node.credentials);
+                if(tokens.restored) {
+                    node.debug("Using the access token saved after the last token refresh");
+                }
                 let clientOpts = {
                     baseUrl: baseUrl,
-                    accessToken: node.credentials.accessToken,
+                    accessToken: tokens.accessToken,
                     store: new MemoryStore({
                         localStorage: localStorage,
                     }),
@@ -698,6 +701,20 @@ module.exports = function(RED) {
                         },
                     },
                 };
+                if(tokens.refreshToken && node.credentials.oauthClientId) {
+                    clientOpts.refreshToken = tokens.refreshToken;
+                    clientOpts.oauthClientId = node.credentials.oauthClientId;
+                    let currentRefreshToken = tokens.refreshToken;
+                    clientOpts.onTokenRefresh = function(newTokens) {
+                        try {
+                            oauthLogin.saveTokens(localStorage, node.credentials, newTokens, currentRefreshToken);
+                            currentRefreshToken = newTokens.refreshToken || currentRefreshToken;
+                            node.debug("Access token refreshed");
+                        } catch(e) {
+                            node.warn("Could not save the refreshed access token: " + e);
+                        }
+                    };
+                }
                 if(node.e2ee) {
                     // Provide the legacy (pre-v37 libolm) crypto store so that
                     // initRustCrypto() can perform a one-time migration of any
@@ -992,7 +1009,7 @@ module.exports = function(RED) {
                                 node.warn(`Device ID changed (${storedDeviceId} -> ${effectiveDeviceId}); discarding the encryption store from the old device.`);
                                 await discardCryptoStore();
                             } else {
-                                await restoreCryptoStore(cryptoSnapshotPath);
+                                await restoreCryptoStore(cryptoSnapshotPath, cryptoDbNamePrefix);
                             }
                             try {
                                 await node.matrixClient.initRustCrypto({
@@ -1109,12 +1126,43 @@ module.exports = function(RED) {
         credentials: {
             deviceLabel: { type: "text", required: false },
             userId: { type: "text", required: true },
-            accessToken: { type: "text", required: true },
+            accessToken: { type: "password", required: true },
             deviceId: { type: "text", required: false },
             url: { type: "text", required: true },
-            password: { type: "password", required: false }
+            password: { type: "password", required: false },
+            // set by "Log in with OAuth"
+            refreshToken: { type: "password", required: false },
+            oauthClientId: { type: "text", required: false }
         }
     });
+
+    // OAuth device login for the config editor: start shows the code to enter
+    // in a browser, poll returns the tokens once the user has approved it.
+    RED.httpAdmin.post(
+        "/matrix-chat/oauth/start",
+        RED.auth.needsPermission('flows.write'),
+        async function(req, res) {
+            try {
+                const sdk = await sdkPromise;
+                if(!req.body.baseUrl) {
+                    res.json({ result: 'error', message: 'Enter the Server URL first.' });
+                    return;
+                }
+                const baseUrl = await resolveHomeserverUrl(sdk, req.body.baseUrl);
+                const started = await oauthLogin.startDeviceLogin(sdk, baseUrl, req.body.displayName || "Node-RED");
+                res.json({ result: 'ok', ...started });
+            } catch(e) {
+                res.json({ result: 'error', message: loginErrorMessage(e) });
+            }
+        });
+
+    RED.httpAdmin.post(
+        "/matrix-chat/oauth/poll",
+        RED.auth.needsPermission('flows.write'),
+        function(req, res) {
+            const state = oauthLogin.pollDeviceLogin(String(req.body.id || ''));
+            res.json({ result: 'ok', ...state });
+        });
 
     RED.httpAdmin.post(
         "/matrix-chat/login",
@@ -1158,17 +1206,33 @@ module.exports = function(RED) {
                         function(err) {
                             res.json({
                                 'result': 'error',
-                                'message': err
+                                'message': loginErrorMessage(err)
                             });
                         }
                     );
             } catch(err) {
                 res.json({
                     'result': 'error',
-                    'message': err
+                    'message': loginErrorMessage(err)
                 });
             }
         });
+
+    // Readable text for a failed login. Serializing the error object itself
+    // gave "{}" for network errors, which have no enumerable fields.
+    function loginErrorMessage(err) {
+        if(!err) {
+            return 'Unknown error';
+        }
+        const serverError = err.data && err.data.error;
+        if(serverError) {
+            return err.errcode ? `${serverError} (${err.errcode})` : serverError;
+        }
+        if(err.name === 'ConnectionError') {
+            return 'Could not reach the homeserver. Check the server URL and that Node-RED can connect to it.';
+        }
+        return err.message || String(err);
+    }
 
     /**
      * Interactive Secure Secret Storage (4S) / cross-signing setup for the

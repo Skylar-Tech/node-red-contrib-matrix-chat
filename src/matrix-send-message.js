@@ -1,5 +1,6 @@
 const sdkPromise = import("matrix-js-sdk");
 const { Markdown } = require("./matrix-markdown");
+const { resolveReplyTarget, normaliseUserIds, applyReplyAndMentions } = require("./matrix-reply-mentions");
 
 module.exports = function(RED) {
     function MatrixSendImage(n) {
@@ -15,6 +16,15 @@ module.exports = function(RED) {
         this.message = n.message;
         this.threadReplyType = n.threadReplyType || null;
         this.threadReplyValue = n.threadReplyValue || null;
+        // Nodes saved before replies/mentions existed have none of these set,
+        // which leaves their messages unchanged.
+        this.replyToType = n.replyToType || null;
+        this.replyToValue = n.replyToValue || null;
+        this.mentionUsersType = n.mentionUsersType || null;
+        this.mentionUsersValue = n.mentionUsersValue || null;
+        this.mentionRoomType = n.mentionRoomType || null;
+        this.mentionRoomValue = n.mentionRoomValue || null;
+        this.notifyReplySender = n.notifyReplySender !== false;
 
         // taken from https://github.com/matrix-org/synapse/blob/master/synapse/push/mailer.py
         this.allowedTags = [
@@ -110,7 +120,17 @@ module.exports = function(RED) {
 
             let msgType = node.messageType,
                 msgFormat = node.messageFormat,
-                threadReply = getToValue(msg, node.threadReplyType, node.threadReplyValue);
+                threadReply = getToValue(msg, node.threadReplyType, node.threadReplyValue),
+                replyTo = node.replyToType ? resolveReplyTarget(getToValue(msg, node.replyToType, node.replyToValue), msg) : null,
+                mentionRoom = node.mentionRoomType ? getToValue(msg, node.mentionRoomType, node.mentionRoomValue) : false,
+                mentionUsers;
+            try {
+                mentionUsers = node.mentionUsersType ? normaliseUserIds(getToValue(msg, node.mentionUsersType, node.mentionUsersValue)) : [];
+            } catch(e) {
+                sendError(e.message, msg);
+                return;
+            }
+            mentionRoom = mentionRoom === true || mentionRoom === 'true';
 
             if (!node.server || !node.server.matrixClient) {
                 sendError("No matrix server selected", msg);
@@ -134,9 +154,11 @@ module.exports = function(RED) {
                 return;
             }
 
-            let content = null;
+            let content = null,
+                isEdit = false;
             if (typeof payload === 'object') {
-                content = payload;
+                // a copy, so adding a reply or mentions never changes msg.payload
+                content = RED.util.cloneMessage(payload);
             } else {
                 if (msgType === 'msg.type') {
                     if (!msg.type) {
@@ -207,6 +229,7 @@ module.exports = function(RED) {
                         event_id: msg.eventId
                     };
                     content['body'] = ' * ' + content['body'];
+                    isEdit = true;
                 } else if (threadReply) {
                     // If incoming message is a reply to a thread we fetch the thread parent from m.relates_to,
                     // otherwise fallback to msg.eventId.
@@ -227,6 +250,18 @@ module.exports = function(RED) {
                     }
                 }
             }
+
+            await applyReplyAndMentions({
+                client: node.server.matrixClient,
+                roomId: msg.topic,
+                content: content,
+                msg: msg,
+                replyTo: replyTo,
+                mentionUsers: mentionUsers,
+                mentionRoom: mentionRoom,
+                notifyReplySender: node.notifyReplySender,
+                isEdit: isEdit,
+            });
 
             try {
                 let e = await node.server.matrixClient.sendMessage(msg.topic, content);

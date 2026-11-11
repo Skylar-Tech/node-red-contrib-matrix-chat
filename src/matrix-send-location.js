@@ -2,6 +2,7 @@
 // deep-import the content-helpers module.  The SDK has no `exports` field in
 // its package.json (verified against v41) so subpath imports are stable.
 const contentHelpersPromise = import("matrix-js-sdk/lib/content-helpers.js");
+const { resolveReplyTarget, normaliseUserIds, applyReplyAndMentions } = require("./matrix-reply-mentions");
 
 module.exports = function(RED) {
     const VALID_ASSET_TYPES = ["m.self", "m.pin"];
@@ -39,7 +40,13 @@ module.exports = function(RED) {
             assetType:   typedSetting(n.assetTypeType,   n.assetTypeValue,   "assetType"),
             timestamp:   typedSetting(n.timestampType,   n.timestampValue,   "timestamp"),
             text:        typedSetting(n.textType,        n.textValue,        "payload"),
+            // Older configs have none of these; msg.replyTo / msg.mentionUsers /
+            // msg.mentionRoom are unset in their flows, so nothing changes.
+            replyTo:      typedSetting(n.replyToType,      n.replyToValue,      "replyTo"),
+            mentionUsers: typedSetting(n.mentionUsersType, n.mentionUsersValue, "mentionUsers"),
+            mentionRoom:  typedSetting(n.mentionRoomType,  n.mentionRoomValue,  "mentionRoom"),
         };
+        this.notifyReplySender = n.notifyReplySender !== false;
         this.latitudeType     = settings.latitude.type;
         this.latitudeValue    = settings.latitude.value;
         this.longitudeType    = settings.longitude.type;
@@ -135,7 +142,7 @@ module.exports = function(RED) {
 
             // Resolve every typed input up-front so a single bad config or
             // flow/global lookup surfaces as one clear error.
-            let rawLat, rawLng, rawAlt, rawGeoUri, description, assetType, rawTimestamp, text;
+            let rawLat, rawLng, rawAlt, rawGeoUri, description, assetType, rawTimestamp, text, replyTo, mentionUsers, mentionRoom;
             try {
                 rawLat       = getToValue(msg, node.latitudeType,     node.latitudeValue);
                 rawLng       = getToValue(msg, node.longitudeType,    node.longitudeValue);
@@ -145,7 +152,12 @@ module.exports = function(RED) {
                 assetType    = getToValue(msg, node.assetTypeType,    node.assetTypeValue);
                 rawTimestamp = getToValue(msg, node.timestampType,    node.timestampValue);
                 text         = getToValue(msg, node.textType,         node.textValue);
+                replyTo      = resolveReplyTarget(getToValue(msg, settings.replyTo.type, settings.replyTo.value), msg);
+                mentionUsers = normaliseUserIds(getToValue(msg, settings.mentionUsers.type, settings.mentionUsers.value));
+                mentionRoom  = getToValue(msg, settings.mentionRoom.type, settings.mentionRoom.value);
+                mentionRoom  = mentionRoom === true || mentionRoom === "true";
             } catch (e) {
+                msg.error = e.message;
                 node.error(e.message, msg);
                 node.send([null, msg]);
                 return;
@@ -164,12 +176,14 @@ module.exports = function(RED) {
                     return;
                 }
                 if (lat < -90 || lat > 90) {
-                    node.error("Latitude (" + lat + ") is out of range; must be between -90 and 90", msg);
+                    msg.error = "Latitude (" + lat + ") is out of range; must be between -90 and 90";
+                    node.error(msg.error, msg);
                     node.send([null, msg]);
                     return;
                 }
                 if (lng < -180 || lng > 180) {
-                    node.error("Longitude (" + lng + ") is out of range; must be between -180 and 180", msg);
+                    msg.error = "Longitude (" + lng + ") is out of range; must be between -180 and 180";
+                    node.error(msg.error, msg);
                     node.send([null, msg]);
                     return;
                 }
@@ -191,7 +205,8 @@ module.exports = function(RED) {
                 assetType = "m.self";
             }
             if (VALID_ASSET_TYPES.indexOf(assetType) === -1) {
-                node.error('Invalid asset type "' + assetType + '"; must be "m.self" or "m.pin"', msg);
+                msg.error = 'Invalid asset type "' + assetType + '"; must be "m.self" or "m.pin"';
+                node.error(msg.error, msg);
                 node.send([null, msg]);
                 return;
             }
@@ -212,6 +227,16 @@ module.exports = function(RED) {
             try {
                 const { makeLocationContent } = await contentHelpersPromise;
                 const content = makeLocationContent(cleanText, geoUri, timestamp, cleanDescription, assetType);
+                await applyReplyAndMentions({
+                    client: node.server.matrixClient,
+                    roomId: msg.topic,
+                    content: content,
+                    msg: msg,
+                    replyTo: replyTo,
+                    mentionUsers: mentionUsers,
+                    mentionRoom: mentionRoom,
+                    notifyReplySender: node.notifyReplySender,
+                });
                 const response = await node.server.matrixClient.sendMessage(msg.topic, content);
                 msg.eventId = response.event_id;
                 msg.payload = content;

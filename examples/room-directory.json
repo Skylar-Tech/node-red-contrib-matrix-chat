@@ -1,0 +1,276 @@
+[
+  {
+    "id": "032bf7eac22666b7",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Search public rooms",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "2076af3e3aa1efc4",
+      "f3a81da3a0d4333c",
+      "1aadc9e6de06a434",
+      "6edff9309a32a8fc",
+      "ad66b7f7c9245bdc"
+    ],
+    "x": 54,
+    "y": 74,
+    "w": 826,
+    "h": 132
+  },
+  {
+    "id": "094d984ecb4019ea",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "List a room in the directory, or remove it",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "1b790c4bb7b5294c",
+      "5eb834eda1879171",
+      "688af8f89755b220",
+      "a9b643b7bcc19110",
+      "7ed14bc4c0e9f090",
+      "7e7e6263afac832d"
+    ],
+    "x": 54,
+    "y": 254,
+    "w": 621,
+    "h": 132
+  },
+  {
+    "id": "2076af3e3aa1efc4",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "032bf7eac22666b7",
+    "name": "search \"gaming\"",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "gaming",
+    "payloadType": "str",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "f3a81da3a0d4333c"
+      ]
+    ]
+  },
+  {
+    "id": "f3a81da3a0d4333c",
+    "type": "matrix-room-directory",
+    "z": "f025a8b9fbd1b054",
+    "g": "032bf7eac22666b7",
+    "name": "",
+    "action": "search",
+    "roomId": null,
+    "limit": 20,
+    "x": 408,
+    "y": 140,
+    "wires": [
+      [
+        "1aadc9e6de06a434"
+      ],
+      [
+        "6edff9309a32a8fc"
+      ]
+    ]
+  },
+  {
+    "id": "1aadc9e6de06a434",
+    "type": "function",
+    "z": "f025a8b9fbd1b054",
+    "g": "032bf7eac22666b7",
+    "name": "room names",
+    "func": "msg.payload = msg.payload.map(r => `${r.name || r.room_id} (${r.num_joined_members} members)`);\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 616,
+    "y": 115,
+    "wires": [
+      [
+        "ad66b7f7c9245bdc"
+      ]
+    ]
+  },
+  {
+    "id": "ad66b7f7c9245bdc",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "032bf7eac22666b7",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 784,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "6edff9309a32a8fc",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "032bf7eac22666b7",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 616,
+    "y": 165,
+    "wires": []
+  },
+  {
+    "id": "1b790c4bb7b5294c",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "094d984ecb4019ea",
+    "name": "publish room",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 295,
+    "wires": [
+      [
+        "688af8f89755b220"
+      ]
+    ]
+  },
+  {
+    "id": "688af8f89755b220",
+    "type": "matrix-room-directory",
+    "z": "f025a8b9fbd1b054",
+    "g": "094d984ecb4019ea",
+    "name": "",
+    "action": "publish",
+    "roomId": null,
+    "limit": 20,
+    "x": 396,
+    "y": 295,
+    "wires": [
+      [
+        "7ed14bc4c0e9f090"
+      ],
+      [
+        "7e7e6263afac832d"
+      ]
+    ]
+  },
+  {
+    "id": "5eb834eda1879171",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "094d984ecb4019ea",
+    "name": "unpublish room",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "!example:test.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 345,
+    "wires": [
+      [
+        "a9b643b7bcc19110"
+      ]
+    ]
+  },
+  {
+    "id": "a9b643b7bcc19110",
+    "type": "matrix-room-directory",
+    "z": "f025a8b9fbd1b054",
+    "g": "094d984ecb4019ea",
+    "name": "",
+    "action": "unpublish",
+    "roomId": null,
+    "limit": 20,
+    "x": 396,
+    "y": 345,
+    "wires": [
+      [
+        "7ed14bc4c0e9f090"
+      ],
+      [
+        "7e7e6263afac832d"
+      ]
+    ]
+  },
+  {
+    "id": "7ed14bc4c0e9f090",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "094d984ecb4019ea",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 579,
+    "y": 295,
+    "wires": []
+  },
+  {
+    "id": "7e7e6263afac832d",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "094d984ecb4019ea",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 579,
+    "y": 345,
+    "wires": []
+  }
+]

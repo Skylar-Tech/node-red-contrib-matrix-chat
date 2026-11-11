@@ -1,4 +1,4 @@
-const crypto = require("isomorphic-webcrypto");
+const crypto = require("crypto").webcrypto;
 const ffmpeg = require('fluent-ffmpeg');
 const sharp = require('sharp');
 const { imageSize } = require('image-size');
@@ -49,7 +49,7 @@ module.exports = function(RED) {
                     }
                 }
             } catch (error) {
-                node.error(`Error detecting file type for ${filename}: ${error.message}`, msg);
+                node.warn(`Error detecting file type for ${filename}: ${error.message}`);
             }
             return null;
         }
@@ -204,8 +204,7 @@ module.exports = function(RED) {
                         tempFile = tmpObj.name;
                         return tmpObj.name;
                     } catch (error) {
-                        node.error(`Error creating temp file: ${error.message}`, msg);
-                        throw error;
+                        throw new Error(`Error creating temp file: ${error.message}`);
                     }
                 }
 
@@ -214,7 +213,7 @@ module.exports = function(RED) {
                     try {
                         fs.rmSync(tempFile);
                     } catch (error) {
-                        node.error(`Error deleting temp file: ${error.message}`, msg);
+                        node.warn(`Error deleting temp file: ${error.message}`);
                     }
                 }
 
@@ -227,8 +226,7 @@ module.exports = function(RED) {
 
                         return fs.statSync(bufferOrPath).size;
                     } catch (error) {
-                        node.error(`Error getting file size: ${error.message}`, msg);
-                        throw error;
+                        throw new Error(`Error getting file size: ${error.message}`);
                     }
                 }
 
@@ -258,7 +256,7 @@ module.exports = function(RED) {
                             msg.payload.info.thumbnail_url = uploadedThumbnail.content_uri;
                         }
                     } catch (error) {
-                        node.error(`Error adding thumbnail: ${error.message}`, msg);
+                        node.warn(`Error adding thumbnail: ${error.message}`);
                     }
                 }
 
@@ -266,10 +264,9 @@ module.exports = function(RED) {
                     try {
                         // always PNG (it is uploaded as image/png), never upscaled
                         let input = Buffer.isBuffer(bufferOrPath) ? bufferOrPath : fs.readFileSync(bufferOrPath);
-                        return sharp(input).resize({width: 320, withoutEnlargement: true}).png().toBuffer();
+                        return await sharp(input).resize({width: 320, withoutEnlargement: true}).png().toBuffer();
                     } catch (error) {
-                        node.error(`Error creating image thumbnail: ${error.message}`, msg);
-                        throw error;
+                        throw new Error(`Error creating image thumbnail: ${error.message}`);
                     }
                 }
 
@@ -354,7 +351,7 @@ module.exports = function(RED) {
                             await addThumbnail(thumbnailBuffer, encryptedThumbnail);
                         }
                     } catch (e) {
-                        node.error("thumbnail error: " + e, msg);
+                        node.warn("thumbnail error: " + e);
                     }
                 } else if (msgtype === 'm.audio' && detectedFileType) {
                     try {
@@ -369,7 +366,7 @@ module.exports = function(RED) {
                             msg.payload.info.duration = duration;
                         }
                     } catch (e) {
-                        node.error(e, msg);
+                        node.warn("ffprobe error: " + e);
                     }
                     deleteTempFile();
                 } else if (msgtype === 'm.video' && detectedFileType) {
@@ -390,14 +387,14 @@ module.exports = function(RED) {
                             msg.payload.info.h = videoStream.height;
                         }
                     } catch (e) {
-                        node.error("ffprobe error: " + e, msg);
+                        node.warn("ffprobe error: " + e);
                     }
 
                     if (generateThumbnails) {
                         try {
                             await _ffmpegVideoThumbnail(filepath);
                         } catch (e) {
-                            node.error("Screenshot generation error: " + e, msg);
+                            node.warn("Screenshot generation error: " + e);
                         }
                     }
                     deleteTempFile();

@@ -10,6 +10,9 @@ module.exports = function(RED) {
         this.roomValue = n.roomValue;
         this.eventIdType = n.eventIdType;
         this.eventIdValue = n.eventIdValue;
+        // Older nodes have neither, which keeps the public, whole-room receipt.
+        this.receiptType = n.receiptType === "m.read.private" ? "m.read.private" : "m.read";
+        this.threaded = n.threaded === true;
 
         node.status({ fill: "red", shape: "ring", text: "disconnected" });
 
@@ -84,7 +87,19 @@ module.exports = function(RED) {
                     event = new MatrixEvent(raw);
                 }
 
-                await node.server.matrixClient.sendReceipt(event, "m.read");
+                if (node.threaded) {
+                    // A threaded receipt only marks the event's own thread (or
+                    // the main timeline) as read. The client runs without
+                    // thread support, so work out the thread from the event.
+                    // https://spec.matrix.org/latest/client-server-api/#threaded-read-receipts
+                    const relation = event.getContent()["m.relates_to"];
+                    const threadId = (relation && relation.rel_type === "m.thread" && relation.event_id) ? relation.event_id : "main";
+                    const path = `/rooms/${encodeURIComponent(roomId)}/receipt/${encodeURIComponent(node.receiptType)}/${encodeURIComponent(eventId)}`;
+                    await node.server.matrixClient.http.authedRequest("POST", path, undefined, { thread_id: threadId });
+                    msg.threadId = threadId;
+                } else {
+                    await node.server.matrixClient.sendReceipt(event, node.receiptType);
+                }
                 node.send([msg, null]);
             } catch (e) {
                 msg.error = `Mark read error: ${e}`;

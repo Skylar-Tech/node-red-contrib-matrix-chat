@@ -1,0 +1,273 @@
+[
+  {
+    "id": "65cc34fc137dc8a3",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Ask to join a room",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "a0fb3e045ff9e135",
+      "f76fd41dca212e9a",
+      "5ea9f4df9cb02e51",
+      "592c154ce3126567"
+    ],
+    "x": 54,
+    "y": 74,
+    "w": 602,
+    "h": 132
+  },
+  {
+    "id": "331ab89a9e31fab2",
+    "type": "group",
+    "z": "f025a8b9fbd1b054",
+    "name": "Let in everyone who knocks",
+    "style": {
+      "label": true
+    },
+    "nodes": [
+      "24081a8d449ad44f",
+      "8c5ff45f92eb007c",
+      "174b5084fcdd3c94",
+      "eb9ff6d99985b1b2",
+      "36cb7f49aaecff57",
+      "33262fd79408166e"
+    ],
+    "x": 74,
+    "y": 234,
+    "w": 1071,
+    "h": 132
+  },
+  {
+    "id": "a0fb3e045ff9e135",
+    "type": "inject",
+    "z": "f025a8b9fbd1b054",
+    "g": "65cc34fc137dc8a3",
+    "name": "knock on #private",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      },
+      {
+        "p": "reason",
+        "v": "Hi, I'm the support bot",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "#private:example.org",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "f76fd41dca212e9a"
+      ]
+    ]
+  },
+  {
+    "id": "f76fd41dca212e9a",
+    "type": "matrix-knock-room",
+    "z": "f025a8b9fbd1b054",
+    "g": "65cc34fc137dc8a3",
+    "name": "",
+    "roomId": null,
+    "reason": null,
+    "x": 392,
+    "y": 140,
+    "wires": [
+      [
+        "5ea9f4df9cb02e51"
+      ],
+      [
+        "592c154ce3126567"
+      ]
+    ]
+  },
+  {
+    "id": "5ea9f4df9cb02e51",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "65cc34fc137dc8a3",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 560,
+    "y": 115,
+    "wires": []
+  },
+  {
+    "id": "592c154ce3126567",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "65cc34fc137dc8a3",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 560,
+    "y": 165,
+    "wires": []
+  },
+  {
+    "id": "24081a8d449ad44f",
+    "type": "matrix-receive",
+    "z": "f025a8b9fbd1b054",
+    "g": "331ab89a9e31fab2",
+    "name": "",
+    "roomId": "",
+    "acceptOwnEvents": false,
+    "acceptText": false,
+    "acceptEmotes": false,
+    "acceptNotices": false,
+    "acceptStickers": false,
+    "acceptReactions": false,
+    "acceptFiles": false,
+    "acceptAudio": false,
+    "acceptImages": false,
+    "acceptVideos": false,
+    "acceptLocations": false,
+    "acceptMembership": true,
+    "acceptState": false,
+    "acceptRedactions": false,
+    "acceptOther": false,
+    "otherEventTypes": "",
+    "x": 180,
+    "y": 300,
+    "wires": [
+      [
+        "8c5ff45f92eb007c"
+      ]
+    ]
+  },
+  {
+    "id": "8c5ff45f92eb007c",
+    "type": "switch",
+    "z": "f025a8b9fbd1b054",
+    "g": "331ab89a9e31fab2",
+    "name": "someone knocked",
+    "property": "membershipChange",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "knock",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 400,
+    "y": 300,
+    "wires": [
+      [
+        "174b5084fcdd3c94"
+      ]
+    ]
+  },
+  {
+    "id": "174b5084fcdd3c94",
+    "type": "change",
+    "z": "f025a8b9fbd1b054",
+    "g": "331ab89a9e31fab2",
+    "name": "invite the knocker",
+    "rules": [
+      {
+        "t": "set",
+        "p": "userId",
+        "pt": "msg",
+        "to": "targetUserId",
+        "tot": "msg"
+      },
+      {
+        "t": "delete",
+        "p": "reason",
+        "pt": "msg"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 635,
+    "y": 300,
+    "wires": [
+      [
+        "eb9ff6d99985b1b2"
+      ]
+    ]
+  },
+  {
+    "id": "eb9ff6d99985b1b2",
+    "type": "matrix-invite-room",
+    "z": "f025a8b9fbd1b054",
+    "g": "331ab89a9e31fab2",
+    "name": "",
+    "roomId": null,
+    "x": 866,
+    "y": 300,
+    "wires": [
+      [
+        "36cb7f49aaecff57"
+      ],
+      [
+        "33262fd79408166e"
+      ]
+    ]
+  },
+  {
+    "id": "36cb7f49aaecff57",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "331ab89a9e31fab2",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1049,
+    "y": 275,
+    "wires": []
+  },
+  {
+    "id": "33262fd79408166e",
+    "type": "debug",
+    "z": "f025a8b9fbd1b054",
+    "g": "331ab89a9e31fab2",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1049,
+    "y": 325,
+    "wires": []
+  }
+]
