@@ -266,6 +266,10 @@
         The Receive node's <code>msg.mentions</code> describes who the <i>incoming</i> message mentioned and is
         not used here, so replying never repeats someone else's <code>@room</code>.
     </p>
+    <p>
+        With the default notification settings, notices (<code>m.notice</code>) don't notify anyone, even
+        when they mention users or the room, so send mentions as text.
+    </p>
 
     <h3>Outputs</h3>
     <ol class="node-ports">
