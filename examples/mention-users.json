@@ -97,7 +97,7 @@
     "name": "",
     "roomId": null,
     "message": null,
-    "messageType": "m.notice",
+    "messageType": "m.text",
     "messageFormat": "",
     "replaceMessage": false,
     "threadReplyType": "msg",
