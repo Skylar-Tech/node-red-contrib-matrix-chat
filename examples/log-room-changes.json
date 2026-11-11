@@ -69,12 +69,15 @@
     ],
     "checkall": "true",
     "repair": false,
-    "outputs": 1,
+    "outputs": 2,
     "x": 388,
     "y": 140,
     "wires": [
       [
         "eb722bd9a77e1cb8"
+      ],
+      [
+        "e74a43ead8806e4f"
       ]
     ]
   },
